@@ -7,9 +7,12 @@ const nextConfig: NextConfig = {
   compress: true,
 
   images: {
+    // Allow /api/uploads/* with and without the ?_r= cache-buster query string
+    localPatterns: [
+      { pathname: "/api/uploads/**", search: "" },
+      { pathname: "/api/uploads/**", search: "**" },
+    ],
     remotePatterns: [
-      { protocol: "https", hostname: "utfs.io" },
-      { protocol: "https", hostname: "uploadthing.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
   },

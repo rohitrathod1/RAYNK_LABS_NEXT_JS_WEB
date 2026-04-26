@@ -119,3 +119,7 @@ body {
 .gradient-text {
   @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
 }
+
+.admin-gradient-text {
+  @apply bg-gradient-to-r from-primary via-blue-400 to-primary/50 bg-clip-text text-transparent;
+}

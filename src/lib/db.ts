@@ -8,7 +8,10 @@ import { Pool } from "pg";
 const globalForPrisma = globalThis as unknown as { db: PrismaClient };
 
 function createPrismaClient(): PrismaClient {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: true }, // explicit verify-full — silences pg deprecation warning
+  });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,

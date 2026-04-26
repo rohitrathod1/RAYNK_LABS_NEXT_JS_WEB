@@ -1,0 +1,15 @@
+// home.prisma — CMS content for the home page.
+// Each row is a section (hero, mission, featured-products, health-benefits, testimonials, cta).
+
+model HomePage {
+  id        String   @id @default(cuid())
+  section   String   @unique       // "hero" | "mission" | "featured-products" | "health-benefits" | "testimonials" | "cta"
+  title     String?
+  content   Json
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}
