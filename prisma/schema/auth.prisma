@@ -1,0 +1,43 @@
+// auth.prisma — Admin user model for authentication.
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AdminStatus {
+  PENDING    // registered, awaiting approval
+  APPROVED   // can log in
+  REJECTED   // registration rejected
+  SUSPENDED  // temporarily disabled
+}
+
+model Admin {
+  id       String      @id @default(cuid())
+  name     String
+  email    String      @unique
+  mobile   String?     @unique
+  password String      // bcrypt hashed — never return in API responses
+  role     AdminRole   @default(ADMIN)
+  status   AdminStatus @default(PENDING)
+
+  // Profile
+  imageUrl  String?
+  bio       String?
+  github    String?
+  linkedin  String?
+  portfolio String?
+
+  // Approval workflow
+  approvedById   String?
+  approvedAt     DateTime?
+  approvedBy     Admin?    @relation("AdminApprovals", fields: [approvedById], references: [id])
+  approvedAdmins Admin[]   @relation("AdminApprovals")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([role])
+}

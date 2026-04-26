@@ -1,0 +1,17 @@
+// seo.prisma — Per-page SEO metadata.
+// Every public page model links here via seoId.
+
+model Seo {
+  id          String  @id @default(cuid())
+  page        String  @unique  // "home", "services", "projects", etc.
+  title       String?          // overrides <title>
+  description String?          // overrides meta description
+  keywords    String?          // comma-separated
+  ogImage     String?          // OpenGraph image URL
+  noIndex     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([page])
+}

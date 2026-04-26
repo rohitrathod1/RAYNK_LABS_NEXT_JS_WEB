@@ -1,0 +1,11 @@
+// base.prisma — Generator + Datasource ONLY.
+// DO NOT add models here. One .prisma file per feature.
+// Connection URL is configured in prisma.config.ts (Prisma v7 requirement).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}

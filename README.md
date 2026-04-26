@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RaYnk Labs — Web Platform
 
-## Getting Started
+Full-stack web platform for the RaYnk Labs student innovation lab.
+Public showcase + admin CMS built on Next.js 16, Prisma, and PostgreSQL.
 
-First, run the development server:
+---
+
+## Tech Stack
+
+| | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS v4 |
+| Database | PostgreSQL (Neon) + Prisma |
+| Auth | NextAuth v5 |
+| State | Redux Toolkit + TanStack Query |
+| Uploads | UploadThing |
+| UI | Radix UI + shadcn/ui |
+
+---
+
+## Quick Start
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Configure environment
+cp .env.example .env.local
+# Fill in all values in .env.local
+
+# 3. Set up database
+npm run db:generate
+npm run db:push
+npm run db:seed
+
+# 4. Start dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Public site → http://localhost:3000
+- Admin panel → http://localhost:3000/admin/login
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm run db:generate` | Regenerate Prisma client |
+| `npm run db:push` | Sync schema to DB (dev) |
+| `npm run db:seed` | Seed initial data |
+| `npm run db:studio` | Prisma Studio (visual DB) |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Folder Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/         → Routing only
+├── modules/     → Business logic (one folder per feature)
+├── components/  → Shared UI
+├── lib/         → Infrastructure (db, auth, utils)
+├── hooks/       → Custom React hooks
+├── store/       → Redux (UI state)
+├── providers/   → Context providers
+└── types/       → Global TypeScript
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Key Files
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| File | Purpose |
+|------|---------|
+| [prompt.md](prompt.md) | **READ FIRST** — all development rules |
+| [EXPLAIN.md](EXPLAIN.md) | Full architecture explanation |
+| [docs/](docs/) | Per-page documentation |
+| `.env.example` | Environment variable template |
+
+---
+
+## Adding a New Page
+
+Every new page follows the **7-step workflow** in [prompt.md](prompt.md):
+Module → Prisma Schema → Public Page → API Routes → Admin Page → Docs → Sitemap.
