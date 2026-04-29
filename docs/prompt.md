@@ -1,3 +1,548 @@
+# 🔴 MASTER CONTROL PROMPT FOR CLAUDE (STRICT EXECUTION)
+
+## 🚨 CRITICAL RULES (MUST FOLLOW)
+
+1. ❌ DO NOT create all pages at once
+2. ✅ ONLY create ONE page/module at a time when I say
+3. ❌ DO NOT skip steps
+4. ❌ DO NOT mix multiple modules in one response
+5. ✅ ALWAYS follow the existing project structure and rules from prompt.md
+6. ✅ ALWAYS include Admin + SEO + Permissions in every page
+7. ❌ DO NOT generate unnecessary code or extra features
+
+---
+
+# 🧱 SYSTEM STRUCTURE (MANDATORY)
+
+## 1. Public Website
+
+* Home
+* About
+* Services
+* Portfolio
+* Blog
+* Team
+* Contact
+
+## 2. Admin Panel
+
+* Manage ALL content
+* Manage pages
+* Manage SEO
+* Manage users/admins
+
+## 3. Role System (VERY IMPORTANT)
+
+### SUPER_ADMIN
+
+* Full system access
+* Create Admin
+* Delete Admin
+* Assign permissions
+* Manage roles
+* Access ALL pages
+* View system activity
+
+### ADMIN
+
+* Login using credentials given by Super Admin
+* Can manage:
+  * Pages (Home, About, etc.)
+  * Blog
+  * Portfolio
+  * Team
+  * SEO
+* Cannot:
+  * Create Admin (unless permission given)
+  * Change system roles
+
+---
+
+# 🔐 PERMISSION SYSTEM (MANDATORY)
+
+DO NOT use only roles.
+
+Use PERMISSIONS like:
+
+* EDIT_HOME
+* EDIT_ABOUT
+* MANAGE_BLOG
+* MANAGE_PORTFOLIO
+* MANAGE_TEAM
+* MANAGE_SEO
+* MANAGE_USERS
+
+Example:
+
+Admin A:
+
+* EDIT_HOME ✅
+* MANAGE_SEO ✅
+
+Admin B:
+
+* EDIT_HOME ❌
+* MANAGE_BLOG ✅
+
+👉 All permission checks MUST be DB-based (not hardcoded)
+
+---
+
+# 🔐 RBAC SYSTEM (MANDATORY - DO NOT SKIP)
+
+## 🚨 CRITICAL RULES
+
+1. ❌ DO NOT rely only on role (ADMIN / SUPER_ADMIN)
+2. ✅ ALWAYS use permission-based access
+3. ❌ DO NOT hardcode permission checks
+4. ✅ ALL permissions must come from DATABASE
+5. ✅ EVERY admin API must use permission middleware
+
+---
+
+## 🧱 DATABASE STRUCTURE (MANDATORY)
+
+### Permission Table
+
+* id
+* name (unique)
+
+---
+
+### UserPermission Table
+
+* id
+* userId
+* permissionId
+
+👉 Each user has custom permissions
+
+---
+
+## 🔑 PERMISSION FLOW
+
+1. Super Admin creates Admin
+2. Assign permissions to Admin
+3. Admin logs in
+4. System checks permission before every action
+
+---
+
+## ⚙️ PERMISSION MIDDLEWARE (MANDATORY)
+
+Create middleware:
+
+* checkPermission(user, permission)
+* requirePermission(permission)
+
+---
+
+## 🔥 LOGIC RULE
+
+### Super Admin
+
+```js
+if (user.role === "SUPER_ADMIN") return true;
+```
+
+👉 Always allow
+
+---
+
+### Admin
+
+```js
+check if permission exists in DB
+```
+
+---
+
+## 🔌 API PROTECTION (STRICT)
+
+EVERY admin API MUST use:
+
+Example:
+
+### Home API
+
+* requirePermission("EDIT_HOME")
+
+### Blog API
+
+* requirePermission("MANAGE_BLOG")
+
+### SEO API
+
+* requirePermission("MANAGE_SEO")
+
+---
+
+## 🧑‍💼 ADMIN PERMISSION UI
+
+Super Admin dashboard MUST include:
+
+* User list
+* Assign permission (checkbox UI)
+* Save permissions
+
+Example:
+
+[✔] EDIT_HOME
+[✔] MANAGE_BLOG
+[ ] MANAGE_SEO
+
+---
+
+## 🎯 FRONTEND CONTROL
+
+UI must hide features if no permission:
+
+* No EDIT_HOME → hide edit button
+* No MANAGE_SEO → hide SEO tab
+
+---
+
+## ⚠️ STRICT ENFORCEMENT
+
+Claude MUST:
+
+✅ Add permission check in:
+
+* APIs
+* Server actions
+
+❌ MUST NOT:
+
+* allow access without permission
+* skip middleware
+
+---
+
+## 🎯 FINAL GOAL
+
+* Fully secure admin system
+* Dynamic permission control
+* Super Admin full override
+* Admin limited access
+
+---
+
+# 🔐 FINAL RBAC ENFORCEMENT PATCH (CRITICAL FIX)
+
+## 🚨 HARD RULE (NO EXCEPTION)
+
+❌ DO NOT use role-based checks in APIs
+❌ DO NOT write:
+
+```js
+if (user.role === "ADMIN")
+```
+
+✅ ONLY use permission middleware
+
+---
+
+## 🧱 REQUIRED PRISMA MODELS (MANDATORY)
+
+Add in schema:
+
+```prisma
+model Permission {
+  id   String @id @default(cuid())
+  name String @unique
+  users UserPermission[]
+}
+
+model UserPermission {
+  id           String @id @default(cuid())
+  userId       String
+  permissionId String
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+}
+```
+
+---
+
+## ⚙️ PERMISSION CHECK LOGIC (STRICT)
+
+### Core Rule:
+
+```
+IF permission exists → ALLOW
+ELSE → DENY
+```
+
+---
+
+## 🔥 SUPER ADMIN OVERRIDE
+
+```js
+if (user.role === "SUPER_ADMIN") return true;
+```
+
+👉 ONLY this role check allowed
+
+---
+
+## ⚡ PERFORMANCE RULE (IMPORTANT)
+
+Permissions MUST be cached per request:
+
+```js
+const permissions = await getUserPermissions(user.id);
+```
+
+👉 DO NOT query DB multiple times
+
+---
+
+## 🔌 FINAL API RULE (MANDATORY)
+
+❌ WRONG:
+
+```js
+if (user.role === "ADMIN")
+```
+
+✅ CORRECT:
+
+```js
+requirePermission("EDIT_HOME")
+```
+
+---
+
+## 🎯 SECURITY RULE
+
+System MUST follow:
+
+* Deny by default
+* No permission → no access
+* No fallback
+* No bypass
+
+---
+
+## 🧠 REAL EXAMPLE
+
+Think like this:
+
+Admin = Employee
+Permission = Office access card
+
+👉 Without card → door will NOT open
+👉 Even if employee exists
+
+---
+
+## ✅ FINAL RESULT
+
+* Fully secure RBAC
+* No role misuse
+* Clean architecture
+* Scalable system
+
+---
+
+# ⚙️ ADMIN DASHBOARD STRUCTURE
+
+## Pages:
+
+1. Dashboard (overview)
+2. Home Editor
+3. About Editor
+4. Services Manager
+5. Portfolio Manager
+6. Blog Manager
+7. Team Manager
+8. Contact Submissions
+9. Navbar Manager
+10. Footer Manager
+11. Profile Settings
+12. SEO Dashboard ✅
+
+---
+
+# 🔍 SEO DASHBOARD (MANDATORY)
+
+Admin must be able to manage:
+
+* Meta Title
+* Meta Description
+* Keywords
+* OG Image
+* Canonical URL
+
+Each page MUST have SEO control.
+
+---
+
+# 🌐 PUBLIC WEBSITE STRUCTURE
+
+## Navbar
+
+* Logo
+* Home
+* About
+* Services (Dropdown)
+* Portfolio
+* Blog
+* Team
+* Contact
+
+---
+
+## Pages Breakdown
+
+### HOME PAGE
+
+Sections:
+
+* Hero / Carousel
+* Our Initiatives (4 boxes)
+* Services (3x3 grid)
+* Why digital website
+* Portfolio preview
+* Testimonials
+* Why choose us
+* Contact CTA
+
+---
+
+### ABOUT PAGE
+
+* About company
+* Who we are
+* Mission
+* Why choose us
+* Core team
+* Social links
+
+---
+
+### SERVICES PAGE
+
+Categories:
+
+* Website Design
+* SEO Optimization
+* Graphic Design
+
+Each service:
+
+* Intro
+* Benefits
+* Why needed
+* CTA
+
+---
+
+### PORTFOLIO
+
+* Web design
+* Graphic design
+* Previous work
+* Feedback
+* CTA
+
+---
+
+### BLOG
+
+* Intro
+* Blog cards (3x3)
+* CTA
+
+---
+
+### TEAM
+
+* Founders
+* Members
+* Click → open portfolio
+
+---
+
+### CONTACT
+
+* Get service
+* Work with us
+* Feedback form
+
+---
+
+# ⚠️ EXECUTION RULE (VERY IMPORTANT)
+
+When I say:
+
+👉 "Create Home Page"
+
+You MUST:
+
+1. Follow FULL workflow from prompt.md
+2. Create:
+   * Prisma model
+   * Module
+   * Admin page
+   * API
+   * SEO support
+3. Add Permission checks
+4. Add Admin + Super Admin logic
+5. Add SEO tab in admin
+
+---
+
+# ❌ WHAT YOU MUST NOT DO
+
+* Do NOT create all pages
+* Do NOT skip admin
+* Do NOT skip SEO
+* Do NOT hardcode roles
+* Do NOT ignore permission system
+
+---
+
+# ✅ OUTPUT FORMAT (STRICT)
+
+Always follow order:
+
+1. Prisma Schema
+2. Module (types, validation, data)
+3. API
+4. Admin Page
+5. SEO Integration
+6. Permission Logic
+7. Docs (docs/{page}.md)
+
+---
+
+# 🎯 FINAL GOAL
+
+* Fully dynamic CMS
+* Permission-based system
+* Scalable admin dashboard
+* SEO optimized pages
+* Clean modular architecture
+
+---
+
+# 🟢 WAIT FOR MY COMMAND
+
+Do NOT start building anything yet.
+
+Wait for instruction like:
+👉 "Create Home Page"
+👉 "Create Blog Module"
+👉 "Create SEO Dashboard"
+
+Only then proceed.
+
+---
+
 # RAYNK_LABS_NEXT_JS_WEB - Master Build Prompt
 
 > **IMPORTANT INSTRUCTIONS - READ BEFORE ANY WORK:**
@@ -3782,4 +4327,3 @@ Before marking a page "done", verify all of these:
 ### §44.12 Authority
 
 §44 supersedes any earlier skeleton or responsive example that uses `<SectionSkeleton height="..." />` or stops scaling at `lg:`. When building a new page, always follow §44.
-
