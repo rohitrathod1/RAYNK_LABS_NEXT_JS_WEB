@@ -10,17 +10,23 @@ interface NavLink {
   subLinks?: { title: string; href: string }[];
 }
 
+interface ApiNavLink {
+  title: string;
+  href: string;
+  subLinks?: ApiNavLink[];
+}
+
 export function NavbarWrapper() {
   const [navLinks, setNavLinks] = useState<NavLink[]>([]);
 
   useEffect(() => {
     fetch('/api/navbar')
       .then((r) => r.json())
-      .then(({ links }) => {
-        const mapped = (links || []).map((link: any) => ({
+      .then(({ links }: { links?: ApiNavLink[] }) => {
+        const mapped = (links || []).map((link) => ({
           title: link.title,
           href: link.href,
-          subLinks: link.subLinks?.map((child: any) => ({
+          subLinks: link.subLinks?.map((child) => ({
             title: child.title,
             href: child.href,
           })),

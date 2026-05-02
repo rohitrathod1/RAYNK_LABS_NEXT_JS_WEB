@@ -290,7 +290,7 @@ export default function FooterManager() {
 
         {!footerData?.sections || footerData.sections.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No sections yet. Click "Add Section" to create one.</p>
+            <p>No sections yet. Click &quot;Add Section&quot; to create one.</p>
           </div>
         ) : (
           <div className="space-y-4">

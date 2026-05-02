@@ -16,7 +16,7 @@ export async function GET() {
       imageUrl: admin.imageUrl,
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,
-      permissions: admin.permissions.map((up) => up.permission.name),
+      permissions: admin.permissions.map((up) => up.permission),
     }));
 
     return NextResponse.json({ success: true, data: sanitized });

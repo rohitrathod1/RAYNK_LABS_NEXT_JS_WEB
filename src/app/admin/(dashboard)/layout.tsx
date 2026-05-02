@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
 import {
@@ -13,13 +13,11 @@ import {
   LayoutDashboard,
   Home,
   Sparkles,
-  Package,
   Newspaper,
   Users,
   Globe,
   Navigation,
   PanelBottom,
-  ChevronDown,
   LogOut,
   ArrowLeft,
   Moon,
@@ -137,11 +135,9 @@ const SIDEBAR_SECTIONS: NavSection[] = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -156,8 +152,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
   }, [userRole, userPermissions]);
 
-  useEffect(() => setMobileOpen(false), [pathname]);
-
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node) && mobileOpen) {
@@ -168,10 +162,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [mobileOpen]);
 
-  const toggle = useCallback((key: string) => {
-    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
-
   const isActive = (href: string) => pathname === href;
 
   const handleLogout = () => {
@@ -179,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="admin-shell flex h-screen overflow-hidden bg-background">
       {mobileOpen && (
         <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
@@ -188,43 +178,58 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside
         ref={sidebarRef}
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-card shadow-sm 2xl:w-72',
+          'fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col border-r border-white/10 bg-card shadow-sm 2xl:w-72',
           'transform transition-transform duration-300',
           mobileOpen ? 'translate-x-0' : '-translate-x-64',
           'md:translate-x-0',
         )}
       >
         {/* Header */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b px-6 2xl:h-20 2xl:px-8">
-          <Link href="/" title="Back to Website">
-            <ArrowLeft size={20} className="cursor-pointer hover:text-primary 2xl:h-6 2xl:w-6" />
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4 2xl:h-20 2xl:px-6">
+          <Link
+            href="/"
+            title="Back to Website"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ArrowLeft size={20} className="2xl:h-6 2xl:w-6" />
           </Link>
-          <span className="text-lg font-bold 2xl:text-xl">Admin Panel</span>
-          <button onClick={() => setMobileOpen(false)} className="cursor-pointer md:hidden" aria-label="Close sidebar">
+          <span className="truncate px-2 text-lg font-bold 2xl:text-xl">Admin Panel</span>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground md:hidden"
+            aria-label="Close sidebar"
+          >
             <X size={20} />
           </button>
-          <div className="hidden w-5 md:block" />
+          <div className="hidden h-10 w-10 md:block" />
         </div>
 
         {/* Nav */}
-        <nav className="sidebar-scroll flex-1 space-y-0.5 overflow-y-auto p-3">
+        <nav className="no-scrollbar flex-1 space-y-1 overflow-y-auto p-3">
           {visibleSections.map((section) => {
             const active = isActive(section.href);
-            const isOpen = expanded[section.title] ?? false;
             const Icon = section.icon;
 
             return (
               <div key={section.title}>
                 <Link
                   href={section.href}
+                  onClick={() => setMobileOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition 2xl:px-4 2xl:py-3 2xl:text-base',
+                    'group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary 2xl:px-4 2xl:py-3 2xl:text-base',
                     active
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground/80 hover:bg-accent hover:text-foreground',
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                      : 'text-foreground/75 hover:translate-x-0.5 hover:bg-accent hover:text-foreground',
                   )}
                 >
-                  <Icon size={18} className="shrink-0" />
+                  <span
+                    className={cn(
+                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition',
+                      active ? 'bg-white/15' : 'bg-transparent group-hover:bg-primary/10 group-hover:text-primary',
+                    )}
+                  >
+                    <Icon size={17} />
+                  </span>
                   <span className="truncate">{section.title}</span>
                 </Link>
               </div>
@@ -233,55 +238,65 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {visibleSections.length === 0 && (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              🚫 You don't have access to any modules
+              You don&apos;t have access to any modules
             </div>
           )}
         </nav>
 
-        <div className="border-t p-4 text-xs text-muted-foreground 2xl:p-5 2xl:text-sm">
+        <div className="shrink-0 border-t border-white/10 p-4 text-xs text-muted-foreground 2xl:p-5 2xl:text-sm">
           <p>Manage all pages from sidebar.</p>
         </div>
       </aside>
 
       {/* ── Main content ──────────────────────── */}
-      <div className="min-w-0 flex-1 md:ml-64 2xl:ml-72">
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-background/95 px-4 backdrop-blur md:hidden">
+      <div className="flex h-screen min-w-0 flex-1 flex-col md:ml-64 2xl:ml-72">
+        <header className="z-20 flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-background/95 px-4 backdrop-blur md:hidden">
           <div className="flex items-center gap-4">
-            <button onClick={() => setMobileOpen(true)} className="cursor-pointer" aria-label="Open menu">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 transition hover:border-primary/40 hover:bg-accent"
+              aria-label="Open menu"
+            >
               <Menu size={24} />
             </button>
             <h1 className="truncate text-sm font-bold">Admin Panel</h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9 rounded-lg border border-white/20 hover:border-blue-500 transition-all duration-200">
+            <Button variant="ghost" size="icon" title="Toggle theme" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9 rounded-xl border border-white/15 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10">
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button asChild variant="outline" size="sm" className="h-9 gap-2 rounded-lg border border-white/20 hover:border-blue-500 transition-all duration-200 px-3 text-xs">
-              <a href="/" target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3.5 w-3.5" /> <span className="hidden sm:inline">View Site</span>
-              </a>
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-9 gap-2 rounded-lg bg-red-600 hover:bg-red-700 transition-all duration-200 px-3 text-xs">
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/15 px-3 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> <span className="hidden sm:inline">View Site</span>
+            </a>
+            <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-9 gap-2 rounded-xl bg-red-600 px-3 text-xs shadow-lg shadow-red-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700">
               <LogOut className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </header>
 
-        <header className="sticky top-0 z-20 hidden h-16 items-center justify-end gap-3 border-b border-white/10 bg-background/95 px-6 backdrop-blur md:flex 2xl:h-20 2xl:px-8 2xl:gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-10 w-10 rounded-lg border border-white/20 hover:border-blue-500 transition-all duration-200">
+        <header className="z-20 hidden h-16 shrink-0 items-center justify-end gap-3 border-b border-white/10 bg-background/95 px-6 backdrop-blur md:flex 2xl:h-20 2xl:px-8 2xl:gap-4">
+          <Button variant="ghost" size="icon" title="Toggle theme" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-10 w-10 rounded-xl border border-white/15 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10">
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button asChild variant="outline" size="sm" className="h-10 rounded-lg gap-2 border-white/20 hover:border-blue-500 transition-all duration-200 px-4">
-            <a href="/" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" /> View Site
-            </a>
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-10 gap-2 rounded-lg bg-red-600 hover:bg-red-700 transition-all duration-200 px-4">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
+          >
+            <ExternalLink className="h-4 w-4" /> View Site
+          </a>
+          <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-10 gap-2 rounded-xl bg-red-600 px-4 shadow-lg shadow-red-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700">
             <LogOut className="h-4 w-4" /> Logout
           </Button>
         </header>
 
-        <main className="p-4 sm:p-6 2xl:p-10">{children}</main>
+        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 2xl:p-10">{children}</main>
       </div>
 
       <LogoutModal
@@ -290,25 +305,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onConfirm={handleLogout}
       />
 
-      <style jsx global>{`
-        .sidebar-scroll::-webkit-scrollbar {
-          width: 6px;
-        }
-        .sidebar-scroll::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .sidebar-scroll::-webkit-scrollbar-thumb {
-          background: hsl(var(--muted-foreground) / 0.2);
-          border-radius: 999px;
-        }
-        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background: hsl(var(--muted-foreground) / 0.4);
-        }
-        .sidebar-scroll {
-          scrollbar-width: thin;
-          scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
-        }
-      `}</style>
     </div>
   );
 }

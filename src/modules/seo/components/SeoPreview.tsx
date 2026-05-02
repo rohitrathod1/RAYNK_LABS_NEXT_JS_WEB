@@ -60,7 +60,10 @@ export function SeoPreview({
 }: SeoPreviewProps) {
   const resolvedSrc = useMemo(() => resolveImageSrc(ogImage), [ogImage]);
   const [imgError, setImgError] = useState(false);
-  useEffect(() => setImgError(false), [resolvedSrc]);
+  useEffect(() => {
+    const id = window.setTimeout(() => setImgError(false), 0);
+    return () => window.clearTimeout(id);
+  }, [resolvedSrc]);
 
   const isLocalSrc = resolvedSrc.startsWith("/");
 

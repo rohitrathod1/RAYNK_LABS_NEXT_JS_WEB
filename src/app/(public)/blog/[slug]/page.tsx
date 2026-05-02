@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       keywords: post.tags?.join(", ") ?? undefined,
       ogImage: post.coverImage ?? undefined,
     },
-    seo?.title ?? undefined
+    seo?.metaTitle ?? undefined
   );
 }
 

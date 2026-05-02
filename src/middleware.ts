@@ -25,6 +25,17 @@ function addSecurityHeaders(res: NextResponse): NextResponse {
   return res;
 }
 
+function nextWithPath(req: NextRequest): NextResponse {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-invoke-path", req.nextUrl.pathname);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
+
 function clientIp(req: NextRequest): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
@@ -102,7 +113,7 @@ export default auth(async (req: AuthRequest) => {
     isAdminPage || isAdminApi || (isApiRoute && isMutation && !isAuthApi);
 
   if (!needsAuth) {
-    return addSecurityHeaders(NextResponse.next());
+    return addSecurityHeaders(nextWithPath(req));
   }
 
   const session = req.auth;
@@ -149,6 +160,7 @@ export default auth(async (req: AuthRequest) => {
       "/admin/dashboard/contact": "MANAGE_CONTACT",
       "/admin/dashboard/navbar": "MANAGE_NAVBAR",
       "/admin/dashboard/footer": "MANAGE_FOOTER",
+      "/admin/footer": "MANAGE_FOOTER",
       "/admin/dashboard/seo": "MANAGE_SEO",
       "/admin/dashboard/users": "MANAGE_USERS",
     };
@@ -164,7 +176,7 @@ export default auth(async (req: AuthRequest) => {
       }
     }
 
-    return addSecurityHeaders(NextResponse.next());
+    return addSecurityHeaders(nextWithPath(req));
   }
 
   // ── 3b. Admin API routes — JSON responses ─────────────────────────
@@ -179,7 +191,7 @@ export default auth(async (req: AuthRequest) => {
     );
   }
 
-  return addSecurityHeaders(NextResponse.next());
+  return addSecurityHeaders(nextWithPath(req));
 });
 
 export const config = {

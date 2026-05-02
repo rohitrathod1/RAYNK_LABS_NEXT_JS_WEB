@@ -20,3 +20,15 @@ model Seo {
 
   @@index([page])
 }
+
+model SeoPage {
+  id              String   @id @default(cuid())
+  page            String   @unique
+  metaTitle       String
+  metaDescription String
+  keywords        String[]
+  ogImage         String?
+  canonicalUrl    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

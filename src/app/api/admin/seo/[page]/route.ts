@@ -24,14 +24,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
     await requirePermission("MANAGE_SEO");
     const { page } = await params;
     const body = await req.json();
-    const parsed = seoFormSchema.safeParse(body);
+    const parsed = seoFormSchema.safeParse({ ...body, page: decodeURIComponent(page) });
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Validation failed", issues: parsed.error.flatten().fieldErrors },
         { status: 400 },
       );
     }
-    const result = await upsertSeo(decodeURIComponent(page), parsed.data);
+    const result = await upsertSeo(parsed.data);
     return NextResponse.json({ success: true, data: result });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;

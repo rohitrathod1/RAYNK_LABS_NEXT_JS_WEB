@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
 
 export async function getSeoByPage(page: string) {
-  return db.seo.findUnique({ where: { page } });
+  return db.seoPage.findUnique({ where: { page } });
 }
 
 export async function getAllSeo() {
-  return db.seo.findMany({ orderBy: { page: "asc" } });
+  return db.seoPage.findMany({ orderBy: { page: "asc" } });
 }

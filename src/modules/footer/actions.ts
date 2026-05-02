@@ -21,6 +21,7 @@ import {
 
 function revalidateFooter() {
   revalidatePath("/");
+  revalidatePath("/admin/footer");
   revalidatePath("/admin/dashboard/footer");
 }
 

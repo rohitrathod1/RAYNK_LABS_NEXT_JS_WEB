@@ -1,184 +1,145 @@
-# SEO Dashboard System - Documentation
+# SEO Admin Page
 
 ## Overview
 
-The SEO Dashboard System provides a complete content management system for per-page SEO metadata. It allows admin users to control SEO settings for all public pages.
-
-## SEO Pages Supported
-
-- Home
-- About
-- Services
-- Portfolio
-- Blog
-- Team
-- Contact
+The SEO admin page lets authorized admins manage page-level metadata for public pages. It uses the exact `SeoPage` Prisma model and stores title, description, keywords, OG image, and canonical URL per unique page key.
 
 ## Prisma Model
 
 ```prisma
-model Seo {
-  id            String   @id @default(cuid())
-  page          String   @unique       // "home", "about", "services", etc.
-  title         String?                // meta title (shown in browser tab + Google)
-  description   String?                // meta description
-  keywords      String?                // comma-separated keywords
-  ogTitle       String?                // OG title for social sharing
-  ogDescription String?                // OG description for social sharing
-  ogImage       String?                // OG image (bare filename or full URL)
-  twitterCard   String   @default("summary_large_image")
-  canonicalUrl  String?
-  robots        String   @default("index,follow")
-  noIndex       Boolean  @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([page])
+model SeoPage {
+  id              String   @id @default(cuid())
+  page            String   @unique
+  metaTitle       String
+  metaDescription String
+  keywords        String[]
+  ogImage         String?
+  canonicalUrl    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
-```
-
-## Module Structure
-
-```
-src/modules/seo/
-├── index.ts           # Exports components and types
-├── types.ts           # TypeScript interfaces
-├── validations.ts     # Zod validation schemas
-├── data/
-│   ├── index.ts       # Re-exports
-│   ├── queries.ts    # Database queries
-│   └── mutations.ts  # Database mutations
-└── components/
-    ├── index.ts       # Component exports
-    ├── SeoTabPanel.tsx  # SEO form panel
-    ├── SeoPreview.tsx   # Google preview simulation
-    └── SeoGuide.tsx    # SEO help guide
 ```
 
 ## API Routes
 
-### Public API
+Public fetch:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/seo?page=home` | Get SEO data for a page |
+```http
+GET /api/seo?page=home
+```
 
-### Admin API
+Returns the SEO record for the requested page.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/seo` | List all SEO records (requires MANAGE_SEO) |
-| GET | `/api/admin/seo/[page]` | Get SEO for specific page |
-| PUT | `/api/admin/seo/[page]` | Update SEO for specific page |
-| DELETE | `/api/admin/seo/[page]` | Delete SEO record |
+Admin list and page fetch:
 
-## SEO Dashboard Page
+```http
+GET /api/admin/seo
+GET /api/admin/seo?page=home
+```
 
-**Route**: `/admin/dashboard/seo`
+Admin create/update:
 
-**Features**:
-1. **Page Selector** - Dropdown to select which page to edit
-2. **SEO Fields**:
-   - Meta Title (max 70 chars)
-   - Meta Description (max 180 chars)
-   - Keywords (comma-separated)
-   - OG Title
-   - OG Description
-   - OG Image upload
-   - Canonical URL
-   - Robots directive
-3. **Google Preview** - Live preview of how the page appears in search results
-4. **Save Button** - Save SEO changes
+```http
+POST /api/admin/seo
+Content-Type: application/json
 
-## Page Integration
-
-All public pages must use `resolveSeo()` from `@/lib/seo`:
-
-```typescript
-import { resolveSeo } from "@/lib/seo";
-import { getSeoByPage } from "@/modules/seo/data/queries";
-
-export async function generateMetadata({ params }: { params: { slug?: string } }): Promise<Metadata> {
-  const seo = await getSeoByPage("page_name");
-  return resolveSeo(seo);
+{
+  "page": "home",
+  "metaTitle": "RaYnk Labs",
+  "metaDescription": "Digital services and innovation lab.",
+  "keywords": "raynk labs, web design, seo",
+  "ogImage": "image.webp",
+  "canonicalUrl": "https://raynklabs.com"
 }
 ```
 
-### Pages with SEO Integration:
-- ✅ / (Home)
-- ✅ /about
-- ✅ /services
-- ✅ /portfolio
-- ✅ /blog
-- ✅ /team
-- ✅ /contact
+Compatibility routes:
 
-## Permission System
+```http
+GET /api/admin/seo/[page]
+PUT /api/admin/seo/[page]
+DELETE /api/admin/seo/[page]
+```
 
-- All admin SEO routes require `MANAGE_SEO` permission
-- SUPER_ADMIN has full access
-- Permission check: `requirePermission("MANAGE_SEO")`
+All admin SEO routes call `requirePermission("MANAGE_SEO")`.
 
-## UI Features
+## Admin UI
 
-### SEO Tab Panel (SeoTabPanel)
-- Form fields with validation
-- Live Google search preview
-- Copy buttons for URLs and titles
-- Image upload for OG image
-- Twitter card type selector
+Route:
 
-### SEO Preview (SeoPreview)
-- Simulates Google search result
-- Shows title (blue link style)
-- Shows URL
-- Shows description
+```text
+/admin/seo
+```
 
-### SEO Guide (SeoGuide)
-- Tips for writing good meta titles
-- Tips for writing good meta descriptions
-- Keyword best practices
+The UI is a responsive three-column layout on desktop:
 
-## Workflow
+- Left: page selector
+- Center: `react-hook-form` SEO form
+- Right: API status and live SEO preview
 
-1. **Admin Login** - Admin logs in with MANAGE_SEO permission
-2. **Navigate to SEO Dashboard** - Go to `/admin/dashboard/seo`
-3. **Select Page** - Choose which page to edit from the dropdown
-4. **Edit SEO Fields** - Update meta title, description, keywords, etc.
-5. **Preview** - See live Google search preview
-6. **Save** - Click save to store changes
-7. **Verify** - Check public page metadata
+On mobile it stacks into a single column.
 
-## Build Verification
+Editable fields:
 
-After all changes, run:
+- Meta Title
+- Meta Description
+- Keywords
+- OG Image upload
+- Canonical URL
+
+The form validates in real time and saves through `POST /api/admin/seo`.
+
+## Data Flow
+
+1. Admin selects a page key.
+2. UI fetches `GET /api/admin/seo?page=<page>`.
+3. Admin edits form fields.
+4. UI posts the payload to `POST /api/admin/seo`.
+5. API validates data and upserts `SeoPage`.
+6. Public pages read `SeoPage` through `getSeoData(pageName)`.
+7. `resolveSeo()` converts the DB row into Next metadata.
+
+## Public SEO Integration
+
+Use `getSeoData()` and `resolveSeo()` in public page metadata functions:
+
+```ts
+import type { Metadata } from "next";
+import { getSeoData, resolveSeo } from "@/lib/seo";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const seoData = await getSeoData("home");
+  return resolveSeo(seoData, "Fallback Title");
+}
+```
+
+`resolveSeo()` sets:
+
+- `title`
+- `description`
+- `keywords`
+- canonical URL
+- Open Graph image
+- Twitter image/card data
+- robots defaults
+
+## Admin Usage
+
+1. Log in as `SUPER_ADMIN` or an admin with `MANAGE_SEO`.
+2. Open `/admin/seo`.
+3. Select the page from the left panel.
+4. Fill metadata fields.
+5. Upload or select an OG image.
+6. Click `Save Changes`.
+7. Refresh the public page and inspect metadata.
+
+## Build Check
+
+Run:
+
 ```bash
 npm run build
 npm run lint
 ```
 
-### Known Issues:
-- Build may fail with "Server Functions cannot be called during initial render" error in `_not-found` page
-- This is a pre-existing issue unrelated to the SEO module
-- The SEO module itself compiles and type-checks successfully
-
-## Postman Testing
-
-### Test Public API
-```
-GET http://localhost:3000/api/seo?page=home
-```
-
-### Test Admin APIs (requires auth token)
-```
-GET http://localhost:3000/api/admin/seo
-GET http://localhost:3000/api/admin/seo/home
-PUT http://localhost:3000/api/admin/seo/home
-Body: {
-  "title": "Updated Title",
-  "description": "Updated description",
-  "keywords": "keyword1, keyword2"
-}
-DELETE http://localhost:3000/api/admin/seo/home
-```
+In this environment, commands are run through the direct Node binary when `npm` is unavailable.

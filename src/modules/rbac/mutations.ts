@@ -58,18 +58,28 @@ export async function deleteAdmin(id: string) {
 }
 
 export async function assignPermissions(userId: string, permissionNames: string[]) {
-  await db.userPermission.deleteMany({ where: { userId } });
-
-  if (permissionNames.length === 0) return;
-
+  const uniqueNames = [...new Set(permissionNames)];
   const permissions = await db.permission.findMany({
-    where: { name: { in: permissionNames } },
+    where: { name: { in: uniqueNames } },
   });
 
-  await db.userPermission.createMany({
-    data: permissions.map((p) => ({
-      userId,
-      permissionId: p.id,
-    })),
+  const foundNames = new Set(permissions.map((permission) => permission.name));
+  const missing = uniqueNames.filter((name) => !foundNames.has(name));
+  if (missing.length > 0) {
+    throw new Error(`Unknown permissions: ${missing.join(", ")}`);
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.userPermission.deleteMany({ where: { userId } });
+
+    if (permissions.length === 0) return;
+
+    await tx.userPermission.createMany({
+      data: permissions.map((permission) => ({
+        userId,
+        permissionId: permission.id,
+      })),
+      skipDuplicates: true,
+    });
   });
 }

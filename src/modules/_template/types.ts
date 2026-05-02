@@ -7,10 +7,8 @@ export interface TemplateItem {
   updatedAt: Date;
 }
 
-export interface CreateTemplateInput {
-  // Define input fields here
-}
+export type CreateTemplateInput = object;
 
-export interface UpdateTemplateInput extends Partial<CreateTemplateInput> {
+export type UpdateTemplateInput = Partial<CreateTemplateInput> & {
   id: string;
-}
+};

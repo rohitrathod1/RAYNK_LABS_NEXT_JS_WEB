@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { Providers } from "@/providers";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { AdminCheck } from "@/components/admin-check";
+import { Footer } from "@/components/footer";
 import { headers } from "next/headers";
 import "./globals.css";
 
-const geistSans = Geist({
+const geistSans = localFont({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  src: [
+    { path: "../../public/fonts/Jost-Light.ttf", weight: "300", style: "normal" },
+    { path: "../../public/fonts/Jost-Regular.ttf", weight: "400", style: "normal" },
+    { path: "../../public/fonts/Jost-Medium.ttf", weight: "500", style: "normal" },
+    { path: "../../public/fonts/Jost-Bold.ttf", weight: "700", style: "normal" },
+    { path: "../../public/fonts/Jost-ExtraBold.ttf", weight: "800", style: "normal" },
+  ],
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  src: "../../public/fonts/Jost-Regular.ttf",
   display: "swap",
 });
 
@@ -46,6 +53,7 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const headersList = await headers();
   const pathname = headersList.get("x-invoke-path") || "/";
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
 
   return (
     <html
@@ -55,8 +63,9 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>
-          <AdminCheck pathname={pathname} />
+          {!isAdminRoute && <AdminCheck pathname={pathname} />}
           {children}
+          {!isAdminRoute && <Footer />}
           <Toaster richColors closeButton position="top-right" />
         </Providers>
       </body>

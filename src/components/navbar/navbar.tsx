@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown, Moon, Sun } from 'lucide-react';
 import { useScroll } from '@/hooks/use-scroll';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/providers/theme-provider';
 import { SITE_NAME } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Save, Loader2, ExternalLink } from "lucide-react";
-import Image from "next/image";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/common/image-upload";
+import { SafeImage } from "@/components/common/safe-image";
 import { updateProfileAction } from "@/modules/profile/actions";
 import type { ProfileData } from "@/modules/profile/types";
 
@@ -89,7 +89,7 @@ export default function ProfilePage() {
           {/* Profile Image */}
           <div className="relative w-24 h-24 rounded-full overflow-hidden bg-muted ring-4 ring-primary/20 shrink-0">
             {profile.imageUrl ? (
-              <Image
+              <SafeImage
                 src={profile.imageUrl}
                 alt={profile.name}
                 width={96}

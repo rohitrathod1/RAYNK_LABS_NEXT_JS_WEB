@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 export async function getUserPermissions(userId: string) {
   const userPerms = await db.userPermission.findMany({
     where: { userId },
-    include: { permission: { select: { name: true } } },
+    include: { permission: { select: { id: true, name: true, description: true } } },
   });
   return userPerms.map((up) => up.permission.name);
 }
@@ -26,7 +26,8 @@ export async function getAdminsWithPermissions() {
       createdAt: true,
       updatedAt: true,
       permissions: {
-        include: { permission: { select: { name: true } } },
+        include: { permission: { select: { id: true, name: true, description: true } } },
+        orderBy: { permission: { name: "asc" } },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -48,7 +49,8 @@ export async function getAdminById(id: string) {
       createdAt: true,
       updatedAt: true,
       permissions: {
-        include: { permission: { select: { name: true } } },
+        include: { permission: { select: { id: true, name: true, description: true } } },
+        orderBy: { permission: { name: "asc" } },
       },
     },
   });

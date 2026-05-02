@@ -49,7 +49,7 @@ export default function AboutPageManager() {
   const { data: session } = useSession();
 
   useEffect(() => {
-    if (session && !hasPermission(session, "MANAGE_ABOUT")) {
+    if (session && !hasPermission(session, "EDIT_ABOUT")) {
       router.push("/admin");
     }
   }, [session, router]);

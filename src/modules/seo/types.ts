@@ -7,22 +7,21 @@ export type RobotsDirective =
   | "noindex,nofollow";
 
 export interface SeoFormData {
-  title: string;
-  description: string;
+  page: string;
+  metaTitle: string;
+  metaDescription: string;
   keywords: string;
-  ogTitle: string;
-  ogDescription: string;
   ogImage: string;
-  twitterCard: TwitterCard;
   canonicalUrl: string;
-  robots: RobotsDirective;
 }
 
 export interface SeoListItem {
   id: string;
   page: string;
-  title: string | null;
-  description: string | null;
-  robots: string;
+  metaTitle: string;
+  metaDescription: string;
+  keywords: string[];
+  ogImage: string | null;
+  canonicalUrl: string | null;
   updatedAt: string;
 }

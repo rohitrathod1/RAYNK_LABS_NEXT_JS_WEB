@@ -6,8 +6,8 @@ import { useSession } from "next-auth/react";
 import { Save, Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import { hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
-import Image from "next/image";
 import { ImageUpload } from "@/components/common/image-upload";
+import { SafeImage } from "@/components/common/safe-image";
 import {
   updateTeamHero,
   updateTeamIntro,
@@ -486,7 +486,7 @@ export default function TeamPageManager() {
               {teamMembers.map((member) => (
                 <div key={member.id} className="flex items-center justify-between p-4 border rounded-md">
                   <div className="flex items-center gap-4">
-                    <Image
+                    <SafeImage
                       src={member.image}
                       alt={member.name}
                       width={48}

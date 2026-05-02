@@ -13,7 +13,14 @@ const PLACEHOLDER = "/api/uploads/placeholder.png";
  *   - Bare filename                      → /api/uploads/<filename>
  */
 function resolveSrc(raw: string): string {
-  if (!raw || raw === "placeholder.png") return PLACEHOLDER;
+  if (
+    !raw ||
+    raw === "placeholder.png" ||
+    raw === "/placeholder.png" ||
+    raw === "/default-logo.png"
+  ) {
+    return PLACEHOLDER;
+  }
   if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:")) {
     return raw;
   }
@@ -30,7 +37,13 @@ function resolveSrc(raw: string): string {
 
 /** Returns true when the value is empty or the seed placeholder — no real image uploaded. */
 export function isPlaceholderValue(raw: string | undefined | null): boolean {
-  return !raw || raw === "placeholder.png";
+  return (
+    !raw ||
+    raw === "placeholder.png" ||
+    raw === "/placeholder.png" ||
+    raw === "/default-logo.png" ||
+    raw === PLACEHOLDER
+  );
 }
 
 interface SafeImageProps extends Omit<ImageProps, "src" | "onError"> {
@@ -55,9 +68,12 @@ export function SafeImage({ src, alt, onMissing, ...rest }: SafeImageProps) {
   const reportedRef = useRef(false);
 
   useEffect(() => {
-    setPhase("initial");
-    setCurrentSrc(initial);
-    reportedRef.current = false;
+    const id = window.setTimeout(() => {
+      setPhase("initial");
+      setCurrentSrc(initial);
+      reportedRef.current = false;
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [initial]);
 
   const isFallback = phase === "fallback";

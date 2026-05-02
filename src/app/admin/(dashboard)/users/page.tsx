@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { hasPermission } from "@/lib/permissions";
+import { SafeImage } from "@/components/common/safe-image";
 import {
   Plus,
   Eye,
@@ -34,11 +35,6 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
 } from "@/components/ui";
 import { PERMISSIONS, PERMISSION_DESCRIPTIONS } from "@/modules/rbac/constants";
 import type { PermissionKey } from "@/modules/rbac/constants";
@@ -52,7 +48,7 @@ interface AdminUser {
   role: "ADMIN" | "SUPER_ADMIN";
   status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
   imageUrl: string | null;
-  permissions: string[];
+  permissions: Permission[];
   createdAt: string;
   updatedAt: string;
 }
@@ -84,7 +80,6 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
-  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
 
   useEffect(() => {
     if (session && !hasPermission(session, "MANAGE_USERS")) {
@@ -134,7 +129,10 @@ export default function AdminUsersPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const id = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [fetchData]);
 
   // ── Filtered users ─────────────────────────────────────────────────────────
@@ -162,7 +160,7 @@ export default function AdminUsersPage() {
     setFormEmail(user.email);
     setFormPassword("");
     setFormStatus(user.status);
-    setFormPermissions(user.permissions);
+    setFormPermissions(user.permissions.map((permission) => permission.name));
     setSelectedUser(user);
     setModalMode("edit");
   };
@@ -372,12 +370,18 @@ export default function AdminUsersPage() {
               </TableRow>
             ) : (
               filteredUsers.map((user) => (
-                <TableRow key={user.id}>
+                <TableRow
+                  key={user.id}
+                  onClick={() => openViewModal(user)}
+                  className="cursor-pointer"
+                >
                   <TableCell>
                     {user.imageUrl ? (
-                      <img
+                      <SafeImage
                         src={user.imageUrl}
                         alt={user.name}
+                        width={36}
+                        height={36}
                         className="h-9 w-9 rounded-full object-cover"
                       />
                     ) : (
@@ -408,15 +412,18 @@ export default function AdminUsersPage() {
                   <TableCell>
                     <div className="flex flex-wrap gap-1 max-w-xs">
                       {user.permissions.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">None</span>
+                        <Badge variant="secondary" className="text-[10px]">
+                          No permissions assigned
+                        </Badge>
                       ) : (
                         user.permissions.slice(0, 3).map((perm) => (
-                          <span
-                            key={perm}
+                          <Badge
+                            key={perm.id}
+                            variant="secondary"
                             className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
                           >
-                            {perm.replace(/_/g, " ")}
-                          </span>
+                            {perm.name.replace(/_/g, " ")}
+                          </Badge>
                         ))
                       )}
                       {user.permissions.length > 3 && (
@@ -429,6 +436,7 @@ export default function AdminUsersPage() {
                   <TableCell>
                     <Switch
                       checked={user.status === "APPROVED"}
+                      onClick={(event) => event.stopPropagation()}
                       onCheckedChange={() => handleToggleStatus(user)}
                       disabled={user.id === currentUserId}
                     />
@@ -438,7 +446,10 @@ export default function AdminUsersPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => openViewModal(user)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openViewModal(user);
+                        }}
                         className="h-8 w-8"
                         title="View"
                       >
@@ -447,7 +458,10 @@ export default function AdminUsersPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => openEditModal(user)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEditModal(user);
+                        }}
                         className="h-8 w-8"
                         title="Edit"
                       >
@@ -456,7 +470,10 @@ export default function AdminUsersPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(user)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDelete(user);
+                        }}
                         className="h-8 w-8 text-destructive hover:text-destructive"
                         title="Delete"
                         disabled={
@@ -565,20 +582,27 @@ export default function AdminUsersPage() {
                   Select which sections this admin can manage.
                 </p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {permissionKeys.map((key) => (
+                  {(permissions.length > 0
+                    ? permissions
+                    : permissionKeys.map((key) => ({
+                        id: key,
+                        name: key,
+                        description: PERMISSION_DESCRIPTIONS[key],
+                      }))
+                  ).map((permission) => (
                     <label
-                      key={key}
+                      key={permission.id}
                       className="flex items-start gap-2 rounded-lg border p-2.5 cursor-pointer transition-colors hover:bg-muted/50 has-[[data-state=checked]]:border-primary/50 has-[[data-state=checked]]:bg-primary/5"
                     >
                       <Checkbox
-                        checked={formPermissions.includes(key)}
-                        onCheckedChange={() => togglePermission(key)}
+                        checked={formPermissions.includes(permission.name)}
+                        onCheckedChange={() => togglePermission(permission.name)}
                         className="mt-0.5"
                       />
                       <div>
-                        <p className="text-sm font-medium">{key.replace(/_/g, " ")}</p>
+                        <p className="text-sm font-medium">{permission.name.replace(/_/g, " ")}</p>
                         <p className="text-[11px] text-muted-foreground">
-                          {PERMISSION_DESCRIPTIONS[key]}
+                          {permission.description}
                         </p>
                       </div>
                     </label>
@@ -617,9 +641,11 @@ export default function AdminUsersPage() {
             <div className="space-y-4 py-4">
               <div className="flex items-center gap-4">
                 {selectedUser.imageUrl ? (
-                  <img
+                  <SafeImage
                     src={selectedUser.imageUrl}
                     alt={selectedUser.name}
+                    width={64}
+                    height={64}
                     className="h-16 w-16 rounded-full object-cover"
                   />
                 ) : (
@@ -671,12 +697,14 @@ export default function AdminUsersPage() {
                     <p className="text-sm text-muted-foreground">No permissions assigned</p>
                   ) : (
                     selectedUser.permissions.map((perm) => (
-                      <span
-                        key={perm}
+                      <Badge
+                        key={perm.id}
+                        variant="secondary"
                         className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+                        title={perm.description ?? perm.name}
                       >
-                        {perm.replace(/_/g, " ")}
-                      </span>
+                        {perm.name.replace(/_/g, " ")}
+                      </Badge>
                     ))
                   )}
                 </div>

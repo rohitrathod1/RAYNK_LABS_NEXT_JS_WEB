@@ -54,7 +54,7 @@ export async function getRelatedPosts(currentId: string, tags: string[], limit =
 }
 
 export async function getBlogSeo() {
-  return db.seo.findUnique({ where: { page: "blog" } });
+  return db.seoPage.findUnique({ where: { page: "blog" } });
 }
 
 export async function getBlogSection(section: string) {
