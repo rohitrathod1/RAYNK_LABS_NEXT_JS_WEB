@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   Home,
   Info,
@@ -17,7 +18,10 @@ import {
   Globe,
   Search,
   Settings,
+  UserCog,
 } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
+import { PERMISSIONS } from "@/modules/rbac/constants";
 
 interface PageEntry {
   label: string;
@@ -25,6 +29,7 @@ interface PageEntry {
   icon: React.ElementType;
   description: string;
   color: string;
+  permission: string | null;
 }
 
 const ALL_PAGES: PageEntry[] = [
@@ -34,6 +39,7 @@ const ALL_PAGES: PageEntry[] = [
     icon: Home,
     description: "Hero, mission, products, testimonials, CTA",
     color: "from-emerald-500/20 to-emerald-600/5",
+    permission: PERMISSIONS.EDIT_HOME,
   },
   {
     label: "About Page",
@@ -41,6 +47,7 @@ const ALL_PAGES: PageEntry[] = [
     icon: Info,
     description: "Story, team, values & mission sections",
     color: "from-sky-500/20 to-sky-600/5",
+    permission: PERMISSIONS.EDIT_ABOUT,
   },
   {
     label: "Services",
@@ -48,20 +55,23 @@ const ALL_PAGES: PageEntry[] = [
     icon: Sparkles,
     description: "All service offerings and categories",
     color: "from-violet-500/20 to-violet-600/5",
+    permission: PERMISSIONS.MANAGE_SERVICES,
   },
   {
     label: "Projects",
-    href: "/admin/projects",
+    href: "/admin/portfolio",
     icon: FolderOpen,
     description: "Project portfolio and case studies",
     color: "from-amber-500/20 to-amber-600/5",
+    permission: PERMISSIONS.MANAGE_PORTFOLIO,
   },
   {
     label: "Blog",
-    href: "/admin/blog",
+    href: "/admin/blogs",
     icon: Newspaper,
     description: "Articles, tutorials, announcements",
     color: "from-rose-500/20 to-rose-600/5",
+    permission: PERMISSIONS.MANAGE_BLOG,
   },
   {
     label: "Team Members",
@@ -69,13 +79,7 @@ const ALL_PAGES: PageEntry[] = [
     icon: Users,
     description: "Team profiles, roles and bios",
     color: "from-indigo-500/20 to-indigo-600/5",
-  },
-  {
-    label: "Careers",
-    href: "/admin/careers",
-    icon: Briefcase,
-    description: "Job listings and applications",
-    color: "from-orange-500/20 to-orange-600/5",
+    permission: PERMISSIONS.MANAGE_TEAM,
   },
   {
     label: "Community",
@@ -83,13 +87,7 @@ const ALL_PAGES: PageEntry[] = [
     icon: MessageSquare,
     description: "Contact forms and newsletter",
     color: "from-teal-500/20 to-teal-600/5",
-  },
-  {
-    label: "Our Products",
-    href: "/admin/products",
-    icon: Package,
-    description: "Product showcase and details",
-    color: "from-cyan-500/20 to-cyan-600/5",
+    permission: PERMISSIONS.MANAGE_CONTACT,
   },
   {
     label: "Navbar",
@@ -97,6 +95,7 @@ const ALL_PAGES: PageEntry[] = [
     icon: Navigation,
     description: "Navigation links and sub-links",
     color: "from-fuchsia-500/20 to-fuchsia-600/5",
+    permission: PERMISSIONS.MANAGE_NAVBAR,
   },
   {
     label: "Footer",
@@ -104,6 +103,7 @@ const ALL_PAGES: PageEntry[] = [
     icon: PanelBottom,
     description: "Columns, links and contact settings",
     color: "from-lime-500/20 to-lime-600/5",
+    permission: PERMISSIONS.MANAGE_FOOTER,
   },
   {
     label: "SEO Manager",
@@ -111,20 +111,35 @@ const ALL_PAGES: PageEntry[] = [
     icon: Globe,
     description: "Meta titles, descriptions and OG images",
     color: "from-yellow-500/20 to-yellow-600/5",
+    permission: PERMISSIONS.MANAGE_SEO,
+  },
+  {
+    label: "User Management",
+    href: "/admin/users",
+    icon: UserCog,
+    description: "Admin users, roles and permissions",
+    color: "from-slate-500/20 to-slate-600/5",
+    permission: PERMISSIONS.MANAGE_USERS,
   },
 ];
 
 export default function AdminDashboardPage() {
+  const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return ALL_PAGES;
+    const pages = ALL_PAGES.filter((page) => {
+      if (!page.permission) return true;
+      return hasPermission(session, page.permission);
+    });
+
+    if (!searchQuery.trim()) return pages;
     const q = searchQuery.toLowerCase();
-    return ALL_PAGES.filter(
+    return pages.filter(
       (p) =>
         p.label.toLowerCase().includes(q) || p.description.toLowerCase().includes(q),
     );
-  }, [searchQuery]);
+  }, [searchQuery, session]);
 
   return (
     <div className="mx-auto max-w-5xl py-4 sm:py-8 2xl:max-w-7xl 2xl:py-10">

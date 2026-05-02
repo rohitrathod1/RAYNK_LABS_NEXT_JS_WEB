@@ -1,0 +1,36 @@
+// blog.prisma — Blog posts and CMS content
+
+model BlogPost {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  excerpt         String?
+  content         String   @db.Text
+  coverImage      String?
+  author          String
+  tags            String[]
+  isPublished     Boolean  @default(false)
+  metaTitle       String?
+  metaDescription String?
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isPublished])
+  @@index([publishedAt])
+  @@index([createdAt])
+}
+
+model BlogPage {
+  id        String   @id @default(cuid())
+  section   String   @unique       // "hero" | "blog_list"
+  title     String?
+  content   Json
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}

@@ -1,0 +1,37 @@
+// footer.prisma — Footer CMS content.
+// FooterSection: Columns like About, Services, Quick Links, Contact.
+// FooterLink: Individual links under each section.
+// FooterSettings: Logo, description, address, email, phone, copyright.
+
+model FooterSection {
+  id        String   @id @default(cuid())
+  title     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+
+  links     FooterLink[]
+
+  createdAt DateTime @default(now())
+}
+
+model FooterLink {
+  id        String   @id @default(cuid())
+  label     String
+  href      String
+  sectionId String
+  sortOrder Int      @default(0)
+
+  section   FooterSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model FooterSettings {
+  id           String   @id @default(cuid())
+  logo         String?
+  description  String?
+  address      String?
+  email        String?
+  phone        String?
+  copyright    String?
+}

@@ -1,0 +1,15 @@
+// about.prisma — CMS content for the about page.
+// Each row is a section (hero, story, mission, why_choose_us, core_team, social_links).
+
+model AboutPage {
+  id        String   @id @default(cuid())
+  section   String   @unique
+  title     String?
+  content   Json
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}

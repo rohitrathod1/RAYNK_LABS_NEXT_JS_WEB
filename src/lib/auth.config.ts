@@ -13,23 +13,22 @@ export const authConfig: NextAuthConfig = {
   },
   providers: [],
   callbacks: {
-    // Attach id + role to JWT on sign-in
     jwt({ token, user }) {
       if (user) {
         token.id = user.id!;
         token.role = (user as { role?: string }).role ?? "ADMIN";
+        token.permissions = (user as { permissions?: string[] }).permissions ?? [];
       }
       return token;
     },
-    // Expose id + role on session object (accessible via useSession / auth())
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.permissions = token.permissions as string[] | undefined;
       }
       return session;
     },
-    // Called by middleware to authorize requests
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
       const role = (auth?.user as { role?: string } | undefined)?.role;

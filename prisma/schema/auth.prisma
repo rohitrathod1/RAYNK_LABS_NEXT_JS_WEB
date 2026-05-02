@@ -26,6 +26,8 @@ model Admin {
   bio       String?
   github    String?
   linkedin  String?
+  instagram String?
+  youtube   String?
   portfolio String?
 
   // Approval workflow
@@ -34,10 +36,31 @@ model Admin {
   approvedBy     Admin?    @relation("AdminApprovals", fields: [approvedById], references: [id])
   approvedAdmins Admin[]   @relation("AdminApprovals")
 
+  // RBAC
+  permissions UserPermission[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([status])
   @@index([role])
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  users       UserPermission[]
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String
+  permissionId String
+
+  user       Admin      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
 }

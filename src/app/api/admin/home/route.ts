@@ -1,48 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/middleware/permission";
 import { db } from "@/lib/db";
 import {
   heroSchema,
-  missionSchema,
-  featuredProductsSchema,
-  healthBenefitsSchema,
+  initiativesSchema,
+  servicesSchema,
+  whyDigitalSchema,
+  portfolioSchema,
   testimonialsSchema,
+  whyChooseSchema,
   ctaSchema,
 } from "@/modules/home/validations";
 import type { ZodSchema } from "zod";
 
-async function assertAdmin() {
-  const session = await auth();
-  if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role as string)) {
-    throw new Error("Unauthorized");
-  }
-}
-
 const SECTION_SCHEMAS: Record<string, ZodSchema> = {
   hero: heroSchema,
-  mission: missionSchema,
-  "featured-products": featuredProductsSchema,
-  "health-benefits": healthBenefitsSchema,
+  initiatives: initiativesSchema,
+  services: servicesSchema,
+  why_digital: whyDigitalSchema,
+  portfolio_preview: portfolioSchema,
   testimonials: testimonialsSchema,
-  cta: ctaSchema,
+  why_choose_us: whyChooseSchema,
+  contact_cta: ctaSchema,
 };
 
 export async function GET() {
   try {
-    await assertAdmin();
+    await requirePermission("EDIT_HOME");
     const sections = await db.homePage.findMany({ orderBy: { sortOrder: "asc" } });
     const data: Record<string, unknown> = {};
     for (const s of sections) data[s.section] = s.content;
     return NextResponse.json({ success: true, data });
   } catch (err) {
+    const status = (err as { status?: number }).status ?? 500;
     const msg = err instanceof Error ? err.message : "Error";
-    return NextResponse.json({ success: false, error: msg }, { status: msg === "Unauthorized" ? 401 : 500 });
+    return NextResponse.json({ success: false, error: msg }, { status });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    await assertAdmin();
+    await requirePermission("EDIT_HOME");
     const body = (await req.json()) as { section: string; content: unknown };
     const schema = SECTION_SCHEMAS[body.section];
     if (!schema) {
@@ -56,7 +54,8 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ success: true, data: result });
   } catch (err) {
+    const status = (err as { status?: number }).status ?? 500;
     const msg = err instanceof Error ? err.message : "Error";
-    return NextResponse.json({ success: false, error: msg }, { status: msg === "Unauthorized" ? 401 : 400 });
+    return NextResponse.json({ success: false, error: msg }, { status });
   }
 }

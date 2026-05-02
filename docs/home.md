@@ -1,201 +1,307 @@
-# Home Page — Documentation
+# Home Page CMS System
 
-## 1. PAGE OVERVIEW
+## Overview
 
-- **Page name:** Home
-- **Public route:** `/`
-- **Admin route:** `/admin/dashboard/home`
-- **Prisma model:** `HomePage`
-- **Sections:** hero, mission, featured-products, health-benefits, testimonials, cta
-- **SEO:** `Seo` table, `page = "home"`
+The Home Page is a fully CMS-driven public page with an admin dashboard for content management. It features 8 editable sections, SEO integration, and permission-based access control.
 
 ---
 
-## 2. UI STRUCTURE
+## Page Structure
 
-| Section | What the user sees |
-|---|---|
-| **hero** | Full-screen section — badge, large heading, subheading, primary + secondary CTA buttons, optional background image |
-| **mission** | Two-column layout — text + stats grid on left, image on right |
-| **featured-products** | Section heading + subtitle + 3-column product card grid (image, badge, name, description, link) |
-| **health-benefits** | Section heading + subtitle + 2×3 icon + title + description benefit grid |
-| **testimonials** | Section heading + subtitle + 3-column testimonial card grid (star rating, quote, avatar, name, role) |
-| **cta** | Full-width primary-colored banner — heading, subheading, single CTA button, optional background image |
+### Public Sections (in order)
+
+| # | Section Key | Component | Description |
+|---|-------------|-----------|-------------|
+| 1 | `hero` | HeroSection | Full-screen hero with heading, subtitle, dual CTA buttons, background image |
+| 2 | `initiatives` | InitiativesSection | 4-card grid with icons, titles, descriptions |
+| 3 | `services` | ServicesSection | 3x3 grid of service cards with icons |
+| 4 | `why_digital` | WhyDigitalSection | Split layout: image left, text + bullet points right |
+| 5 | `portfolio_preview` | PortfolioSection | Project grid with hover effects, tags, and links |
+| 6 | `testimonials` | TestimonialsSection | Client feedback cards with star ratings and avatars |
+| 7 | `why_choose_us` | WhyChooseSection | 6-point grid with icons highlighting value propositions |
+| 8 | `contact_cta` | CtaSection | Final call-to-action with heading and button |
 
 ---
 
-## 3. API DOCUMENTATION
+## Module Structure
 
-### `GET /api/home`
-Public endpoint. ISR cached (revalidate = 60s).
+```
+src/modules/home/
+├── types.ts              # TypeScript interfaces for all sections
+├── validations.ts        # Zod schemas for form validation
+├── actions.ts            # Server actions for admin updates
+├── index.ts              # Barrel exports
+├── components/
+│   ├── index.ts
+│   ├── main.tsx          # HomePageContent with dynamic imports
+│   ├── hero-section.tsx
+│   ├── initiatives-section.tsx
+│   ├── services-section.tsx
+│   ├── why-digital-section.tsx
+│   ├── portfolio-section.tsx
+│   ├── testimonials-section.tsx
+│   ├── why-choose-section.tsx
+│   └── cta-section.tsx
+└── data/
+    ├── index.ts
+    ├── queries.ts        # getHomePageData(), getHomeSection(), getHomeSeo()
+    ├── mutations.ts      # upsertHomeSection()
+    └── defaults.ts       # defaultSeo, defaultHomeContent
+```
+
+---
+
+## Lazy Loading Strategy
+
+Following prompt.md Section 24:
+
+| Section | Strategy | Reason |
+|---------|----------|--------|
+| Hero | Direct SSR import | LCP-critical, above-the-fold |
+| Initiatives | `next/dynamic` + SectionSkeleton | SEO content below fold |
+| Services | `next/dynamic` + SectionSkeleton | SEO content below fold |
+| Why Digital | `next/dynamic` + SectionSkeleton | SEO content below fold |
+| Portfolio | `next/dynamic` + SectionSkeleton | SEO content below fold |
+| Testimonials | `next/dynamic` + SectionSkeleton | SEO content below fold |
+| Why Choose Us | `next/dynamic` + SectionSkeleton | SEO content below fold |
+| Contact CTA | `next/dynamic` + SectionSkeleton | SEO content below fold |
+
+All sections use framer-motion `whileInView` for reveal-on-scroll animations.
+
+---
+
+## API Routes
+
+### Public API
+
+**GET `/api/home`**
+- Returns all active home page sections as a JSON object keyed by section name
+- Cached with `revalidate = 60` (ISR)
+- No authentication required
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "hero": { "heading": "...", "subheading": "...", "ctaText": "...", "ctaHref": "...", "secondaryCtaText": "...", "secondaryCtaHref": "...", "backgroundImage": "filename.webp", "badgeText": "..." },
-    "mission": { "title": "...", "body": "...", "image": "filename.webp", "stats": [{ "label": "...", "value": "..." }] },
-    "featured-products": { "title": "...", "subtitle": "...", "products": [{ "name": "...", "description": "...", "image": "...", "href": "...", "badge": "..." }] },
-    "health-benefits": { "title": "...", "subtitle": "...", "benefits": [{ "title": "...", "description": "...", "icon": "Rocket" }] },
-    "testimonials": { "title": "...", "subtitle": "...", "testimonials": [{ "name": "...", "role": "...", "avatar": "...", "quote": "...", "rating": 5 }] },
-    "cta": { "heading": "...", "subheading": "...", "ctaText": "...", "ctaHref": "...", "backgroundImage": "..." }
+    "hero": { "heading": "...", "subtitle": "...", ... },
+    "initiatives": { "title": "...", "cards": [...] },
+    ...
   }
 }
 ```
 
-### `GET /api/admin/home`
-Admin only (ADMIN or SUPER_ADMIN role required). Returns same structure but includes inactive sections.
+### Admin API
 
-### `POST /api/admin/home`
-Admin only.
+**GET `/api/admin/home`**
+- Returns all sections (including inactive) for admin editing
+- Requires `requirePermission("EDIT_HOME")`
+- SUPER_ADMIN has full access
 
-**Request body:**
-```json
+**POST `/api/admin/home`**
+- Upserts a single section
+- Request body: `{ "section": "hero", "content": { ... } }`
+- Validates content against Zod schema for the specified section
+- Requires `requirePermission("EDIT_HOME")`
+
+---
+
+## Admin Dashboard
+
+**Route:** `/admin/dashboard/home`
+
+**Tabs:**
+1. Hero - heading, subtitle, primary/secondary CTAs, background image
+2. Initiatives - title, subtitle, 4 cards (icon, title, description)
+3. Services - title, subtitle, 9 services (icon, title, description)
+4. Why Digital - title, subtitle, image, bullet points
+5. Portfolio - title, subtitle, items (title, description, image, href, tags)
+6. Testimonials - title, subtitle, testimonials (name, role, avatar, quote, rating)
+7. Why Choose Us - title, subtitle, points (icon, title, description)
+8. Contact CTA - heading, subheading, CTA text, CTA link
+9. SEO - meta title, meta description, keywords, OG image, noIndex toggle
+
+Each tab has a "Save Changes" button that calls the corresponding server action.
+
+---
+
+## SEO Integration
+
+### Seo Model
+
+Uses the `Seo` table with `page = "home"` as the unique key.
+
+### Fields
+- `title` - Meta title
+- `description` - Meta description
+- `keywords` - Comma-separated keywords
+- `ogImage` - Open Graph image URL
+- `noIndex` - Boolean to exclude from search engines
+
+### Resolution Chain
+
+1. Database row for `page = "home"`
+2. Falls back to `defaultSeo` in `src/modules/home/data/defaults.ts`
+3. Falls back to site-wide constants (`SITE_NAME`, `SITE_DESCRIPTION`)
+
+### Usage
+
+```typescript
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getHomeSeo();
+  return resolveSeo(seo, defaultSeo.title ?? undefined);
+}
+```
+
+---
+
+## Permission System
+
+### Required Permission
+
+```typescript
+requirePermission("EDIT_HOME")
+```
+
+### Access Rules
+- **SUPER_ADMIN**: Full access (bypasses permission check)
+- **ADMIN**: Requires explicit `EDIT_HOME` permission in `UserPermission` table
+- **No permission**: Returns 403 Forbidden
+
+### Permission Flow
+1. Admin navigates to `/admin/dashboard/home`
+2. API calls `/api/admin/home` with session cookie
+3. `requirePermission("EDIT_HOME")` validates:
+   - Session exists
+   - User role is ADMIN or SUPER_ADMIN
+   - If ADMIN, checks `UserPermission` table for `EDIT_HOME`
+4. If valid, returns data; otherwise throws 401/403
+
+---
+
+## Prisma Model
+
+```prisma
+model HomePage {
+  id        String   @id @default(cuid())
+  section   String   @unique
+  title     String?
+  content   Json
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}
+```
+
+### Section Keys
+- `hero`
+- `initiatives`
+- `services`
+- `why_digital`
+- `portfolio_preview`
+- `testimonials`
+- `why_choose_us`
+- `contact_cta`
+
+---
+
+## Workflow
+
+### For Admins
+
+1. Log in to `/admin/login`
+2. Navigate to Home Editor in the dashboard sidebar
+3. Select a tab (Hero, Initiatives, Services, etc.)
+4. Edit fields, upload images via ImageUpload component
+5. Click "Save Changes" to persist
+6. Switch to SEO tab to configure meta tags
+7. View live site to verify changes
+
+### For Developers
+
+1. Modify section types in `types.ts`
+2. Update Zod schemas in `validations.ts`
+3. Update default content in `defaults.ts`
+4. Add/modify components in `components/`
+5. Update `main.tsx` dynamic imports if adding sections
+6. Add server action in `actions.ts` for new sections
+7. Update admin page tabs and form fields
+
+---
+
+## Postman Testing
+
+### Test Public API
+
+```
+GET http://localhost:3000/api/home
+Expected: 200 OK with section data
+```
+
+### Test Admin API (Authenticated)
+
+```
+GET http://localhost:3000/api/admin/home
+Headers: Cookie: next-auth.session-token=...
+Expected: 200 OK with all section data
+
+POST http://localhost:3000/api/admin/home
+Headers: Cookie: next-auth.session-token=...
+Body:
 {
   "section": "hero",
-  "content": { "heading": "...", "subheading": "...", "ctaText": "...", "ctaHref": "..." }
+  "content": {
+    "heading": "Test Heading",
+    "subtitle": "Test subtitle",
+    "ctaPrimaryText": "Get Started",
+    "ctaPrimaryHref": "/contact",
+    "ctaSecondaryText": "Learn More",
+    "ctaSecondaryHref": "/about",
+    "backgroundImage": ""
+  }
 }
+Expected: 200 OK with saved data
 ```
 
-**Response:**
-```json
-{ "success": true, "data": { "id": "...", "section": "hero", "content": {...} } }
+### Test Unauthorized Access
+
+```
+GET http://localhost:3000/api/admin/home
+Expected: 401 Unauthorized (no session)
+
+POST http://localhost:3000/api/admin/home
+Body: { "section": "hero", "content": {...} }
+Expected: 401 Unauthorized (no session)
+```
+
+### Test Forbidden Access (ADMIN without EDIT_HOME)
+
+```
+GET http://localhost:3000/api/admin/home
+Headers: Cookie: next-auth.session-token=<admin-without-permission>
+Expected: 403 Forbidden
 ```
 
 ---
 
-## 4. WORKFLOW
+## Image Upload
 
-```
-Admin edits form in /admin/dashboard/home
-  → Clicks "Save Changes"
-  → Server action (updateHomeHero, etc.) called
-  → requireAdmin() checked
-  → Zod validates input
-  → upsertHomeSection() writes to DB
-  → revalidatePath("/") + revalidatePath("/admin/dashboard/home")
-  → ISR invalidated → next request rebuilds page
-  → User sees change within 60s
-```
+All images use the `ImageUpload` component from `@/components/common/image-upload`.
+- Images are uploaded via `POST /api/upload`
+- Stored in `/uploads/images/` with unique filenames
+- DB stores only the filename (not full path)
+- Served via `GET /api/uploads/[filename]`
+- `SafeImage` component resolves filenames to URLs on the frontend
 
 ---
 
-## 5. DATA STRUCTURE
+## Rendering Strategy
 
-### `hero` section
-```ts
-{
-  heading: string;
-  subheading: string;
-  ctaText: string;
-  ctaHref: string;
-  secondaryCtaText: string;
-  secondaryCtaHref: string;
-  backgroundImage: string;   // bare filename
-  badgeText: string;
-}
-```
-
-### `mission` section
-```ts
-{
-  title: string;
-  body: string;
-  image: string;             // bare filename
-  stats: { label: string; value: string }[];
-}
-```
-
-### `featured-products` section
-```ts
-{
-  title: string;
-  subtitle: string;
-  products: {
-    name: string;
-    description: string;
-    image: string;           // bare filename
-    href: string;
-    badge: string;
-  }[];
-}
-```
-
-### `health-benefits` section
-```ts
-{
-  title: string;
-  subtitle: string;
-  benefits: {
-    title: string;
-    description: string;
-    icon: string;            // Lucide icon name (e.g. "Rocket", "Star", "Code")
-  }[];
-}
-```
-
-### `testimonials` section
-```ts
-{
-  title: string;
-  subtitle: string;
-  testimonials: {
-    name: string;
-    role: string;
-    avatar: string;          // bare filename
-    quote: string;
-    rating: number;          // 1–5
-  }[];
-}
-```
-
-### `cta` section
-```ts
-{
-  heading: string;
-  subheading: string;
-  ctaText: string;
-  ctaHref: string;
-  backgroundImage: string;   // bare filename
-}
-```
-
----
-
-## 6. IMAGE HANDLING
-
-- All images stored as **bare filenames** in DB (e.g. `"1714049200-hero.webp"`)
-- Upload via `POST /api/upload` (multipart/form-data, key = `"file"`)
-- Sharp processes: resize max 1600×1600, re-encode WebP, strip EXIF
-- Served via `GET /api/uploads/[filename]` with `Cache-Control: public, max-age=86400, s-maxage=604800`
-- Fallback: `GET /api/uploads/placeholder.png`
-- Components use `<SafeImage src={filename} />` — auto-resolves to API URL, retries on fail, shows placeholder on error
-
----
-
-## 7. SEO
-
-- **Storage:** `Seo` table, `page = "home"`
-- **Fields:** title, description, keywords (string), ogImage (bare filename or URL), noIndex
-- **Fallback chain:**
-  1. DB row (admin-controlled via SEO tab)
-  2. `defaultSeo` in `src/modules/home/data/defaults.ts`
-  3. Site-wide fallback in `src/lib/seo.ts`
-- **Used in:** `src/app/(public)/home/page-content.tsx` → `generateMetadata()` → `resolveSeo()`
-
----
-
-## 8. POSTMAN TESTING
-
-1. **Login:** `POST /api/auth/callback/credentials` with `{ email, password }` — capture `next-auth.session-token` cookie
-2. **Public data:** `GET /api/home` — no auth required
-3. **Admin data:** `GET /api/admin/home` — requires session cookie
-4. **Update hero:** `POST /api/admin/home` with body `{ "section": "hero", "content": { "heading": "New heading", "subheading": "...", "ctaText": "...", "ctaHref": "/" } }`
-5. **Verify:** `GET /api/home` — confirm changes reflected
-
----
-
-## 9. UPDATE LOG
-
-[2026-04-26] — Initial home page created with 6 sections: hero, mission, featured-products, health-benefits, testimonials, cta. Full admin CMS + public ISR page + API routes.
+- **Public page**: ISR with `revalidate = 60`
+- **Admin page**: Client-side rendering (CSR)
+- **Hero section**: Eager SSR (no dynamic import)
+- **All other sections**: Code-split with `next/dynamic` + SSR preserved for SEO
+- **Animations**: Framer Motion `whileInView` for scroll-triggered reveals

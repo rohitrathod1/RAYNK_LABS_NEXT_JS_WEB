@@ -2,49 +2,57 @@ import { z } from "zod";
 
 export const heroSchema = z.object({
   heading: z.string().min(1, "Heading required"),
-  subheading: z.string().min(1, "Subheading required"),
-  ctaText: z.string().min(1),
-  ctaHref: z.string().min(1),
-  secondaryCtaText: z.string().optional().default(""),
-  secondaryCtaHref: z.string().optional().default(""),
+  subtitle: z.string().min(1, "Subtitle required"),
+  ctaPrimaryText: z.string().min(1, "Primary CTA text required"),
+  ctaPrimaryHref: z.string().min(1, "Primary CTA link required"),
+  ctaSecondaryText: z.string().optional().default(""),
+  ctaSecondaryHref: z.string().optional().default(""),
   backgroundImage: z.string().optional().default(""),
-  badgeText: z.string().optional().default(""),
 });
 
-export const missionSchema = z.object({
+export const initiativeCardSchema = z.object({
+  icon: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+});
+
+export const initiativesSchema = z.object({
   title: z.string().min(1, "Title required"),
-  body: z.string().min(1, "Body required"),
-  image: z.string().optional().default(""),
-  stats: z
-    .array(z.object({ label: z.string().min(1), value: z.string().min(1) }))
-    .optional()
-    .default([]),
+  subtitle: z.string().optional().default(""),
+  cards: z.array(initiativeCardSchema).optional().default([]),
 });
 
-export const featuredProductSchema = z.object({
-  name: z.string().min(1),
+export const serviceCardSchema = z.object({
+  icon: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+});
+
+export const servicesSchema = z.object({
+  title: z.string().min(1, "Title required"),
+  subtitle: z.string().optional().default(""),
+  services: z.array(serviceCardSchema).optional().default([]),
+});
+
+export const whyDigitalSchema = z.object({
+  title: z.string().min(1, "Title required"),
+  subtitle: z.string().optional().default(""),
+  image: z.string().optional().default(""),
+  bulletPoints: z.array(z.string().min(1)).optional().default([]),
+});
+
+export const portfolioItemSchema = z.object({
+  title: z.string().min(1),
   description: z.string().min(1),
   image: z.string().optional().default(""),
   href: z.string().optional().default(""),
-  badge: z.string().optional().default(""),
+  tags: z.array(z.string()).optional().default([]),
 });
 
-export const featuredProductsSchema = z.object({
+export const portfolioSchema = z.object({
   title: z.string().min(1, "Title required"),
   subtitle: z.string().optional().default(""),
-  products: z.array(featuredProductSchema).optional().default([]),
-});
-
-export const healthBenefitSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  icon: z.string().optional().default(""),
-});
-
-export const healthBenefitsSchema = z.object({
-  title: z.string().min(1, "Title required"),
-  subtitle: z.string().optional().default(""),
-  benefits: z.array(healthBenefitSchema).optional().default([]),
+  items: z.array(portfolioItemSchema).optional().default([]),
 });
 
 export const testimonialSchema = z.object({
@@ -61,12 +69,23 @@ export const testimonialsSchema = z.object({
   testimonials: z.array(testimonialSchema).optional().default([]),
 });
 
+export const whyChoosePointSchema = z.object({
+  icon: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+});
+
+export const whyChooseSchema = z.object({
+  title: z.string().min(1, "Title required"),
+  subtitle: z.string().optional().default(""),
+  points: z.array(whyChoosePointSchema).optional().default([]),
+});
+
 export const ctaSchema = z.object({
   heading: z.string().min(1, "Heading required"),
   subheading: z.string().optional().default(""),
   ctaText: z.string().min(1),
   ctaHref: z.string().min(1),
-  backgroundImage: z.string().optional().default(""),
 });
 
 export const seoSchema = z.object({
@@ -78,8 +97,10 @@ export const seoSchema = z.object({
 });
 
 export type HeroSchema = z.infer<typeof heroSchema>;
-export type MissionSchema = z.infer<typeof missionSchema>;
-export type FeaturedProductsSchema = z.infer<typeof featuredProductsSchema>;
-export type HealthBenefitsSchema = z.infer<typeof healthBenefitsSchema>;
+export type InitiativesSchema = z.infer<typeof initiativesSchema>;
+export type ServicesSchema = z.infer<typeof servicesSchema>;
+export type WhyDigitalSchema = z.infer<typeof whyDigitalSchema>;
+export type PortfolioSchema = z.infer<typeof portfolioSchema>;
 export type TestimonialsSchema = z.infer<typeof testimonialsSchema>;
+export type WhyChooseSchema = z.infer<typeof whyChooseSchema>;
 export type CtaSchema = z.infer<typeof ctaSchema>;

@@ -1,51 +1,48 @@
-import Link from "next/link";
 import { SafeImage } from "@/components/common/safe-image";
-import type { HeroSection as HeroSectionType } from "../types";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import type { HeroSection } from "../types";
 
-export function HeroSection({ data }: { data: HeroSectionType }) {
+export function HeroSection({ data }: { data: HeroSection }) {
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
-      {data.backgroundImage && (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <div className="absolute inset-0 z-0">
         <SafeImage
           src={data.backgroundImage}
-          alt="Hero background"
+          alt=""
           fill
           priority
-          className="object-cover opacity-10 dark:opacity-5"
+          sizes="100vw"
+          className="object-cover"
         />
-      )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+      </div>
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        {data.badgeText && (
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            {data.badgeText}
+      <div className="relative z-10 section-container section-padding text-center">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
+            {data.heading}
+          </h1>
+
+          <p className="text-lg sm:text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed">
+            {data.subtitle}
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <Button asChild size="lg" className="text-base px-8 py-6">
+              <Link href={data.ctaPrimaryHref}>{data.ctaPrimaryText}</Link>
+            </Button>
+            {data.ctaSecondaryText && (
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="text-base px-8 py-6 bg-white/10 text-white border-white/30 hover:bg-white/20"
+              >
+                <Link href={data.ctaSecondaryHref}>{data.ctaSecondaryText}</Link>
+              </Button>
+            )}
           </div>
-        )}
-
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground max-w-3xl leading-tight">
-          {data.heading}
-        </h1>
-
-        <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-          {data.subheading}
-        </p>
-
-        <div className="mt-10 flex flex-wrap gap-4">
-          <Link
-            href={data.ctaHref}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
-          >
-            {data.ctaText}
-          </Link>
-          {data.secondaryCtaText && data.secondaryCtaHref && (
-            <Link
-              href={data.secondaryCtaHref}
-              className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-border text-foreground font-semibold hover:bg-accent transition-colors"
-            >
-              {data.secondaryCtaText}
-            </Link>
-          )}
         </div>
       </div>
     </section>

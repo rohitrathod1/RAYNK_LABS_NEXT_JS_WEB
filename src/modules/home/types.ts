@@ -1,45 +1,56 @@
 export interface HeroSection {
   heading: string;
-  subheading: string;
-  ctaText: string;
-  ctaHref: string;
-  secondaryCtaText: string;
-  secondaryCtaHref: string;
+  subtitle: string;
+  ctaPrimaryText: string;
+  ctaPrimaryHref: string;
+  ctaSecondaryText: string;
+  ctaSecondaryHref: string;
   backgroundImage: string;
-  badgeText: string;
 }
 
-export interface MissionSection {
+export interface InitiativeCard {
+  icon: string;
   title: string;
-  body: string;
-  image: string;
-  stats: { label: string; value: string }[];
+  description: string;
 }
 
-export interface FeaturedProduct {
-  name: string;
+export interface InitiativesSection {
+  title: string;
+  subtitle: string;
+  cards: InitiativeCard[];
+}
+
+export interface ServiceCard {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface ServicesSection {
+  title: string;
+  subtitle: string;
+  services: ServiceCard[];
+}
+
+export interface WhyDigitalSection {
+  title: string;
+  subtitle: string;
+  image: string;
+  bulletPoints: string[];
+}
+
+export interface PortfolioItem {
+  title: string;
   description: string;
   image: string;
   href: string;
-  badge: string;
+  tags: string[];
 }
 
-export interface FeaturedProductsSection {
+export interface PortfolioSection {
   title: string;
   subtitle: string;
-  products: FeaturedProduct[];
-}
-
-export interface HealthBenefit {
-  title: string;
-  description: string;
-  icon: string;
-}
-
-export interface HealthBenefitsSection {
-  title: string;
-  subtitle: string;
-  benefits: HealthBenefit[];
+  items: PortfolioItem[];
 }
 
 export interface Testimonial {
@@ -56,19 +67,32 @@ export interface TestimonialsSection {
   testimonials: Testimonial[];
 }
 
+export interface WhyChoosePoint {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface WhyChooseSection {
+  title: string;
+  subtitle: string;
+  points: WhyChoosePoint[];
+}
+
 export interface CtaSection {
   heading: string;
   subheading: string;
   ctaText: string;
   ctaHref: string;
-  backgroundImage: string;
 }
 
 export interface HomePageData {
   hero: HeroSection;
-  mission: MissionSection;
-  "featured-products": FeaturedProductsSection;
-  "health-benefits": HealthBenefitsSection;
+  initiatives: InitiativesSection;
+  services: ServicesSection;
+  why_digital: WhyDigitalSection;
+  portfolio_preview: PortfolioSection;
   testimonials: TestimonialsSection;
-  cta: CtaSection;
+  why_choose_us: WhyChooseSection;
+  contact_cta: CtaSection;
 }

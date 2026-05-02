@@ -1,26 +1,35 @@
-import dynamic from "next/dynamic";
 import { HeroSection } from "./hero-section";
+import dynamic from "next/dynamic";
 import { SectionSkeleton } from "@/components/common/section-skeleton";
 import type { HomePageData } from "../types";
 
-// SEO content — code-split JS, preserves SSR for crawlers
-const MissionSection = dynamic(
-  () => import("./mission-section").then((m) => m.MissionSection),
+const InitiativesSection = dynamic(
+  () => import("./initiatives-section").then((m) => m.InitiativesSection),
   { loading: () => <SectionSkeleton /> },
 );
 
-const FeaturedProductsSection = dynamic(
-  () => import("./featured-products-section").then((m) => m.FeaturedProductsSection),
+const ServicesSection = dynamic(
+  () => import("./services-section").then((m) => m.ServicesSection),
   { loading: () => <SectionSkeleton /> },
 );
 
-const HealthBenefitsSection = dynamic(
-  () => import("./health-benefits-section").then((m) => m.HealthBenefitsSection),
+const WhyDigitalSection = dynamic(
+  () => import("./why-digital-section").then((m) => m.WhyDigitalSection),
+  { loading: () => <SectionSkeleton /> },
+);
+
+const PortfolioSection = dynamic(
+  () => import("./portfolio-section").then((m) => m.PortfolioSection),
   { loading: () => <SectionSkeleton /> },
 );
 
 const TestimonialsSection = dynamic(
   () => import("./testimonials-section").then((m) => m.TestimonialsSection),
+  { loading: () => <SectionSkeleton /> },
+);
+
+const WhyChooseSection = dynamic(
+  () => import("./why-choose-section").then((m) => m.WhyChooseSection),
   { loading: () => <SectionSkeleton /> },
 );
 
@@ -33,11 +42,13 @@ export function HomePageContent({ data }: { data: HomePageData }) {
   return (
     <main className="flex flex-col">
       <HeroSection data={data.hero} />
-      <MissionSection data={data.mission} />
-      <FeaturedProductsSection data={data["featured-products"]} />
-      <HealthBenefitsSection data={data["health-benefits"]} />
+      <InitiativesSection data={data.initiatives} />
+      <ServicesSection data={data.services} />
+      <WhyDigitalSection data={data.why_digital} />
+      <PortfolioSection data={data.portfolio_preview} />
       <TestimonialsSection data={data.testimonials} />
-      <CtaSection data={data.cta} />
+      <WhyChooseSection data={data.why_choose_us} />
+      <CtaSection data={data.contact_cta} />
     </main>
   );
 }

@@ -1,0 +1,34 @@
+// team.prisma — CMS content for the team page.
+// TeamPage: Each row is a section (hero, intro, founders, team_members, values, contact_cta).
+// TeamMember: Individual team member profiles.
+
+model TeamPage {
+  id        String   @id @default(cuid())
+  section   String   @unique
+  title     String?
+  content   Json
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  bio       String?
+  image     String
+  linkedin  String?
+  twitter   String?
+  github    String?
+  portfolio String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}

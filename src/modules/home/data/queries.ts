@@ -13,16 +13,13 @@ export async function getHomePageData(): Promise<HomePageData> {
 
   return {
     hero: (data.hero as HomePageData["hero"]) ?? defaultHomeContent.hero,
-    mission: (data.mission as HomePageData["mission"]) ?? defaultHomeContent.mission,
-    "featured-products":
-      (data["featured-products"] as HomePageData["featured-products"]) ??
-      defaultHomeContent["featured-products"],
-    "health-benefits":
-      (data["health-benefits"] as HomePageData["health-benefits"]) ??
-      defaultHomeContent["health-benefits"],
-    testimonials:
-      (data.testimonials as HomePageData["testimonials"]) ?? defaultHomeContent.testimonials,
-    cta: (data.cta as HomePageData["cta"]) ?? defaultHomeContent.cta,
+    initiatives: (data.initiatives as HomePageData["initiatives"]) ?? defaultHomeContent.initiatives,
+    services: (data.services as HomePageData["services"]) ?? defaultHomeContent.services,
+    why_digital: (data.why_digital as HomePageData["why_digital"]) ?? defaultHomeContent.why_digital,
+    portfolio_preview: (data.portfolio_preview as HomePageData["portfolio_preview"]) ?? defaultHomeContent.portfolio_preview,
+    testimonials: (data.testimonials as HomePageData["testimonials"]) ?? defaultHomeContent.testimonials,
+    why_choose_us: (data.why_choose_us as HomePageData["why_choose_us"]) ?? defaultHomeContent.why_choose_us,
+    contact_cta: (data.contact_cta as HomePageData["contact_cta"]) ?? defaultHomeContent.contact_cta,
   };
 }
 

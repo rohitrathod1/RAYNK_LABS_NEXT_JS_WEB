@@ -13,10 +13,56 @@ async function main() {
 
   if (isReset) {
     console.log("⚠️  Resetting — deleting existing data...");
+    await prisma.userPermission.deleteMany();
+    await prisma.permission.deleteMany();
     await prisma.seo.deleteMany();
     await prisma.admin.deleteMany();
     // Add more deleteMany() calls here as models are added
     console.log("✅ Reset complete");
+  }
+
+  // ── Permissions (RBAC) ─────────────────────────────────────────────────────
+  const permissionNames = [
+    { name: "EDIT_HOME", description: "Edit home page content" },
+    { name: "EDIT_ABOUT", description: "Edit about page content" },
+    { name: "MANAGE_SERVICES", description: "Manage services section" },
+    { name: "MANAGE_PORTFOLIO", description: "Manage portfolio/projects" },
+    { name: "MANAGE_BLOG", description: "Manage blog posts" },
+    { name: "MANAGE_TEAM", description: "Manage team members" },
+    { name: "MANAGE_CONTACT", description: "Manage contact forms" },
+    { name: "MANAGE_NAVBAR", description: "Manage navigation bar" },
+    { name: "MANAGE_FOOTER", description: "Manage footer content" },
+    { name: "MANAGE_SEO", description: "Manage SEO settings" },
+    { name: "MANAGE_USERS", description: "Manage admin users and permissions" },
+  ];
+
+  for (const perm of permissionNames) {
+    await prisma.permission.upsert({
+      where: { name: perm.name },
+      update: {},
+      create: perm,
+    });
+  }
+  console.log(`✅ Seeded ${permissionNames.length} permissions`);
+
+  // ── Super Admin (DB record — env admin is the primary login) ──────────────
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@raynklabs.com";
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "Admin@1234";
+
+  // Grant all permissions to the super admin
+  const superAdmin = await prisma.admin.findUnique({ where: { email: adminEmail } });
+  if (superAdmin) {
+    const allPerms = await prisma.permission.findMany();
+    for (const perm of allPerms) {
+      await prisma.userPermission.upsert({
+        where: {
+          userId_permissionId: { userId: superAdmin.id, permissionId: perm.id },
+        },
+        update: {},
+        create: { userId: superAdmin.id, permissionId: perm.id },
+      });
+    }
+    console.log(`✅ Granted all permissions to super admin`);
   }
 
   // ── SEO defaults (one record per public page) ──────────────────────────────
@@ -43,10 +89,7 @@ async function main() {
   }
   console.log(`✅ Seeded ${seoRecords.length} SEO records`);
 
-  // ── Super Admin (DB record — env admin is the primary login) ──────────────
-  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@raynklabs.com";
-  const adminPassword = process.env.ADMIN_PASSWORD ?? "Admin@1234";
-
+  // ── Create Super Admin if not exists ──────────────────────────────────────
   const existing = await prisma.admin.findUnique({ where: { email: adminEmail } });
   if (!existing) {
     await prisma.admin.create({

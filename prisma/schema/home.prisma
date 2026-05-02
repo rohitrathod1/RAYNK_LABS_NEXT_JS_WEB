@@ -1,9 +1,9 @@
 // home.prisma — CMS content for the home page.
-// Each row is a section (hero, mission, featured-products, health-benefits, testimonials, cta).
+// Each row is a section: hero, initiatives, services, why-digital, portfolio, testimonials, why-choose-us, cta, seo
 
 model HomePage {
   id        String   @id @default(cuid())
-  section   String   @unique       // "hero" | "mission" | "featured-products" | "health-benefits" | "testimonials" | "cta"
+  section   String   @unique       // "hero" | "initiatives" | "services" | "why-digital" | "portfolio" | "testimonials" | "why-choose-us" | "cta" | "seo"
   title     String?
   content   Json
   sortOrder Int      @default(0)

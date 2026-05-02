@@ -1,29 +1,65 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/common/image-upload";
+import { hasPermission } from "@/lib/permissions";
 import {
   updateHomeHero,
-  updateHomeMission,
-  updateHomeFeaturedProducts,
-  updateHomeHealthBenefits,
+  updateHomeInitiatives,
+  updateHomeServices,
+  updateHomeWhyDigital,
+  updateHomePortfolio,
   updateHomeTestimonials,
+  updateHomeWhyChoose,
   updateHomeCta,
   updateHomeSeo,
 } from "@/modules/home/actions";
 import type { HomePageData } from "@/modules/home/types";
 import { defaultHomeContent } from "@/modules/home/data/defaults";
 
-const TABS = ["hero", "mission", "featured-products", "health-benefits", "testimonials", "cta", "seo"] as const;
+const TABS = [
+  "hero",
+  "initiatives",
+  "services",
+  "why_digital",
+  "portfolio_preview",
+  "testimonials",
+  "why_choose_us",
+  "contact_cta",
+  "seo",
+] as const;
 type Tab = (typeof TABS)[number];
 
 type FormData = HomePageData & {
   seo: { title: string; description: string; keywords: string; ogImage: string; noIndex: boolean };
 };
 
+const TAB_LABELS: Record<Tab, string> = {
+  hero: "Hero",
+  initiatives: "Initiatives",
+  services: "Services",
+  why_digital: "Why Digital",
+  portfolio_preview: "Portfolio",
+  testimonials: "Testimonials",
+  why_choose_us: "Why Choose Us",
+  contact_cta: "Contact CTA",
+  seo: "SEO",
+};
+
 export default function HomePageManager() {
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    if (session && !hasPermission(session, "EDIT_HOME")) {
+      router.push("/admin");
+    }
+  }, [session, router]);
+
   const [activeTab, setActiveTab] = useState<Tab>("hero");
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [loading, setLoading] = useState(false);
@@ -35,17 +71,16 @@ export default function HomePageManager() {
       .then(({ data }: { data: Partial<FormData> }) => {
         setFormData({
           hero: { ...defaultHomeContent.hero, ...(data?.hero ?? {}) },
-          mission: { ...defaultHomeContent.mission, ...(data?.mission ?? {}) },
-          "featured-products": {
-            ...defaultHomeContent["featured-products"],
-            ...(data?.["featured-products"] ?? {}),
-          },
-          "health-benefits": {
-            ...defaultHomeContent["health-benefits"],
-            ...(data?.["health-benefits"] ?? {}),
+          initiatives: { ...defaultHomeContent.initiatives, ...(data?.initiatives ?? {}) },
+          services: { ...defaultHomeContent.services, ...(data?.services ?? {}) },
+          why_digital: { ...defaultHomeContent.why_digital, ...(data?.why_digital ?? {}) },
+          portfolio_preview: {
+            ...defaultHomeContent.portfolio_preview,
+            ...(data?.portfolio_preview ?? {}),
           },
           testimonials: { ...defaultHomeContent.testimonials, ...(data?.testimonials ?? {}) },
-          cta: { ...defaultHomeContent.cta, ...(data?.cta ?? {}) },
+          why_choose_us: { ...defaultHomeContent.why_choose_us, ...(data?.why_choose_us ?? {}) },
+          contact_cta: { ...defaultHomeContent.contact_cta, ...(data?.contact_cta ?? {}) },
           seo: {
             title: "",
             description: "",
@@ -75,11 +110,13 @@ export default function HomePageManager() {
     type ActionFn = (d: unknown) => Promise<{ success: boolean; error?: string }>;
     const actionMap: Record<Tab, ActionFn> = {
       hero: (d) => updateHomeHero(d),
-      mission: (d) => updateHomeMission(d),
-      "featured-products": (d) => updateHomeFeaturedProducts(d),
-      "health-benefits": (d) => updateHomeHealthBenefits(d),
+      initiatives: (d) => updateHomeInitiatives(d),
+      services: (d) => updateHomeServices(d),
+      why_digital: (d) => updateHomeWhyDigital(d),
+      portfolio_preview: (d) => updateHomePortfolio(d),
       testimonials: (d) => updateHomeTestimonials(d),
-      cta: (d) => updateHomeCta(d),
+      why_choose_us: (d) => updateHomeWhyChoose(d),
+      contact_cta: (d) => updateHomeCta(d),
       seo: (d) => updateHomeSeo(d),
     };
     const result = await actionMap[activeTab]?.(formData[activeTab]);
@@ -89,11 +126,13 @@ export default function HomePageManager() {
   }
 
   const hero = formData.hero ?? defaultHomeContent.hero;
-  const mission = formData.mission ?? defaultHomeContent.mission;
-  const featuredProducts = formData["featured-products"] ?? defaultHomeContent["featured-products"];
-  const healthBenefits = formData["health-benefits"] ?? defaultHomeContent["health-benefits"];
+  const initiatives = formData.initiatives ?? defaultHomeContent.initiatives;
+  const services = formData.services ?? defaultHomeContent.services;
+  const whyDigital = formData.why_digital ?? defaultHomeContent.why_digital;
+  const portfolio = formData.portfolio_preview ?? defaultHomeContent.portfolio_preview;
   const testimonials = formData.testimonials ?? defaultHomeContent.testimonials;
-  const cta = formData.cta ?? defaultHomeContent.cta;
+  const whyChoose = formData.why_choose_us ?? defaultHomeContent.why_choose_us;
+  const cta = formData.contact_cta ?? defaultHomeContent.contact_cta;
   const seo = (formData as Partial<FormData>).seo ?? {
     title: "",
     description: "",
@@ -132,13 +171,13 @@ export default function HomePageManager() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 font-medium transition-colors whitespace-nowrap capitalize text-sm ${
+              className={`px-4 py-3 font-medium transition-colors whitespace-nowrap text-sm ${
                 activeTab === tab
                   ? "border-b-2 border-primary text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tab}
+              {TAB_LABELS[tab]}
             </button>
           ))}
         </div>
@@ -150,34 +189,23 @@ export default function HomePageManager() {
             </div>
           ) : (
             <>
-              {/* HERO TAB */}
               {activeTab === "hero" && (
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Badge Text</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={hero.badgeText}
-                      onChange={(e) => update("hero", { badgeText: e.target.value })}
-                      placeholder="Student-Led Innovation"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Heading *</label>
                     <input
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
                       value={hero.heading}
                       onChange={(e) => update("hero", { heading: e.target.value })}
-                      placeholder="Building the Future..."
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Subheading *</label>
+                    <label className="block text-sm font-medium mb-1.5">Subtitle *</label>
                     <textarea
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
                       rows={3}
-                      value={hero.subheading}
-                      onChange={(e) => update("hero", { subheading: e.target.value })}
+                      value={hero.subtitle}
+                      onChange={(e) => update("hero", { subtitle: e.target.value })}
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -185,32 +213,32 @@ export default function HomePageManager() {
                       <label className="block text-sm font-medium mb-1.5">Primary CTA Text *</label>
                       <input
                         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                        value={hero.ctaText}
-                        onChange={(e) => update("hero", { ctaText: e.target.value })}
+                        value={hero.ctaPrimaryText}
+                        onChange={(e) => update("hero", { ctaPrimaryText: e.target.value })}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1.5">Primary CTA Link *</label>
                       <input
                         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                        value={hero.ctaHref}
-                        onChange={(e) => update("hero", { ctaHref: e.target.value })}
+                        value={hero.ctaPrimaryHref}
+                        onChange={(e) => update("hero", { ctaPrimaryHref: e.target.value })}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1.5">Secondary CTA Text</label>
                       <input
                         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                        value={hero.secondaryCtaText}
-                        onChange={(e) => update("hero", { secondaryCtaText: e.target.value })}
+                        value={hero.ctaSecondaryText}
+                        onChange={(e) => update("hero", { ctaSecondaryText: e.target.value })}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1.5">Secondary CTA Link</label>
                       <input
                         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                        value={hero.secondaryCtaHref}
-                        onChange={(e) => update("hero", { secondaryCtaHref: e.target.value })}
+                        value={hero.ctaSecondaryHref}
+                        onChange={(e) => update("hero", { ctaSecondaryHref: e.target.value })}
                       />
                     </div>
                   </div>
@@ -224,75 +252,273 @@ export default function HomePageManager() {
                 </div>
               )}
 
-              {/* MISSION TAB */}
-              {activeTab === "mission" && (
+              {activeTab === "initiatives" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Title *</label>
+                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
                     <input
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={mission.title}
-                      onChange={(e) => update("mission", { title: e.target.value })}
+                      value={initiatives.title}
+                      onChange={(e) => update("initiatives", { title: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Body *</label>
-                    <textarea
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
-                      rows={5}
-                      value={mission.body}
-                      onChange={(e) => update("mission", { body: e.target.value })}
+                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
+                    <input
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                      value={initiatives.subtitle}
+                      onChange={(e) => update("initiatives", { subtitle: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-sm font-medium">Cards (4 recommended)</label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          update("initiatives", {
+                            cards: [
+                              ...initiatives.cards,
+                              { icon: "Star", title: "", description: "" },
+                            ],
+                          })
+                        }
+                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Card
+                      </button>
+                    </div>
+                    <div className="space-y-6">
+                      {initiatives.cards.map((card, i) => (
+                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Card {i + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                update("initiatives", {
+                                  cards: initiatives.cards.filter((_, j) => j !== i),
+                                })
+                              }
+                              className="text-destructive hover:text-destructive/70"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium mb-1">
+                                Icon (Lucide name)
+                              </label>
+                              <input
+                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
+                                placeholder="Rocket, Star, Code..."
+                                value={card.icon}
+                                onChange={(e) => {
+                                  const updated = [...initiatives.cards];
+                                  updated[i] = { ...updated[i], icon: e.target.value };
+                                  update("initiatives", { cards: updated });
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Title *</label>
+                              <input
+                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
+                                value={card.title}
+                                onChange={(e) => {
+                                  const updated = [...initiatives.cards];
+                                  updated[i] = { ...updated[i], title: e.target.value };
+                                  update("initiatives", { cards: updated });
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Description *</label>
+                            <textarea
+                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm resize-none"
+                              rows={2}
+                              value={card.description}
+                              onChange={(e) => {
+                                const updated = [...initiatives.cards];
+                                updated[i] = { ...updated[i], description: e.target.value };
+                                update("initiatives", { cards: updated });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "services" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
+                    <input
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                      value={services.title}
+                      onChange={(e) => update("services", { title: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
+                    <input
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                      value={services.subtitle}
+                      onChange={(e) => update("services", { subtitle: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-sm font-medium">Services (9 for 3x3 grid)</label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          update("services", {
+                            services: [
+                              ...services.services,
+                              { icon: "Star", title: "", description: "" },
+                            ],
+                          })
+                        }
+                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Service
+                      </button>
+                    </div>
+                    <div className="space-y-6">
+                      {services.services.map((service, i) => (
+                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Service {i + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                update("services", {
+                                  services: services.services.filter((_, j) => j !== i),
+                                })
+                              }
+                              className="text-destructive hover:text-destructive/70"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium mb-1">
+                                Icon (Lucide name)
+                              </label>
+                              <input
+                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
+                                placeholder="Code, Cloud, Bot..."
+                                value={service.icon}
+                                onChange={(e) => {
+                                  const updated = [...services.services];
+                                  updated[i] = { ...updated[i], icon: e.target.value };
+                                  update("services", { services: updated });
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Title *</label>
+                              <input
+                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
+                                value={service.title}
+                                onChange={(e) => {
+                                  const updated = [...services.services];
+                                  updated[i] = { ...updated[i], title: e.target.value };
+                                  update("services", { services: updated });
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Description *</label>
+                            <textarea
+                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm resize-none"
+                              rows={2}
+                              value={service.description}
+                              onChange={(e) => {
+                                const updated = [...services.services];
+                                updated[i] = { ...updated[i], description: e.target.value };
+                                update("services", { services: updated });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "why_digital" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
+                    <input
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                      value={whyDigital.title}
+                      onChange={(e) => update("why_digital", { title: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
+                    <input
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                      value={whyDigital.subtitle}
+                      onChange={(e) => update("why_digital", { subtitle: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Image</label>
                     <ImageUpload
-                      value={mission.image}
-                      onChange={(v) => update("mission", { image: v })}
+                      value={whyDigital.image}
+                      onChange={(v) => update("why_digital", { image: v })}
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium">Stats</label>
+                      <label className="text-sm font-medium">Bullet Points</label>
                       <button
                         type="button"
                         onClick={() =>
-                          update("mission", {
-                            stats: [...mission.stats, { label: "", value: "" }],
+                          update("why_digital", {
+                            bulletPoints: [...whyDigital.bulletPoints, ""],
                           })
                         }
                         className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
                       >
-                        <Plus className="w-3.5 h-3.5" /> Add Stat
+                        <Plus className="w-3.5 h-3.5" /> Add Point
                       </button>
                     </div>
                     <div className="space-y-2">
-                      {mission.stats.map((stat, i) => (
+                      {whyDigital.bulletPoints.map((point, i) => (
                         <div key={i} className="flex gap-2 items-center">
                           <input
                             className="flex-1 px-3 py-1.5 rounded-md border border-input bg-background text-sm"
-                            placeholder="Label"
-                            value={stat.label}
+                            placeholder="Enter bullet point"
+                            value={point}
                             onChange={(e) => {
-                              const updated = [...mission.stats];
-                              updated[i] = { ...updated[i], label: e.target.value };
-                              update("mission", { stats: updated });
-                            }}
-                          />
-                          <input
-                            className="w-24 px-3 py-1.5 rounded-md border border-input bg-background text-sm"
-                            placeholder="Value"
-                            value={stat.value}
-                            onChange={(e) => {
-                              const updated = [...mission.stats];
-                              updated[i] = { ...updated[i], value: e.target.value };
-                              update("mission", { stats: updated });
+                              const updated = [...whyDigital.bulletPoints];
+                              updated[i] = e.target.value;
+                              update("why_digital", { bulletPoints: updated });
                             }}
                           />
                           <button
                             type="button"
                             onClick={() =>
-                              update("mission", { stats: mission.stats.filter((_, j) => j !== i) })
+                              update("why_digital", {
+                                bulletPoints: whyDigital.bulletPoints.filter((_, j) => j !== i),
+                              })
                             }
                             className="text-destructive hover:text-destructive/70"
                           >
@@ -305,180 +531,54 @@ export default function HomePageManager() {
                 </div>
               )}
 
-              {/* FEATURED PRODUCTS TAB */}
-              {activeTab === "featured-products" && (
+              {activeTab === "portfolio_preview" && (
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Section Title *</label>
                     <input
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={featuredProducts.title}
-                      onChange={(e) => update("featured-products", { title: e.target.value })}
+                      value={portfolio.title}
+                      onChange={(e) => update("portfolio_preview", { title: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Subtitle</label>
                     <input
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={featuredProducts.subtitle}
-                      onChange={(e) => update("featured-products", { subtitle: e.target.value })}
+                      value={portfolio.subtitle}
+                      onChange={(e) => update("portfolio_preview", { subtitle: e.target.value })}
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium">Products</label>
+                      <label className="text-sm font-medium">Portfolio Items</label>
                       <button
                         type="button"
                         onClick={() =>
-                          update("featured-products", {
-                            products: [
-                              ...featuredProducts.products,
-                              { name: "", description: "", image: "", href: "", badge: "" },
+                          update("portfolio_preview", {
+                            items: [
+                              ...portfolio.items,
+                              { title: "", description: "", image: "", href: "", tags: [] },
                             ],
                           })
                         }
                         className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
                       >
-                        <Plus className="w-3.5 h-3.5" /> Add Product
+                        <Plus className="w-3.5 h-3.5" /> Add Item
                       </button>
                     </div>
                     <div className="space-y-6">
-                      {featuredProducts.products.map((p, i) => (
+                      {portfolio.items.map((item, i) => (
                         <div key={i} className="p-4 rounded-lg border border-border space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-muted-foreground">
-                              Product {i + 1}
+                              Item {i + 1}
                             </span>
                             <button
                               type="button"
                               onClick={() =>
-                                update("featured-products", {
-                                  products: featuredProducts.products.filter((_, j) => j !== i),
-                                })
-                              }
-                              className="text-destructive hover:text-destructive/70"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Name *</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                value={p.name}
-                                onChange={(e) => {
-                                  const updated = [...featuredProducts.products];
-                                  updated[i] = { ...updated[i], name: e.target.value };
-                                  update("featured-products", { products: updated });
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Badge</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                value={p.badge}
-                                onChange={(e) => {
-                                  const updated = [...featuredProducts.products];
-                                  updated[i] = { ...updated[i], badge: e.target.value };
-                                  update("featured-products", { products: updated });
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Description *</label>
-                            <textarea
-                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm resize-none"
-                              rows={2}
-                              value={p.description}
-                              onChange={(e) => {
-                                const updated = [...featuredProducts.products];
-                                updated[i] = { ...updated[i], description: e.target.value };
-                                update("featured-products", { products: updated });
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Link (href)</label>
-                            <input
-                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                              value={p.href}
-                              onChange={(e) => {
-                                const updated = [...featuredProducts.products];
-                                updated[i] = { ...updated[i], href: e.target.value };
-                                update("featured-products", { products: updated });
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Image</label>
-                            <ImageUpload
-                              value={p.image}
-                              onChange={(v) => {
-                                const updated = [...featuredProducts.products];
-                                updated[i] = { ...updated[i], image: v };
-                                update("featured-products", { products: updated });
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* HEALTH BENEFITS TAB */}
-              {activeTab === "health-benefits" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={healthBenefits.title}
-                      onChange={(e) => update("health-benefits", { title: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={healthBenefits.subtitle}
-                      onChange={(e) => update("health-benefits", { subtitle: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium">Benefits</label>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          update("health-benefits", {
-                            benefits: [
-                              ...healthBenefits.benefits,
-                              { title: "", description: "", icon: "" },
-                            ],
-                          })
-                        }
-                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Benefit
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                      {healthBenefits.benefits.map((b, i) => (
-                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Benefit {i + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                update("health-benefits", {
-                                  benefits: healthBenefits.benefits.filter((_, j) => j !== i),
+                                update("portfolio_preview", {
+                                  items: portfolio.items.filter((_, j) => j !== i),
                                 })
                               }
                               className="text-destructive hover:text-destructive/70"
@@ -491,26 +591,23 @@ export default function HomePageManager() {
                               <label className="block text-xs font-medium mb-1">Title *</label>
                               <input
                                 className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                value={b.title}
+                                value={item.title}
                                 onChange={(e) => {
-                                  const updated = [...healthBenefits.benefits];
+                                  const updated = [...portfolio.items];
                                   updated[i] = { ...updated[i], title: e.target.value };
-                                  update("health-benefits", { benefits: updated });
+                                  update("portfolio_preview", { items: updated });
                                 }}
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium mb-1">
-                                Icon (Lucide name)
-                              </label>
+                              <label className="block text-xs font-medium mb-1">Link (href)</label>
                               <input
                                 className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                placeholder="Rocket, Star, Code..."
-                                value={b.icon}
+                                value={item.href}
                                 onChange={(e) => {
-                                  const updated = [...healthBenefits.benefits];
-                                  updated[i] = { ...updated[i], icon: e.target.value };
-                                  update("health-benefits", { benefits: updated });
+                                  const updated = [...portfolio.items];
+                                  updated[i] = { ...updated[i], href: e.target.value };
+                                  update("portfolio_preview", { items: updated });
                                 }}
                               />
                             </div>
@@ -520,11 +617,43 @@ export default function HomePageManager() {
                             <textarea
                               className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm resize-none"
                               rows={2}
-                              value={b.description}
+                              value={item.description}
                               onChange={(e) => {
-                                const updated = [...healthBenefits.benefits];
+                                const updated = [...portfolio.items];
                                 updated[i] = { ...updated[i], description: e.target.value };
-                                update("health-benefits", { benefits: updated });
+                                update("portfolio_preview", { items: updated });
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1">
+                              Tags (comma-separated)
+                            </label>
+                            <input
+                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
+                              placeholder="Next.js, Prisma, PostgreSQL"
+                              value={item.tags.join(", ")}
+                              onChange={(e) => {
+                                const updated = [...portfolio.items];
+                                updated[i] = {
+                                  ...updated[i],
+                                  tags: e.target.value
+                                    .split(",")
+                                    .map((t) => t.trim())
+                                    .filter(Boolean),
+                                };
+                                update("portfolio_preview", { items: updated });
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Image</label>
+                            <ImageUpload
+                              value={item.image}
+                              onChange={(v) => {
+                                const updated = [...portfolio.items];
+                                updated[i] = { ...updated[i], image: v };
+                                update("portfolio_preview", { items: updated });
                               }}
                             />
                           </div>
@@ -535,7 +664,6 @@ export default function HomePageManager() {
                 </div>
               )}
 
-              {/* TESTIMONIALS TAB */}
               {activeTab === "testimonials" && (
                 <div className="space-y-4">
                   <div>
@@ -620,7 +748,7 @@ export default function HomePageManager() {
                             </div>
                             <div>
                               <label className="block text-xs font-medium mb-1">
-                                Rating (1–5)
+                                Rating (1-5)
                               </label>
                               <input
                                 type="number"
@@ -667,15 +795,118 @@ export default function HomePageManager() {
                 </div>
               )}
 
-              {/* CTA TAB */}
-              {activeTab === "cta" && (
+              {activeTab === "why_choose_us" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
+                    <input
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                      value={whyChoose.title}
+                      onChange={(e) => update("why_choose_us", { title: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
+                    <input
+                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+                      value={whyChoose.subtitle}
+                      onChange={(e) => update("why_choose_us", { subtitle: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-sm font-medium">Points (6 recommended)</label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          update("why_choose_us", {
+                            points: [
+                              ...whyChoose.points,
+                              { icon: "Star", title: "", description: "" },
+                            ],
+                          })
+                        }
+                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Point
+                      </button>
+                    </div>
+                    <div className="space-y-6">
+                      {whyChoose.points.map((point, i) => (
+                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Point {i + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                update("why_choose_us", {
+                                  points: whyChoose.points.filter((_, j) => j !== i),
+                                })
+                              }
+                              className="text-destructive hover:text-destructive/70"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium mb-1">
+                                Icon (Lucide name)
+                              </label>
+                              <input
+                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
+                                placeholder="Zap, Award, Users..."
+                                value={point.icon}
+                                onChange={(e) => {
+                                  const updated = [...whyChoose.points];
+                                  updated[i] = { ...updated[i], icon: e.target.value };
+                                  update("why_choose_us", { points: updated });
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Title *</label>
+                              <input
+                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
+                                value={point.title}
+                                onChange={(e) => {
+                                  const updated = [...whyChoose.points];
+                                  updated[i] = { ...updated[i], title: e.target.value };
+                                  update("why_choose_us", { points: updated });
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Description *</label>
+                            <textarea
+                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm resize-none"
+                              rows={2}
+                              value={point.description}
+                              onChange={(e) => {
+                                const updated = [...whyChoose.points];
+                                updated[i] = { ...updated[i], description: e.target.value };
+                                update("why_choose_us", { points: updated });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "contact_cta" && (
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Heading *</label>
                     <input
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
                       value={cta.heading}
-                      onChange={(e) => update("cta", { heading: e.target.value })}
+                      onChange={(e) => update("contact_cta", { heading: e.target.value })}
                     />
                   </div>
                   <div>
@@ -684,7 +915,7 @@ export default function HomePageManager() {
                       className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
                       rows={3}
                       value={cta.subheading}
-                      onChange={(e) => update("cta", { subheading: e.target.value })}
+                      onChange={(e) => update("contact_cta", { subheading: e.target.value })}
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -693,7 +924,7 @@ export default function HomePageManager() {
                       <input
                         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
                         value={cta.ctaText}
-                        onChange={(e) => update("cta", { ctaText: e.target.value })}
+                        onChange={(e) => update("contact_cta", { ctaText: e.target.value })}
                       />
                     </div>
                     <div>
@@ -701,21 +932,13 @@ export default function HomePageManager() {
                       <input
                         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
                         value={cta.ctaHref}
-                        onChange={(e) => update("cta", { ctaHref: e.target.value })}
+                        onChange={(e) => update("contact_cta", { ctaHref: e.target.value })}
                       />
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Background Image</label>
-                    <ImageUpload
-                      value={cta.backgroundImage}
-                      onChange={(v) => update("cta", { backgroundImage: v })}
-                    />
                   </div>
                 </div>
               )}
 
-              {/* SEO TAB */}
               {activeTab === "seo" && (
                 <div className="space-y-4">
                   <div>
@@ -729,7 +952,7 @@ export default function HomePageManager() {
                           seo: { ...seo, title: e.target.value },
                         }))
                       }
-                      placeholder="RaYnk Labs — Student-Led Tech Innovation Lab"
+                      placeholder="RaYnk Labs - Digital Solutions & Innovation"
                     />
                   </div>
                   <div>
@@ -759,7 +982,7 @@ export default function HomePageManager() {
                           seo: { ...seo, keywords: e.target.value },
                         }))
                       }
-                      placeholder="raynk labs, student tech lab, innovation"
+                      placeholder="raynk labs, digital solutions, web development"
                     />
                   </div>
                   <div>
@@ -795,7 +1018,6 @@ export default function HomePageManager() {
         </div>
       </div>
 
-      {/* Bottom save button */}
       <div className="flex justify-end pb-6">
         <button
           onClick={handleSave}

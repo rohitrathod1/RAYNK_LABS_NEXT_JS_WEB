@@ -39,7 +39,7 @@ export default auth(async (req: AuthRequest) => {
   const { pathname } = req.nextUrl;
   const method = req.method;
 
-  // ── Route classification ───────────────────────────────────────────────────
+  // ── Route classification ───────────────────────────────────────────
   const isAdminPage = pathname.startsWith("/admin");
   const isLoginPage = pathname === "/admin/login";
   const isAuthApi = pathname.startsWith("/api/auth/");
@@ -49,7 +49,7 @@ export default auth(async (req: AuthRequest) => {
 
   const ip = clientIp(req);
 
-  // ── 1. Rate limiting ───────────────────────────────────────────────────────
+  // ── 1. Rate limiting ─────────────────────────────────────────────
   if (isAuthApi && isMutation) {
     const result = localRateLimit.auth(ip);
     if (!result.allowed) {
@@ -76,7 +76,7 @@ export default auth(async (req: AuthRequest) => {
     }
   }
 
-  // ── 2. CSRF origin check for all API mutations ─────────────────────────────
+  // ── 2. CSRF origin check for all API mutations ─────────────────────────
   if (isApiRoute && !isAuthApi && isMutation) {
     const origin = req.headers.get("origin");
     if (origin) {
@@ -97,7 +97,7 @@ export default auth(async (req: AuthRequest) => {
     }
   }
 
-  // ── 3. Auth + role enforcement ─────────────────────────────────────────────
+  // ── 3. Auth + role enforcement ─────────────────────────────────────
   const needsAuth =
     isAdminPage || isAdminApi || (isApiRoute && isMutation && !isAuthApi);
 
@@ -109,8 +109,9 @@ export default auth(async (req: AuthRequest) => {
   const isLoggedIn = !!session?.user;
   const role = session?.user?.role;
   const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
+  const permissions = (session?.user?.permissions as string[]) || [];
 
-  // ── 3a. Admin pages — redirect flow ───────────────────────────────────────
+  // ── 3a. Admin pages — redirect flow ───────────────────────────────
   if (isAdminPage) {
     if (!isLoggedIn && isAuthBlocked(ip)) {
       return addSecurityHeaders(NextResponse.redirect(new URL("/?blocked=1", req.url)));
@@ -137,10 +138,36 @@ export default auth(async (req: AuthRequest) => {
       return addSecurityHeaders(NextResponse.redirect(new URL("/admin", req.url)));
     }
 
+    // ── 3c. Page-level permission checks ──────────────────────────
+    const pagePermissions: Record<string, string> = {
+      "/admin/dashboard/home": "EDIT_HOME",
+      "/admin/dashboard/about": "EDIT_ABOUT",
+      "/admin/dashboard/services": "MANAGE_SERVICES",
+      "/admin/dashboard/portfolio": "MANAGE_PORTFOLIO",
+      "/admin/dashboard/blogs": "MANAGE_BLOG",
+      "/admin/dashboard/team": "MANAGE_TEAM",
+      "/admin/dashboard/contact": "MANAGE_CONTACT",
+      "/admin/dashboard/navbar": "MANAGE_NAVBAR",
+      "/admin/dashboard/footer": "MANAGE_FOOTER",
+      "/admin/dashboard/seo": "MANAGE_SEO",
+      "/admin/dashboard/users": "MANAGE_USERS",
+    };
+
+    for (const [path, perm] of Object.entries(pagePermissions)) {
+      if (pathname.startsWith(path)) {
+        if (role !== "SUPER_ADMIN" && !permissions.includes(perm)) {
+          return addSecurityHeaders(
+            NextResponse.redirect(new URL("/admin", req.url)),
+          );
+        }
+        break;
+      }
+    }
+
     return addSecurityHeaders(NextResponse.next());
   }
 
-  // ── 3b. Admin API routes — JSON responses ─────────────────────────────────
+  // ── 3b. Admin API routes — JSON responses ─────────────────────────
   if (!isLoggedIn) {
     return addSecurityHeaders(
       NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }),

@@ -27,15 +27,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Env-based super admin fallback (works before DB is seeded)
         if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-          return { id: "env-super-admin", name: "Super Admin", email, role: "SUPER_ADMIN" };
+          return { id: "env-super-admin", name: "Super Admin", email, role: "SUPER_ADMIN", permissions: [] };
         }
 
         // DB admin lookup
-        const admin = await db.admin.findUnique({ where: { email } });
+        const admin = await db.admin.findUnique({
+          where: { email },
+          include: {
+            permissions: { include: { permission: { select: { name: true } } } },
+          },
+        });
         if (!admin || admin.status !== "APPROVED") return null;
         if (!(await bcrypt.compare(password, admin.password))) return null;
 
-        return { id: admin.id, name: admin.name, email: admin.email, role: admin.role };
+        const permissions = admin.permissions.map((up) => up.permission.name);
+
+        return {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+          permissions,
+        };
       },
     }),
   ],

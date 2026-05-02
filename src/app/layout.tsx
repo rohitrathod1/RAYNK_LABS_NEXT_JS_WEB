@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { Providers } from "@/providers";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { AdminCheck } from "@/components/admin-check";
+import { headers } from "next/headers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
     default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
-  description: "RaYnk Labs — Building the future, one line at a time.",
+  description: "Raynk Labs — Building the future, one line at a time.",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -39,9 +41,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-invoke-path") || "/";
+
   return (
     <html
       lang="en"
@@ -50,6 +55,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>
+          <AdminCheck pathname={pathname} />
           {children}
           <Toaster richColors closeButton position="top-right" />
         </Providers>

@@ -1,16 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/require-admin";
+import { requirePermission } from "@/middleware/permission";
 import { ok, fail } from "@/lib/action-response";
 import { getErrorMessage } from "@/lib/errors";
 import { db } from "@/lib/db";
 import {
   heroSchema,
-  missionSchema,
-  featuredProductsSchema,
-  healthBenefitsSchema,
+  initiativesSchema,
+  servicesSchema,
+  whyDigitalSchema,
+  portfolioSchema,
   testimonialsSchema,
+  whyChooseSchema,
   ctaSchema,
   seoSchema,
 } from "./validations";
@@ -18,12 +20,12 @@ import { upsertHomeSection } from "./data/mutations";
 
 function revalidateHome() {
   revalidatePath("/");
-  revalidatePath("/admin/home");
+  revalidatePath("/admin/dashboard/home");
 }
 
 export async function updateHomeHero(raw: unknown) {
   try {
-    await requireAdmin();
+    await requirePermission("EDIT_HOME");
     const data = heroSchema.parse(raw);
     await upsertHomeSection("hero", data);
     revalidateHome();
@@ -33,11 +35,11 @@ export async function updateHomeHero(raw: unknown) {
   }
 }
 
-export async function updateHomeMission(raw: unknown) {
+export async function updateHomeInitiatives(raw: unknown) {
   try {
-    await requireAdmin();
-    const data = missionSchema.parse(raw);
-    await upsertHomeSection("mission", data);
+    await requirePermission("EDIT_HOME");
+    const data = initiativesSchema.parse(raw);
+    await upsertHomeSection("initiatives", data);
     revalidateHome();
     return ok(null);
   } catch (err) {
@@ -45,11 +47,11 @@ export async function updateHomeMission(raw: unknown) {
   }
 }
 
-export async function updateHomeFeaturedProducts(raw: unknown) {
+export async function updateHomeServices(raw: unknown) {
   try {
-    await requireAdmin();
-    const data = featuredProductsSchema.parse(raw);
-    await upsertHomeSection("featured-products", data);
+    await requirePermission("EDIT_HOME");
+    const data = servicesSchema.parse(raw);
+    await upsertHomeSection("services", data);
     revalidateHome();
     return ok(null);
   } catch (err) {
@@ -57,11 +59,23 @@ export async function updateHomeFeaturedProducts(raw: unknown) {
   }
 }
 
-export async function updateHomeHealthBenefits(raw: unknown) {
+export async function updateHomeWhyDigital(raw: unknown) {
   try {
-    await requireAdmin();
-    const data = healthBenefitsSchema.parse(raw);
-    await upsertHomeSection("health-benefits", data);
+    await requirePermission("EDIT_HOME");
+    const data = whyDigitalSchema.parse(raw);
+    await upsertHomeSection("why_digital", data);
+    revalidateHome();
+    return ok(null);
+  } catch (err) {
+    return fail(getErrorMessage(err));
+  }
+}
+
+export async function updateHomePortfolio(raw: unknown) {
+  try {
+    await requirePermission("EDIT_HOME");
+    const data = portfolioSchema.parse(raw);
+    await upsertHomeSection("portfolio_preview", data);
     revalidateHome();
     return ok(null);
   } catch (err) {
@@ -71,7 +85,7 @@ export async function updateHomeHealthBenefits(raw: unknown) {
 
 export async function updateHomeTestimonials(raw: unknown) {
   try {
-    await requireAdmin();
+    await requirePermission("EDIT_HOME");
     const data = testimonialsSchema.parse(raw);
     await upsertHomeSection("testimonials", data);
     revalidateHome();
@@ -81,11 +95,23 @@ export async function updateHomeTestimonials(raw: unknown) {
   }
 }
 
+export async function updateHomeWhyChoose(raw: unknown) {
+  try {
+    await requirePermission("EDIT_HOME");
+    const data = whyChooseSchema.parse(raw);
+    await upsertHomeSection("why_choose_us", data);
+    revalidateHome();
+    return ok(null);
+  } catch (err) {
+    return fail(getErrorMessage(err));
+  }
+}
+
 export async function updateHomeCta(raw: unknown) {
   try {
-    await requireAdmin();
+    await requirePermission("EDIT_HOME");
     const data = ctaSchema.parse(raw);
-    await upsertHomeSection("cta", data);
+    await upsertHomeSection("contact_cta", data);
     revalidateHome();
     return ok(null);
   } catch (err) {
@@ -95,7 +121,7 @@ export async function updateHomeCta(raw: unknown) {
 
 export async function updateHomeSeo(raw: unknown) {
   try {
-    await requireAdmin();
+    await requirePermission("EDIT_HOME");
     const data = seoSchema.parse(raw);
     await db.seo.upsert({
       where: { page: "home" },

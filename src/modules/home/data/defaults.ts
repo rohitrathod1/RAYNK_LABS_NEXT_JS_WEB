@@ -2,143 +2,234 @@ import type { PageSEO } from "@/lib/seo";
 import type { HomePageData } from "../types";
 
 export const defaultSeo: PageSEO = {
-  title: "RaYnk Labs — Student-Led Tech Innovation Lab",
+  title: "RaYnk Labs — Digital Solutions & Innovation",
   description:
-    "RaYnk Labs is a student-driven tech innovation lab building software, services, projects, and communities that matter.",
-  keywords: "raynk labs, student tech lab, tech innovation, software development, student startup",
+    "RaYnk Labs delivers cutting-edge digital solutions — web development, software, branding, and innovation that drives business growth.",
+  keywords: "raynk labs, digital solutions, web development, software development, tech innovation, branding",
   ogImage: "/api/uploads/og-home.png",
   noIndex: false,
 };
 
 export const defaultHomeContent: HomePageData = {
   hero: {
-    heading: "Building the Future, One Project at a Time",
-    subheading:
-      "RaYnk Labs is a student-led tech innovation lab turning bold ideas into real products — software, services, and communities that matter.",
-    ctaText: "Explore Our Work",
-    ctaHref: "/projects",
-    secondaryCtaText: "Learn About Us",
-    secondaryCtaHref: "/about",
+    heading: "Grow Your Business with Digital Solutions",
+    subtitle:
+      "We build powerful software, stunning websites, and scalable digital products that transform how you connect with customers and grow your business.",
+    ctaPrimaryText: "Get Started",
+    ctaPrimaryHref: "/contact",
+    ctaSecondaryText: "Contact Us",
+    ctaSecondaryHref: "/contact",
     backgroundImage: "placeholder.png",
-    badgeText: "Student-Led Innovation",
   },
-  mission: {
-    title: "Our Mission",
-    body: "We believe students are the most powerful force for technological change. RaYnk Labs gives ambitious students the infrastructure, mentorship, and community to ship real products — not just learn in classrooms.",
-    image: "placeholder.png",
-    stats: [
-      { label: "Projects Shipped", value: "20+" },
-      { label: "Active Members", value: "50+" },
-      { label: "Technologies", value: "15+" },
-      { label: "Communities Built", value: "5+" },
-    ],
-  },
-  "featured-products": {
-    title: "What We Build",
-    subtitle: "From SaaS tools to open-source libraries — every project starts with a real problem.",
-    products: [
+  initiatives: {
+    title: "Our Key Initiatives",
+    subtitle: "Driving innovation across multiple fronts to deliver exceptional value.",
+    cards: [
       {
-        name: "RaYnk Dashboard",
-        description: "A full-stack admin dashboard template for rapid product development.",
-        image: "placeholder.png",
-        href: "/projects",
-        badge: "Open Source",
-      },
-      {
-        name: "LabsConnect",
-        description: "Community platform connecting student builders across campuses.",
-        image: "placeholder.png",
-        href: "/projects",
-        badge: "In Beta",
-      },
-      {
-        name: "CourseKit",
-        description: "A lightweight course creation and delivery system for educators.",
-        image: "placeholder.png",
-        href: "/projects",
-        badge: "Coming Soon",
-      },
-    ],
-  },
-  "health-benefits": {
-    title: "Why Join RaYnk Labs",
-    subtitle: "More than a club — a launchpad for your career in tech.",
-    benefits: [
-      {
-        title: "Real-World Experience",
-        description:
-          "Ship production-grade software used by real people — not just homework assignments.",
         icon: "Rocket",
+        title: "Product Development",
+        description: "Building scalable SaaS products and custom software solutions from ideation to launch.",
       },
       {
-        title: "Mentorship & Guidance",
-        description:
-          "Work with seniors, alumni, and industry professionals who have walked the path.",
-        icon: "Users",
+        icon: "GraduationCap",
+        title: "Skill Development",
+        description: "Empowering the next generation of developers through hands-on projects and mentorship.",
       },
       {
-        title: "Portfolio That Stands Out",
-        description:
-          "Build projects you can demo, GitHub repos with actual commits, and products with real users.",
-        icon: "Star",
+        icon: "Globe",
+        title: "Open Source",
+        description: "Contributing to the global developer community with tools, libraries, and frameworks.",
       },
       {
-        title: "Community of Builders",
-        description:
-          "Surround yourself with peers who ship, learn fast, and push each other to do more.",
-        icon: "Heart",
+        icon: "Handshake",
+        title: "Client Solutions",
+        description: "Delivering enterprise-grade digital solutions for businesses of all sizes.",
       },
+    ],
+  },
+  services: {
+    title: "Our Services",
+    subtitle: "End-to-end digital services tailored to your business needs.",
+    services: [
       {
-        title: "Open Tech Stack",
-        description:
-          "Learn the tools the industry uses — Next.js, Prisma, Docker, CI/CD, and more.",
         icon: "Code",
+        title: "Web Development",
+        description: "Modern, responsive websites and web applications built with cutting-edge technologies.",
       },
       {
-        title: "Zero Gatekeeping",
-        description:
-          "Anyone can contribute. We value curiosity and work ethic over credentials.",
-        icon: "Unlock",
+        icon: "Smartphone",
+        title: "Mobile Apps",
+        description: "Cross-platform mobile applications that deliver seamless user experiences.",
+      },
+      {
+        icon: "Palette",
+        title: "UI/UX Design",
+        description: "User-centered design that combines aesthetics with functionality and accessibility.",
+      },
+      {
+        icon: "Cloud",
+        title: "Cloud Solutions",
+        description: "Scalable cloud infrastructure, deployment, and DevOps automation for reliability.",
+      },
+      {
+        icon: "Shield",
+        title: "Cybersecurity",
+        description: "Protect your digital assets with comprehensive security audits and implementations.",
+      },
+      {
+        icon: "BarChart3",
+        title: "Data Analytics",
+        description: "Transform raw data into actionable insights with custom dashboards and reporting.",
+      },
+      {
+        icon: "Megaphone",
+        title: "Digital Marketing",
+        description: "SEO, content strategy, and performance marketing to amplify your online presence.",
+      },
+      {
+        icon: "Bot",
+        title: "AI Integration",
+        description: "Leverage artificial intelligence and machine learning to automate and optimize workflows.",
+      },
+      {
+        icon: "LifeBuoy",
+        title: "Tech Consulting",
+        description: "Expert guidance on technology strategy, architecture decisions, and digital transformation.",
+      },
+    ],
+  },
+  why_digital: {
+    title: "Why Go Digital?",
+    subtitle: "Digital transformation is no longer optional — it's essential for survival and growth.",
+    image: "placeholder.png",
+    bulletPoints: [
+      "Reach customers 24/7 with an always-online presence",
+      "Automate repetitive tasks and reduce operational costs by up to 40%",
+      "Scale your business without proportional increases in overhead",
+      "Make data-driven decisions with real-time analytics and insights",
+      "Stay ahead of competitors who haven't yet embraced digital",
+      "Build stronger customer relationships through personalized experiences",
+    ],
+  },
+  portfolio_preview: {
+    title: "Our Recent Work",
+    subtitle: "Explore projects that showcase our expertise and innovation.",
+    items: [
+      {
+        title: "E-Commerce Platform",
+        description: "Full-stack marketplace with payment integration and inventory management.",
+        image: "placeholder.png",
+        href: "/portfolio",
+        tags: ["Next.js", "Stripe", "PostgreSQL"],
+      },
+      {
+        title: "Healthcare Dashboard",
+        description: "Real-time patient monitoring and analytics platform for hospitals.",
+        image: "placeholder.png",
+        href: "/portfolio",
+        tags: ["React", "D3.js", "Node.js"],
+      },
+      {
+        title: "EdTech Learning App",
+        description: "Interactive learning platform with video courses and progress tracking.",
+        image: "placeholder.png",
+        href: "/portfolio",
+        tags: ["React Native", "Firebase", "AWS"],
+      },
+      {
+        title: "SaaS CRM System",
+        description: "Customer relationship management tool with automation and reporting.",
+        image: "placeholder.png",
+        href: "/portfolio",
+        tags: ["Next.js", "Prisma", "Redis"],
+      },
+      {
+        title: "Real Estate Portal",
+        description: "Property listing platform with virtual tours and agent matching.",
+        image: "placeholder.png",
+        href: "/portfolio",
+        tags: ["Vue.js", "MongoDB", "Mapbox"],
+      },
+      {
+        title: "FinTech Mobile App",
+        description: "Budgeting and investment tracking app with bank-level security.",
+        image: "placeholder.png",
+        href: "/portfolio",
+        tags: ["Flutter", "Plaid", "PostgreSQL"],
       },
     ],
   },
   testimonials: {
-    title: "What Members Say",
-    subtitle:
-      "Hear from students and alumni who have built real things with RaYnk Labs.",
+    title: "What Our Clients Say",
+    subtitle: "Real feedback from businesses we've helped transform digitally.",
     testimonials: [
       {
-        name: "Priya Sharma",
-        role: "Software Engineer at Zepto",
+        name: "Rajesh Kumar",
+        role: "CEO, TechVentures Inc.",
         avatar: "placeholder.png",
         quote:
-          "RaYnk Labs is where I learned to actually ship code. The experience I got here was worth more than any internship.",
+          "RaYnk Labs transformed our entire online presence. Our conversion rate increased by 200% within three months of launching the new platform.",
         rating: 5,
       },
       {
-        name: "Arjun Mehta",
-        role: "Founder, DevFlow",
+        name: "Anita Desai",
+        role: "Founder, GreenLeaf Organics",
         avatar: "placeholder.png",
         quote:
-          "The community here is the best part. People who take ideas seriously and help each other build fast.",
+          "The team delivered beyond our expectations. They didn't just build a website — they built a growth engine for our business.",
         rating: 5,
       },
       {
-        name: "Sneha Patel",
-        role: "Product at Razorpay",
+        name: "Vikram Singh",
+        role: "CTO, DataFlow Analytics",
         avatar: "placeholder.png",
         quote:
-          "I built my first full-stack product with RaYnk. The mentorship and structured approach made all the difference.",
+          "Professional, responsive, and incredibly talented. They understood our complex requirements and delivered a clean, scalable solution.",
         rating: 5,
       },
     ],
   },
-  cta: {
-    heading: "Ready to Build Something Real?",
+  why_choose_us: {
+    title: "Why Choose RaYnk Labs?",
+    subtitle: "We combine technical excellence with a deep understanding of business needs.",
+    points: [
+      {
+        icon: "Zap",
+        title: "Fast Delivery",
+        description: "Agile methodology ensures rapid development without compromising quality.",
+      },
+      {
+        icon: "Award",
+        title: "Proven Expertise",
+        description: "50+ successful projects across industries with measurable business impact.",
+      },
+      {
+        icon: "Users",
+        title: "Dedicated Team",
+        description: "A committed team of developers, designers, and strategists working on your project.",
+      },
+      {
+        icon: "RefreshCw",
+        title: "Ongoing Support",
+        description: "Post-launch maintenance, updates, and optimization to keep your product performing.",
+      },
+      {
+        icon: "Lock",
+        title: "Security First",
+        description: "Enterprise-grade security practices built into every project from day one.",
+      },
+      {
+        icon: "TrendingUp",
+        title: "Scalable Solutions",
+        description: "Architecture designed to grow with your business — no costly rewrites needed.",
+      },
+    ],
+  },
+  contact_cta: {
+    heading: "Ready to Start Your Digital Journey?",
     subheading:
-      "Join RaYnk Labs and be part of a student community that ships products, not just projects.",
-    ctaText: "Apply to Join",
-    ctaHref: "/careers",
-    backgroundImage: "placeholder.png",
+      "Let's discuss how we can help transform your business with the right technology solutions.",
+    ctaText: "Contact Us",
+    ctaHref: "/contact",
   },
 };

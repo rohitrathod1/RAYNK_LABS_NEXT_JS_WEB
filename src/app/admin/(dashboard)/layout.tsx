@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
@@ -12,24 +12,26 @@ import {
   X,
   LayoutDashboard,
   Home,
-  Navigation,
-  PanelBottom,
-  Globe,
   Sparkles,
   Package,
   Newspaper,
   Users,
-  BookOpen,
-  Compass,
+  Globe,
+  Navigation,
+  PanelBottom,
   ChevronDown,
   LogOut,
   ArrowLeft,
   Moon,
   Sun,
   ExternalLink,
+  UserCog,
+  FolderOpen,
+  MessageSquare,
 } from 'lucide-react';
-
-// ── Types ────────────────────────────────────────────────────
+import { PERMISSIONS } from '@/modules/rbac/constants';
+import type { PermissionKey } from '@/modules/rbac/constants';
+import { LogoutModal } from '@/components/admin/logout-modal';
 
 interface NavChild {
   title: string;
@@ -42,91 +44,119 @@ interface NavSection {
   title: string;
   href: string;
   icon: React.ElementType;
+  permission: PermissionKey | null;
   children: NavChild[];
 }
 
-// Every sidebar item is a section with a dropdown.
-// Even if it has only one child, the UI stays consistent.
-
-const SIDEBAR: NavSection[] = [
+const SIDEBAR_SECTIONS: NavSection[] = [
   {
     title: 'Dashboard',
     href: '/admin',
     icon: LayoutDashboard,
-    children: [
-      { title: 'Home Page', href: '/admin/home', icon: Home },
-      { title: 'Navbar', href: '/admin/navbar', icon: Navigation },
-      { title: 'Footer', href: '/admin/footer', icon: PanelBottom },
-    ],
-  },
-  {
-    title: 'Our Essence',
-    href: '/admin/our-essence',
-    icon: Sparkles,
-    children: [
-      { title: 'The Story', href: '/admin/our-essence-the-story', icon: BookOpen },
-      { title: 'Core Values', href: '/admin/our-essence-core-values', icon: Compass },
-    ],
-  },
-  {
-    title: 'Our Products',
-    href: '/admin/our-products',
-    icon: Package,
+    permission: null,
     children: [],
   },
   {
-    title: 'Jivo Media',
-    href: '/admin/media',
-    icon: Newspaper,
-    children: [],
-  },
-  {
-    title: 'Community',
-    href: '/admin/community',
+    title: 'Profile',
+    href: '/admin/profile',
     icon: Users,
+    permission: null,
     children: [],
   },
   {
-    title: 'SEO Manager',
+    title: 'Home',
+    href: '/admin/home',
+    icon: Home,
+    permission: PERMISSIONS.EDIT_HOME,
+    children: [],
+  },
+  {
+    title: 'Services',
+    href: '/admin/services',
+    icon: Sparkles,
+    permission: PERMISSIONS.MANAGE_SERVICES,
+    children: [],
+  },
+  {
+    title: 'Portfolio',
+    href: '/admin/portfolio',
+    icon: FolderOpen,
+    permission: PERMISSIONS.MANAGE_PORTFOLIO,
+    children: [],
+  },
+  {
+    title: 'Blog',
+    href: '/admin/blogs',
+    icon: Newspaper,
+    permission: PERMISSIONS.MANAGE_BLOG,
+    children: [],
+  },
+  {
+    title: 'Team',
+    href: '/admin/team',
+    icon: Users,
+    permission: PERMISSIONS.MANAGE_TEAM,
+    children: [],
+  },
+  {
+    title: 'Contact',
+    href: '/admin/contact',
+    icon: MessageSquare,
+    permission: PERMISSIONS.MANAGE_CONTACT,
+    children: [],
+  },
+  {
+    title: 'Navbar',
+    href: '/admin/navbar',
+    icon: Navigation,
+    permission: PERMISSIONS.MANAGE_NAVBAR,
+    children: [],
+  },
+  {
+    title: 'Footer',
+    href: '/admin/footer',
+    icon: PanelBottom,
+    permission: PERMISSIONS.MANAGE_FOOTER,
+    children: [],
+  },
+  {
+    title: 'SEO',
     href: '/admin/seo',
     icon: Globe,
-    children: [
-      { title: 'Home', href: '/admin/home', icon: Home, tab: 'seo' },
-      { title: 'The Story', href: '/admin/our-essence-the-story', icon: BookOpen, tab: 'seo' },
-      { title: 'Core Values', href: '/admin/our-essence-core-values', icon: Compass, tab: 'seo' },
-    ],
+    permission: PERMISSIONS.MANAGE_SEO,
+    children: [],
+  },
+  {
+    title: 'Users',
+    href: '/admin/users',
+    icon: UserCog,
+    permission: PERMISSIONS.MANAGE_USERS,
+    children: [],
   },
 ];
-
-// ── Layout ───────────────────────────────────────────────────
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get('tab');
+  const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setMounted(true), []);
-  useEffect(() => setMobileOpen(false), [pathname]);
+  const userRole = session?.user?.role as string | undefined;
+  const userPermissions = (session?.user?.permissions as string[]) || [];
 
-  // Auto-expand the section that contains the active page
-  useEffect(() => {
-    for (const section of SIDEBAR) {
-      const hasActiveChild = section.children.some((c) => {
-        if (!pathname.startsWith(c.href)) return false;
-        if (c.tab) return tabParam === c.tab;
-        return !tabParam;
-      });
-      const isSelfActive = pathname === section.href;
-      if (hasActiveChild || isSelfActive) {
-        setExpanded((prev) => ({ ...prev, [section.title]: true }));
-      }
-    }
-  }, [pathname, tabParam]);
+  const visibleSections = useMemo(() => {
+    return SIDEBAR_SECTIONS.filter((section) => {
+      if (!section.permission) return true;
+      if (userRole === 'SUPER_ADMIN') return true;
+      return userPermissions.includes(section.permission);
+    });
+  }, [userRole, userPermissions]);
+
+  useEffect(() => setMobileOpen(false), [pathname]);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -142,16 +172,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  /** True when this child link matches current URL (path + optional tab param). */
-  const isChildActive = (child: NavChild) => {
-    if (!pathname.startsWith(child.href)) return false;
-    if (child.tab) return tabParam === child.tab;
-    return !tabParam;
-  };
+  const isActive = (href: string) => pathname === href;
 
-  /** True when this section's hub OR any of its children is the current page. */
-  const isSectionActive = (section: NavSection) =>
-    pathname === section.href || section.children.some((c) => isChildActive(c));
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/admin/login' });
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -174,137 +199,96 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="/" title="Back to Website">
             <ArrowLeft size={20} className="cursor-pointer hover:text-primary 2xl:h-6 2xl:w-6" />
           </Link>
-          <span className="text-lg font-jost-bold 2xl:text-xl">Admin Panel</span>
+          <span className="text-lg font-bold 2xl:text-xl">Admin Panel</span>
           <button onClick={() => setMobileOpen(false)} className="cursor-pointer md:hidden" aria-label="Close sidebar">
             <X size={20} />
           </button>
           <div className="hidden w-5 md:block" />
         </div>
 
-        {/* Nav — all items are dropdown sections */}
+        {/* Nav */}
         <nav className="sidebar-scroll flex-1 space-y-0.5 overflow-y-auto p-3">
-          {SIDEBAR.map((section) => {
-            const active = isSectionActive(section);
+          {visibleSections.map((section) => {
+            const active = isActive(section.href);
             const isOpen = expanded[section.title] ?? false;
             const Icon = section.icon;
 
             return (
               <div key={section.title}>
-                {/* Section header */}
-                <div
+                <Link
+                  href={section.href}
                   className={cn(
-                    'flex items-center rounded-lg transition',
+                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition 2xl:px-4 2xl:py-3 2xl:text-base',
                     active
                       ? 'bg-primary text-primary-foreground'
                       : 'text-foreground/80 hover:bg-accent hover:text-foreground',
                   )}
                 >
-                  <Link
-                    href={section.href}
-                    className="flex flex-1 cursor-pointer items-center gap-3 py-2.5 pl-3 text-sm font-jost-medium 2xl:py-3 2xl:pl-4 2xl:text-base"
-                  >
-                    <Icon size={18} className="shrink-0" />
-                    <span className="truncate">{section.title}</span>
-                  </Link>
-
-                  <button
-                    onClick={() => toggle(section.title)}
-                    className="cursor-pointer px-3 py-2.5 2xl:px-4 2xl:py-3"
-                    aria-label={isOpen ? `Collapse ${section.title}` : `Expand ${section.title}`}
-                  >
-                    <ChevronDown
-                      size={16}
-                      className={cn('transition-transform duration-200', isOpen && 'rotate-180')}
-                    />
-                  </button>
-                </div>
-
-                {/* Dropdown children */}
-                <div
-                  className={cn(
-                    'overflow-hidden transition-all duration-250 ease-in-out',
-                    isOpen ? 'max-h-125 opacity-100' : 'max-h-0 opacity-0',
-                  )}
-                >
-                  <div className="ml-4 border-l border-border/50 py-1 pl-3">
-                    {section.children.length === 0 ? (
-                      <span className="block py-2 text-[11px] italic text-muted-foreground/50">
-                        No pages yet
-                      </span>
-                    ) : (
-                      section.children.map((child) => {
-                        const ChildIcon = child.icon;
-                        const childActive = isChildActive(child);
-                        const childHref = child.tab ? `${child.href}?tab=${child.tab}` : child.href;
-                        return (
-                          <Link
-                            key={childHref}
-                            href={childHref}
-                            className={cn(
-                              'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition 2xl:px-3 2xl:py-2.5 2xl:text-sm',
-                              childActive
-                                ? 'bg-primary/15 font-jost-medium text-primary'
-                                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                            )}
-                          >
-                            <ChildIcon size={14} className="shrink-0" />
-                            <span className="truncate">{child.title}</span>
-                          </Link>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
+                  <Icon size={18} className="shrink-0" />
+                  <span className="truncate">{section.title}</span>
+                </Link>
               </div>
             );
           })}
+
+          {visibleSections.length === 0 && (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              🚫 You don't have access to any modules
+            </div>
+          )}
         </nav>
 
         <div className="border-t p-4 text-xs text-muted-foreground 2xl:p-5 2xl:text-sm">
-          <p>Manage all pages from each section.</p>
+          <p>Manage all pages from sidebar.</p>
         </div>
       </aside>
 
       {/* ── Main content ──────────────────────── */}
       <div className="min-w-0 flex-1 md:ml-64 2xl:ml-72">
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur md:hidden">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-background/95 px-4 backdrop-blur md:hidden">
           <div className="flex items-center gap-4">
             <button onClick={() => setMobileOpen(true)} className="cursor-pointer" aria-label="Open menu">
               <Menu size={24} />
             </button>
-            <h1 className="truncate text-sm font-jost-bold">Admin Panel</h1>
+            <h1 className="truncate text-sm font-bold">Admin Panel</h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9">
-              {mounted && theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9 rounded-lg border border-white/20 hover:border-blue-500 transition-all duration-200">
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button asChild variant="outline" size="icon" className="h-9 w-9">
-              <a href="/" target="_blank" rel="noopener noreferrer" aria-label="View Live Site">
-                <ExternalLink className="h-4 w-4" />
+            <Button asChild variant="outline" size="sm" className="h-9 gap-2 rounded-lg border border-white/20 hover:border-blue-500 transition-all duration-200 px-3 text-xs">
+              <a href="/" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3.5 w-3.5" /> <span className="hidden sm:inline">View Site</span>
               </a>
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => signOut({ callbackUrl: '/admin/login' })} className="gap-2">
-              <LogOut className="h-4 w-4" />
+            <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-9 gap-2 rounded-lg bg-red-600 hover:bg-red-700 transition-all duration-200 px-3 text-xs">
+              <LogOut className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </header>
 
-        <header className="sticky top-0 z-20 hidden h-16 items-center justify-end gap-3 border-b bg-background/95 px-6 backdrop-blur md:flex 2xl:h-20 2xl:px-8 2xl:gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9">
-            {mounted && theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        <header className="sticky top-0 z-20 hidden h-16 items-center justify-end gap-3 border-b border-white/10 bg-background/95 px-6 backdrop-blur md:flex 2xl:h-20 2xl:px-8 2xl:gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-10 w-10 rounded-lg border border-white/20 hover:border-blue-500 transition-all duration-200">
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button asChild variant="outline" size="sm" className="gap-2">
+          <Button asChild variant="outline" size="sm" className="h-10 rounded-lg gap-2 border-white/20 hover:border-blue-500 transition-all duration-200 px-4">
             <a href="/" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" /> View Live Site
+              <ExternalLink className="h-4 w-4" /> View Site
             </a>
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => signOut({ callbackUrl: '/admin/login' })} className="gap-2">
+          <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-10 gap-2 rounded-lg bg-red-600 hover:bg-red-700 transition-all duration-200 px-4">
             <LogOut className="h-4 w-4" /> Logout
           </Button>
         </header>
 
         <main className="p-4 sm:p-6 2xl:p-10">{children}</main>
       </div>
+
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+      />
 
       <style jsx global>{`
         .sidebar-scroll::-webkit-scrollbar {

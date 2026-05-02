@@ -6,6 +6,20 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
 
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      dns: false,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    return config;
+  },
+
+  // Turbopack handles node: protocol imports natively
+  turbopack: {},
+
   images: {
     // Allow /api/uploads/* with and without the ?_r= cache-buster query string
     localPatterns: [

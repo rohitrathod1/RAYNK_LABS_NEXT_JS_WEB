@@ -1,0 +1,301 @@
+'use client';
+
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import { Menu, X, ChevronDown, Moon, Sun } from 'lucide-react';
+import { useScroll } from '@/hooks/use-scroll';
+import { useTheme } from 'next-themes';
+import { SITE_NAME } from '@/lib/constants';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+
+type NavbarSubLink = {
+  title: string;
+  href: string;
+};
+
+type NavbarLink = {
+  title: string;
+  href?: string;
+  subLinks?: NavbarSubLink[];
+};
+
+const HOME_LINK: NavbarLink = { title: 'Home', href: '/' };
+
+export type NavbarProps = {
+  logoUrl?: string | null;
+  logoAlt?: string | null;
+  links: NavbarLink[];
+};
+
+export function Navbar({ logoUrl, logoAlt, links: navLinks }: NavbarProps) {
+  const pathname = usePathname();
+  const links = useMemo<NavbarLink[]>(
+    () => (pathname === '/' ? navLinks : [HOME_LINK, ...navLinks]),
+    [pathname, navLinks],
+  );
+  const scrolled = useScroll(40);
+  const { theme, setTheme } = useTheme();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const altText = logoAlt?.trim() || SITE_NAME;
+
+  const openDropdown = useCallback((key: string) => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    setActiveDropdown(key);
+  }, []);
+
+  const closeDropdown = useCallback(() => {
+    leaveTimer.current = setTimeout(() => setActiveDropdown(null), 200);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = () => setActiveDropdown(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    };
+  }, []);
+
+  const toggleMobileAccordion = (key: string) => {
+    setExpandedMobile((prev) => (prev === key ? null : key));
+  };
+
+  return (
+    <header
+      className={cn(
+        'fixed top-0 z-50 w-full transition-all duration-300',
+        scrolled
+          ? 'bg-black/20 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)]'
+          : 'bg-transparent'
+      )}
+    >
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 lg:h-16 lg:px-12 2xl:h-20 2xl:max-w-screen-2xl 2xl:px-20">
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center" aria-label={altText}>
+          {logoUrl ? (
+            <Image
+              src={logoUrl}
+              alt={altText}
+              width={160}
+              height={56}
+              priority
+              className="h-7 w-auto object-contain lg:h-9 2xl:h-12"
+            />
+          ) : (
+            <span className="text-xl font-bold tracking-tight text-white lg:text-2xl 2xl:text-3xl">
+              {altText}
+            </span>
+          )}
+        </Link>
+
+        {/* Desktop Nav */}
+        <nav className="hidden items-center gap-8 md:flex 2xl:gap-12">
+          {links.map((link) => {
+            const key = link.title;
+            const hasSubLinks = (link.subLinks?.length ?? 0) > 0;
+            const isActive = activeDropdown === key;
+
+            return (
+              <div
+                key={key}
+                className="relative"
+                onMouseEnter={() => hasSubLinks && openDropdown(key)}
+                onMouseLeave={closeDropdown}
+              >
+
+                {/* MAIN LINK */}
+                {hasSubLinks ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveDropdown((prev) => (prev === key ? null : key));
+                    }}
+                    className="flex cursor-default items-center gap-1 text-[13px] font-medium tracking-wide text-white lg:text-sm 2xl:text-base"
+                  >
+                    {link.title}
+                    <ChevronDown
+                      className={cn(
+                        'h-3.5 w-3.5 transition-transform duration-300 2xl:h-4 2xl:w-4',
+                        isActive && 'rotate-180'
+                      )}
+                    />
+                  </button>
+                ) : link.href === '/' ? (
+                  <Link
+                    href="/"
+                    className="group flex items-center gap-1 text-[13px] font-medium tracking-wide text-white lg:text-sm 2xl:text-base"
+                  >
+                    <span className="relative">
+                      {link.title}
+                      <span className="absolute -bottom-1 left-0 h-[1.5px] w-0 bg-white transition-all duration-300 group-hover:w-full" />
+                    </span>
+                  </Link>
+                ) : (
+                  <span className="flex cursor-default items-center gap-1 text-[13px] font-medium tracking-wide text-white lg:text-sm 2xl:text-base">
+                    {link.title}
+                  </span>
+                )}
+
+                {/* DROPDOWN */}
+                <AnimatePresence>
+                  {hasSubLinks && isActive && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full -left-6 z-50 pt-4 2xl:pt-5"
+                    >
+                      <div className="min-w-[220px] rounded-2xl border border-white/40 bg-[#c0c0c0] p-2 shadow-[0_20px_40px_rgba(0,0,0,0.25)] 2xl:min-w-65 2xl:p-3">
+
+                        {link.subLinks?.map((sub) => (
+                          <Link
+                            key={sub.href + sub.title}
+                            href={sub.href}
+                            onClick={() => setActiveDropdown(null)}
+                            className="group block px-4 py-2.5 text-sm font-semibold text-black 2xl:px-5 2xl:py-3 2xl:text-base"
+                          >
+                            <span className="relative inline-block">
+                              {sub.title}
+                              <span className="absolute -bottom-1 left-0 h-[1.5px] w-0 bg-black transition-all duration-300 group-hover:w-full" />
+                            </span>
+                          </Link>
+                        ))}
+
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Theme Toggle (Desktop) */}
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="hidden h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white backdrop-blur-md hover:border-blue-500 transition-all duration-200 md:flex"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+
+        {/* Mobile Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white backdrop-blur-md hover:border-blue-500 transition-all duration-200 md:hidden"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => setMobileOpen((v) => !v)}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md md:hidden"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-white/20 bg-zinc-950 backdrop-blur-3xl md:hidden"
+          >
+            <nav className="flex flex-col px-4 py-6">
+
+              {links.map((link) => {
+                const key = link.title;
+                const hasSubLinks = (link.subLinks?.length ?? 0) > 0;
+                const isExpanded = expandedMobile === key;
+
+                return (
+                  <div key={key}>
+                    <div className="flex items-center">
+                      {hasSubLinks ? (
+                        <button
+                          onClick={() => toggleMobileAccordion(key)}
+                          className="flex w-full cursor-default items-center justify-between px-4 py-3 text-lg font-semibold text-white"
+                        >
+                          <span>{link.title}</span>
+                          <ChevronDown
+                            className={cn(
+                              'h-5 w-5 transition-transform duration-300',
+                              isExpanded && 'rotate-180'
+                            )}
+                          />
+                        </button>
+                      ) : link.href === '/' ? (
+                        <Link
+                          href="/"
+                          onClick={() => setMobileOpen(false)}
+                          className="group flex-1 px-4 py-3 text-lg font-semibold text-white"
+                        >
+                          <span className="relative inline-block">
+                            {link.title}
+                            <span className="absolute -bottom-1 left-0 h-[1.5px] w-0 bg-white transition-all duration-300 group-hover:w-full" />
+                          </span>
+                        </Link>
+                      ) : (
+                        <span className="flex-1 px-4 py-3 text-lg font-semibold text-white">
+                          {link.title}
+                        </span>
+                      )}
+                    </div>
+
+                    {hasSubLinks && (
+                      <div
+                        className={cn(
+                          'grid transition-all duration-300',
+                          isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                        )}
+                      >
+                        <div className="overflow-hidden">
+                          <div className="ml-4 rounded-xl bg-[#c0c0c0]">
+                            {link.subLinks?.map((sub) => (
+                              <Link
+                                key={sub.href + sub.title}
+                                href={sub.href}
+                                onClick={() => setMobileOpen(false)}
+                                className="group block px-6 py-3 text-sm font-bold text-black border-b border-black/5 last:border-0"
+                              >
+                                <span className="relative inline-block">
+                                  {sub.title}
+                                  <span className="absolute -bottom-0.5 left-0 h-[1.5px] w-0 bg-black transition-all duration-300 group-hover:w-full" />
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                );
+              })}
+
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
+  );
+}

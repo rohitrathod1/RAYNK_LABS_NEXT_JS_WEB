@@ -1,7 +1,9 @@
 export { HomePageContent } from "./main";
 export { HeroSection } from "./hero-section";
-export { MissionSection } from "./mission-section";
-export { FeaturedProductsSection } from "./featured-products-section";
-export { HealthBenefitsSection } from "./health-benefits-section";
+export { InitiativesSection } from "./initiatives-section";
+export { ServicesSection } from "./services-section";
+export { WhyDigitalSection } from "./why-digital-section";
+export { PortfolioSection } from "./portfolio-section";
 export { TestimonialsSection } from "./testimonials-section";
+export { WhyChooseSection } from "./why-choose-section";
 export { CtaSection } from "./cta-section";

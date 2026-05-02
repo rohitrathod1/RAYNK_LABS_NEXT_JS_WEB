@@ -1,0 +1,15 @@
+// services.prisma — CMS content for the services page.
+// Each row is a section (hero, categories, services_list, why_choose_service, process, contact_cta).
+
+model ServicesPage {
+  id        String   @id @default(cuid())
+  section   String   @unique       // "hero" | "categories" | "services_list" | "why_choose_service" | "process" | "contact_cta"
+  title     String?
+  content   Json
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}
