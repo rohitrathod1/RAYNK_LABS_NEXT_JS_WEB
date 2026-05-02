@@ -29,6 +29,7 @@ model SeoPage {
   keywords        String[]
   ogImage         String?
   canonicalUrl    String?
+  isIndexed       Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

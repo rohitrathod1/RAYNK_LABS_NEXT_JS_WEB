@@ -14,6 +14,7 @@ export interface PageSEO {
   metaTitle?: string | null;
   metaDescription?: string | null;
   canonicalUrl?: string | null;
+  isIndexed?: boolean | null;
 }
 
 export async function getSeoData(pageName: string) {
@@ -59,6 +60,6 @@ export function resolveSeo(seo: PageSEO | null, fallbackTitle?: string): Metadat
       description,
       images: [image],
     },
-    robots: seo?.noIndex ? "noindex, nofollow" : "index, follow",
+    robots: seo?.noIndex || seo?.isIndexed === false ? "noindex, nofollow" : "index, follow",
   };
 }

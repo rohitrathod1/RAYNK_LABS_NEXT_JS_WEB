@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useTheme } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
@@ -11,21 +11,16 @@ import {
   Menu,
   X,
   LayoutDashboard,
-  Home,
-  Sparkles,
-  Newspaper,
   Users,
   Globe,
-  Navigation,
-  PanelBottom,
+  FileText,
+  ChevronDown,
   LogOut,
   ArrowLeft,
   Moon,
   Sun,
   ExternalLink,
   UserCog,
-  FolderOpen,
-  MessageSquare,
 } from 'lucide-react';
 import { PERMISSIONS } from '@/modules/rbac/constants';
 import type { PermissionKey } from '@/modules/rbac/constants';
@@ -35,7 +30,7 @@ interface NavChild {
   title: string;
   href: string;
   icon: React.ElementType;
-  tab?: string;
+  query?: string;
 }
 
 interface NavSection {
@@ -46,7 +41,7 @@ interface NavSection {
   children: NavChild[];
 }
 
-const SIDEBAR_SECTIONS: NavSection[] = [
+const BASE_SIDEBAR_SECTIONS: NavSection[] = [
   {
     title: 'Dashboard',
     href: '/admin',
@@ -55,39 +50,14 @@ const SIDEBAR_SECTIONS: NavSection[] = [
     children: [],
   },
   {
-    title: 'Profile',
-    href: '/admin/profile',
-    icon: Users,
-    permission: null,
-    children: [],
-  },
-  {
-    title: 'Home',
-    href: '/admin/home',
-    icon: Home,
-    permission: PERMISSIONS.EDIT_HOME,
-    children: [],
-  },
-  {
-    title: 'Services',
-    href: '/admin/services',
-    icon: Sparkles,
-    permission: PERMISSIONS.MANAGE_SERVICES,
-    children: [],
-  },
-  {
-    title: 'Portfolio',
-    href: '/admin/portfolio',
-    icon: FolderOpen,
-    permission: PERMISSIONS.MANAGE_PORTFOLIO,
-    children: [],
-  },
-  {
-    title: 'Blog',
-    href: '/admin/blogs',
-    icon: Newspaper,
-    permission: PERMISSIONS.MANAGE_BLOG,
-    children: [],
+    title: 'SEO Manager',
+    href: '/admin/seo',
+    icon: Globe,
+    permission: PERMISSIONS.MANAGE_SEO,
+    children: [
+      { title: 'All Pages SEO', href: '/admin/seo', icon: Globe },
+      { title: 'Add Page SEO', href: '/admin/seo', icon: Globe, query: 'mode=add' },
+    ],
   },
   {
     title: 'Team',
@@ -97,60 +67,88 @@ const SIDEBAR_SECTIONS: NavSection[] = [
     children: [],
   },
   {
-    title: 'Contact',
-    href: '/admin/contact',
-    icon: MessageSquare,
-    permission: PERMISSIONS.MANAGE_CONTACT,
-    children: [],
-  },
-  {
-    title: 'Navbar',
-    href: '/admin/navbar',
-    icon: Navigation,
-    permission: PERMISSIONS.MANAGE_NAVBAR,
-    children: [],
-  },
-  {
-    title: 'Footer',
-    href: '/admin/footer',
-    icon: PanelBottom,
-    permission: PERMISSIONS.MANAGE_FOOTER,
-    children: [],
-  },
-  {
-    title: 'SEO',
-    href: '/admin/seo',
-    icon: Globe,
-    permission: PERMISSIONS.MANAGE_SEO,
-    children: [],
-  },
-  {
     title: 'Users',
     href: '/admin/users',
     icon: UserCog,
     permission: PERMISSIONS.MANAGE_USERS,
     children: [],
   },
+  {
+    title: 'Profile',
+    href: '/admin/profile',
+    icon: Users,
+    permission: null,
+    children: [],
+  },
 ];
+
+interface SeoSidebarPage {
+  id: string;
+  page: string;
+  metaTitle: string;
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ 'SEO Manager': true, Pages: true });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [seoPages, setSeoPages] = useState<SeoSidebarPage[]>([]);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   const userRole = session?.user?.role as string | undefined;
-  const userPermissions = (session?.user?.permissions as string[]) || [];
+  const rawPermissions = session?.user?.permissions;
+  const userPermissions = useMemo(
+    () => (Array.isArray(rawPermissions) ? (rawPermissions as string[]) : []),
+    [rawPermissions],
+  );
+
+  const canManageSeo = userRole === 'SUPER_ADMIN' || userPermissions.includes(PERMISSIONS.MANAGE_SEO);
+
+  useEffect(() => {
+    if (!session || !canManageSeo) return;
+    const id = window.setTimeout(() => {
+      fetch('/api/admin/seo', { cache: 'no-store' })
+        .then((response) => response.json())
+        .then((payload: { success?: boolean; data?: SeoSidebarPage[] }) => {
+          if (payload.success) setSeoPages(payload.data ?? []);
+        })
+        .catch(() => setSeoPages([]));
+    }, 0);
+
+    return () => window.clearTimeout(id);
+  }, [canManageSeo, session]);
+
+  const sidebarSections = useMemo<NavSection[]>(() => {
+    const pageChildren = canManageSeo ? seoPages.map((seoPage) => ({
+      title: seoPage.page.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
+      href: '/admin/seo',
+      icon: FileText,
+      query: `page=${encodeURIComponent(seoPage.page)}`,
+    })) : [];
+
+    return [
+      ...BASE_SIDEBAR_SECTIONS,
+      {
+        title: 'Pages',
+        href: '/admin/seo',
+        icon: FileText,
+        permission: PERMISSIONS.MANAGE_SEO,
+        children: pageChildren,
+      },
+    ];
+  }, [canManageSeo, seoPages]);
 
   const visibleSections = useMemo(() => {
-    return SIDEBAR_SECTIONS.filter((section) => {
+    return sidebarSections.filter((section) => {
       if (!section.permission) return true;
       if (userRole === 'SUPER_ADMIN') return true;
       return userPermissions.includes(section.permission);
     });
-  }, [userRole, userPermissions]);
+  }, [sidebarSections, userRole, userPermissions]);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -162,7 +160,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [mobileOpen]);
 
-  const isActive = (href: string) => pathname === href;
+  const currentQuery = searchParams.toString();
+  const isChildActive = (child: NavChild) =>
+    pathname === child.href && (child.query ? currentQuery === child.query : !currentQuery || child.href !== '/admin/seo');
+  const isActive = (section: NavSection) =>
+    pathname === section.href || section.children.some((child) => isChildActive(child));
 
   const handleLogout = () => {
     signOut({ callbackUrl: '/admin/login' });
@@ -207,31 +209,70 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav */}
         <nav className="no-scrollbar flex-1 space-y-1 overflow-y-auto p-3">
           {visibleSections.map((section) => {
-            const active = isActive(section.href);
+            const active = isActive(section);
+            const isOpen = expanded[section.title] ?? false;
             const Icon = section.icon;
 
             return (
               <div key={section.title}>
-                <Link
-                  href={section.href}
-                  onClick={() => setMobileOpen(false)}
+                <div
                   className={cn(
-                    'group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary 2xl:px-4 2xl:py-3 2xl:text-base',
-                    active
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'text-foreground/75 hover:translate-x-0.5 hover:bg-accent hover:text-foreground',
+                    'flex items-center rounded-xl transition-all duration-200',
+                    active ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-foreground/75 hover:bg-accent hover:text-foreground',
                   )}
                 >
-                  <span
-                    className={cn(
-                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition',
-                      active ? 'bg-white/15' : 'bg-transparent group-hover:bg-primary/10 group-hover:text-primary',
-                    )}
+                  <Link
+                    href={section.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="group flex min-h-11 flex-1 items-center gap-3 px-3 py-2.5 text-sm font-semibold 2xl:px-4 2xl:py-3 2xl:text-base"
                   >
-                    <Icon size={17} />
-                  </span>
-                  <span className="truncate">{section.title}</span>
-                </Link>
+                    <span
+                      className={cn(
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition',
+                        active ? 'bg-white/15' : 'bg-transparent group-hover:bg-primary/10 group-hover:text-primary',
+                      )}
+                    >
+                      <Icon size={17} />
+                    </span>
+                    <span className="truncate">{section.title}</span>
+                  </Link>
+                  {section.children.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setExpanded((prev) => ({ ...prev, [section.title]: !isOpen }))}
+                      className="flex min-h-11 w-10 items-center justify-center"
+                      aria-label={isOpen ? `Collapse ${section.title}` : `Expand ${section.title}`}
+                    >
+                      <ChevronDown size={16} className={cn('transition-transform duration-200', isOpen && 'rotate-180')} />
+                    </button>
+                  )}
+                </div>
+
+                {section.children.length > 0 && (
+                  <div className={cn('overflow-hidden transition-all duration-200', isOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0')}>
+                    <div className="no-scrollbar ml-5 max-h-72 overflow-y-auto border-l border-border/50 py-1 pl-3">
+                      {section.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        const href = child.query ? `${child.href}?${child.query}` : child.href;
+                        const childActive = isChildActive(child);
+                        return (
+                          <Link
+                            key={href}
+                            href={href}
+                            onClick={() => setMobileOpen(false)}
+                            className={cn(
+                              'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition',
+                              childActive ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                            )}
+                          >
+                            <ChildIcon size={14} />
+                            <span>{child.title}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

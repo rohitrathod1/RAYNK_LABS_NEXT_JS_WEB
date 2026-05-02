@@ -13,6 +13,7 @@ export interface SeoFormData {
   keywords: string;
   ogImage: string;
   canonicalUrl: string;
+  isIndexed: boolean;
 }
 
 export interface SeoListItem {
@@ -23,5 +24,6 @@ export interface SeoListItem {
   keywords: string[];
   ogImage: string | null;
   canonicalUrl: string | null;
+  isIndexed: boolean;
   updatedAt: string;
 }

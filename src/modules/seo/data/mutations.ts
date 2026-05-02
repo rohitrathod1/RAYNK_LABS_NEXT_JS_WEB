@@ -11,6 +11,7 @@ export async function upsertSeo(data: SeoFormSchema) {
       keywords: data.keywords,
       ogImage: data.ogImage,
       canonicalUrl: data.canonicalUrl,
+      isIndexed: data.isIndexed,
       updatedAt: new Date(),
     },
   });

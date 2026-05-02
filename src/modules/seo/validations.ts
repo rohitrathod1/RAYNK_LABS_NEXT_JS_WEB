@@ -20,6 +20,7 @@ export const seoFormSchema = z.object({
   keywords: z.union([z.string(), z.array(z.string())]).default(""),
   ogImage: z.string().optional().default(""),
   canonicalUrl: z.string().optional().default(""),
+  isIndexed: z.boolean().optional().default(true),
 }).transform((data) => ({
   ...data,
   keywords: Array.isArray(data.keywords)

@@ -1,349 +1,533 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useForm } from "react-hook-form";
-import { ExternalLink, Image as ImageIcon, Loader2, Save, Search, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ElementType } from "react";
+import { useSearchParams } from "next/navigation";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Globe,
+  Inbox,
+  Loader2,
+  Pencil,
+  Plus,
+  Save,
+  Search,
+  ShieldOff,
+  Tags,
+  Trash2,
+} from "lucide-react";
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Switch,
+} from "@/components/ui";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/common/image-upload";
-import { hasPermission } from "@/lib/permissions";
-import { SeoPreview } from "@/modules/seo/components/SeoPreview";
-import type { SeoFormData } from "@/modules/seo/types";
+import type { SeoFormData, SeoListItem } from "@/modules/seo/types";
 
-const SEO_PAGES = [
-  { key: "home", label: "Home" },
-  { key: "about", label: "About" },
-  { key: "services", label: "Services" },
-  { key: "portfolio", label: "Portfolio" },
-  { key: "blog", label: "Blog" },
-  { key: "team", label: "Team" },
-  { key: "contact", label: "Contact" },
-];
+function publicHref(pageKey: string): string {
+  if (pageKey === "home") return "/";
+  return `/${pageKey.replace(/-/g, "/")}`;
+}
 
-const emptyForm: SeoFormData = {
+function pageLabel(pageKey: string): string {
+  return pageKey.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+const EMPTY: SeoFormData = {
   page: "home",
   metaTitle: "",
   metaDescription: "",
   keywords: "",
   ogImage: "",
   canonicalUrl: "",
+  isIndexed: true,
 };
 
-export default function SeoDashboardPage() {
-  const router = useRouter();
-  const { data: session } = useSession();
-  const [selectedPage, setSelectedPage] = useState("home");
+const FALLBACK_ROWS: SeoListItem[] = [
+  {
+    id: "fallback-home",
+    page: "home",
+    metaTitle: "RaYnk Labs",
+    metaDescription: "Your trusted partner in digital transformation.",
+    keywords: ["raynk labs", "digital transformation"],
+    ogImage: null,
+    canonicalUrl: null,
+    isIndexed: true,
+    updatedAt: "",
+  },
+  {
+    id: "fallback-about",
+    page: "about",
+    metaTitle: "About RaYnk Labs",
+    metaDescription: "Learn more about RaYnk Labs and our work.",
+    keywords: ["about", "raynk labs"],
+    ogImage: null,
+    canonicalUrl: null,
+    isIndexed: true,
+    updatedAt: "",
+  },
+  {
+    id: "fallback-services",
+    page: "services",
+    metaTitle: "Services",
+    metaDescription: "Explore services from RaYnk Labs.",
+    keywords: ["services", "web development"],
+    ogImage: null,
+    canonicalUrl: null,
+    isIndexed: true,
+    updatedAt: "",
+  },
+];
+
+const GRADIENTS = [
+  "from-emerald-500/20 to-emerald-600/5",
+  "from-sky-500/20 to-sky-600/5",
+  "from-violet-500/20 to-violet-600/5",
+  "from-amber-500/20 to-amber-600/5",
+  "from-rose-500/20 to-rose-600/5",
+  "from-indigo-500/20 to-indigo-600/5",
+];
+
+export default function AdminSeoPage() {
+  const searchParams = useSearchParams();
+  const [rows, setRows] = useState<SeoListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState<SeoListItem | null>(null);
+  const [addOpen, setAddOpen] = useState(searchParams.get("mode") === "add");
+  const [newPageKey, setNewPageKey] = useState("");
+  const [deleting, setDeleting] = useState<SeoListItem | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     setValue,
-    watch,
-    formState: { errors, isDirty },
-  } = useForm<SeoFormData>({
-    mode: "onChange",
-    defaultValues: emptyForm,
-  });
+    formState: { errors },
+  } = useForm<SeoFormData>({ defaultValues: EMPTY });
 
-  const form = watch();
-  const selectedLabel = useMemo(
-    () => SEO_PAGES.find((page) => page.key === selectedPage)?.label ?? selectedPage,
-    [selectedPage],
-  );
+  const form = { ...EMPTY, ...useWatch({ control }) };
+  const selectedPage = searchParams.get("page");
 
-  useEffect(() => {
-    if (session && !hasPermission(session, "MANAGE_SEO")) {
-      router.push("/admin");
-    }
-  }, [session, router]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadSeo() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/admin/seo?page=${encodeURIComponent(selectedPage)}`, {
-          cache: "no-store",
-        });
-        const payload = await res.json();
-        if (!active) return;
-
-        if (payload.success && payload.data) {
-          reset({
-            page: selectedPage,
-            metaTitle: payload.data.metaTitle ?? "",
-            metaDescription: payload.data.metaDescription ?? "",
-            keywords: Array.isArray(payload.data.keywords)
-              ? payload.data.keywords.join(", ")
-              : payload.data.keywords ?? "",
-            ogImage: payload.data.ogImage ?? "",
-            canonicalUrl: payload.data.canonicalUrl ?? "",
-          });
-        } else {
-          reset({ ...emptyForm, page: selectedPage });
-        }
-      } catch {
-        toast.error("Failed to load SEO settings");
-        reset({ ...emptyForm, page: selectedPage });
-      } finally {
-        if (active) setLoading(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/seo", { cache: "no-store" });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error ?? "Failed to load SEO list");
+        setRows(FALLBACK_ROWS);
+        return;
       }
+      setRows(data.data.length > 0 ? data.data : FALLBACK_ROWS);
+    } catch {
+      toast.error("Network error");
+      setRows(FALLBACK_ROWS);
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    void loadSeo();
-    return () => {
-      active = false;
-    };
-  }, [reset, selectedPage]);
+  useEffect(() => {
+    const id = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(id);
+  }, [load]);
 
-  async function onSubmit(values: SeoFormData) {
-    setSaving(true);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (row) =>
+        row.page.toLowerCase().includes(q) ||
+        row.metaTitle.toLowerCase().includes(q) ||
+        row.metaDescription.toLowerCase().includes(q),
+    );
+  }, [query, rows]);
+
+  const indexedCount = rows.filter((row) => row.isIndexed).length;
+  const noIndexCount = rows.length - indexedCount;
+
+  useEffect(() => {
+    if (!selectedPage || rows.length === 0) return;
+
+    const id = window.setTimeout(() => {
+      const row = rows.find((item) => item.page === selectedPage);
+      if (row) {
+        const next = {
+          page: row.page,
+          metaTitle: row.metaTitle,
+          metaDescription: row.metaDescription,
+          keywords: row.keywords.join(", "),
+          ogImage: row.ogImage ?? "",
+          canonicalUrl: row.canonicalUrl ?? "",
+          isIndexed: row.isIndexed,
+        };
+        reset(next);
+        setEditing(row);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(id);
+  }, [reset, rows, selectedPage]);
+
+  function openEditor(row?: SeoListItem) {
+    const next = row
+      ? {
+          page: row.page,
+          metaTitle: row.metaTitle,
+          metaDescription: row.metaDescription,
+          keywords: row.keywords.join(", "),
+          ogImage: row.ogImage ?? "",
+          canonicalUrl: row.canonicalUrl ?? "",
+          isIndexed: row.isIndexed,
+        }
+      : EMPTY;
+    reset(next);
+    setEditing(
+      row ?? {
+        id: "",
+        page: next.page,
+        metaTitle: next.metaTitle,
+        metaDescription: next.metaDescription,
+        keywords: [],
+        ogImage: next.ogImage,
+        canonicalUrl: next.canonicalUrl,
+        isIndexed: next.isIndexed,
+        updatedAt: "",
+      },
+    );
+    setAddOpen(false);
+  }
+
+  async function saveSeo(values: SeoFormData) {
+    setSubmitting(true);
     try {
       const res = await fetch("/api/admin/seo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, page: selectedPage }),
+        body: JSON.stringify(values),
       });
-      const payload = await res.json();
-
-      if (!payload.success) {
-        toast.error(payload.error ?? "Failed to save SEO settings");
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error ?? "Failed to save SEO");
         return;
       }
-
-      toast.success("SEO settings saved");
-      reset({
-        page: payload.data.page,
-        metaTitle: payload.data.metaTitle,
-        metaDescription: payload.data.metaDescription,
-        keywords: payload.data.keywords.join(", "),
-        ogImage: payload.data.ogImage ?? "",
-        canonicalUrl: payload.data.canonicalUrl ?? "",
-      });
+      toast.success("SEO saved");
+      setEditing(null);
+      await load();
     } catch {
-      toast.error("Network error. Could not save SEO settings.");
+      toast.error("Network error");
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   }
 
+  async function deleteSeo() {
+    if (!deleting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/seo", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: deleting.page }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error ?? "Delete failed");
+        return;
+      }
+      toast.success("SEO removed");
+      setDeleting(null);
+      await load();
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">
-            Admin SEO
-          </p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-            SEO Settings
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Control page titles, descriptions, keywords, OG images, and canonical URLs.
-          </p>
+    <div className="mx-auto max-w-5xl py-4 sm:py-8 2xl:max-w-7xl 2xl:py-10">
+      <div className="mb-8 text-center sm:mb-10">
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-primary sm:text-sm">
+          SEO Manager
+        </p>
+        <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl 2xl:text-5xl">
+          Search &amp; Social Metadata
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
+          Manage how every page appears in Google, social previews, and rich-result search features.
+        </p>
+      </div>
+
+      <div className="mb-6 grid grid-cols-3 gap-3 sm:gap-4">
+        <StatCard icon={Globe} label="Total Pages" value={rows.length} />
+        <StatCard icon={CheckCircle2} label="Indexed" value={indexedCount} tone="text-primary" />
+        <StatCard icon={AlertTriangle} label="No-Index" value={noIndexCount} />
+      </div>
+
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search pages..."
+            className="rounded-xl pl-10"
+          />
+          {query ? (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </button>
+          ) : null}
         </div>
-        <Button
-          type="submit"
-          form="seo-settings-form"
-          variant="outline"
-          disabled={saving || loading}
-          className="h-10 rounded-lg border-blue-500/40 bg-blue-500 px-5 text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-600"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save Changes
+        <Button onClick={() => setAddOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add Page SEO
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)_360px]">
-        <aside className="bg-black text-white p-4 rounded-lg">
-          <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-400">
-            <Search className="h-4 w-4" />
-            Pages
-          </div>
-          <div className="space-y-2">
-            {SEO_PAGES.map((page) => (
-              <button
-                key={page.key}
-                type="button"
-                onClick={() => setSelectedPage(page.key)}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
-                  selectedPage === page.key
-                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <span>{page.label}</span>
-                {selectedPage === page.key ? <Sparkles className="h-3.5 w-3.5" /> : null}
-              </button>
-            ))}
-          </div>
-        </aside>
-
-        <form
-          id="seo-settings-form"
-          onSubmit={handleSubmit(onSubmit)}
-          className="bg-black text-white p-8 rounded-lg"
-        >
-          {loading ? (
-            <div className="flex min-h-[420px] items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex flex-col gap-1 border-b border-white/10 pb-5">
-                <h2 className="text-xl font-bold">{selectedLabel} Page</h2>
-                <p className="text-sm text-white/55">
-                  Fields validate in real time. Keep titles and descriptions concise.
-                </p>
-              </div>
-
-              <input type="hidden" {...register("page")} value={selectedPage} />
-
-              <FormControl error={errors.metaTitle?.message}>
-                <Label htmlFor="metaTitle" className="text-white">
-                  Meta Title
-                </Label>
-                <Input
-                  id="metaTitle"
-                  {...register("metaTitle", {
-                    required: "Meta title is required",
-                    maxLength: { value: 70, message: "Keep under 70 characters" },
-                  })}
-                  className="mt-2 h-11 rounded-lg border-white/15 bg-white/5 text-white placeholder:text-white/35 focus-visible:ring-blue-500"
-                  placeholder="RaYnk Labs | Build Better Digital Products"
-                />
-                <FieldHint value={`${form.metaTitle?.length ?? 0}/70`} />
-              </FormControl>
-
-              <FormControl error={errors.metaDescription?.message}>
-                <Label htmlFor="metaDescription" className="text-white">
-                  Meta Description
-                </Label>
-                <Textarea
-                  id="metaDescription"
-                  {...register("metaDescription", {
-                    required: "Meta description is required",
-                    maxLength: { value: 180, message: "Keep under 180 characters" },
-                  })}
-                  rows={4}
-                  className="mt-2 rounded-lg border-white/15 bg-white/5 text-white placeholder:text-white/35 focus-visible:ring-blue-500"
-                  placeholder="Write the search result description for this page."
-                />
-                <FieldHint value={`${form.metaDescription?.length ?? 0}/180`} />
-              </FormControl>
-
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <FormControl error={errors.keywords?.message}>
-                  <Label htmlFor="keywords" className="text-white">
-                    Keywords
-                  </Label>
-                  <Input
-                    id="keywords"
-                    {...register("keywords")}
-                    className="mt-2 h-11 rounded-lg border-white/15 bg-white/5 text-white placeholder:text-white/35 focus-visible:ring-blue-500"
-                    placeholder="seo, web design, raynk labs"
-                  />
-                  <FieldHint value="Separate with commas" />
-                </FormControl>
-
-                <FormControl error={errors.canonicalUrl?.message}>
-                  <Label htmlFor="canonicalUrl" className="text-white">
-                    Canonical URL
-                  </Label>
-                  <Input
-                    id="canonicalUrl"
-                    {...register("canonicalUrl")}
-                    className="mt-2 h-11 rounded-lg border-white/15 bg-white/5 text-white placeholder:text-white/35 focus-visible:ring-blue-500"
-                    placeholder="https://raynklabs.com/services"
-                  />
-                  <FieldHint value="Optional" />
-                </FormControl>
-              </div>
-
-              <FormControl>
-                <div className="mb-2 flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-blue-400" />
-                  <Label className="text-white">OG Image</Label>
-                </div>
-                <ImageUpload
-                  value={form.ogImage}
-                  onChange={(value) => setValue("ogImage", value, { shouldDirty: true })}
-                />
-                <FieldHint value="Recommended size: 1200 x 630" />
-              </FormControl>
-
-              <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <a
-                  href={`/${selectedPage === "home" ? "" : selectedPage}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-white/65 transition hover:text-white"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Preview public page
-                </a>
-                <Button
-                  type="submit"
-                  variant="outline"
-                  disabled={saving || loading}
-                  className="h-9 rounded-lg bg-blue-500 px-5 text-white hover:bg-blue-600 disabled:opacity-60"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  {isDirty ? "Save Changes" : "Saved"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </form>
-
-        <div className="space-y-4">
-          <div className="bg-black text-white p-5 rounded-lg">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-400">
-              Live Status
-            </p>
-            <h3 className="mt-2 text-lg font-bold">{selectedLabel}</h3>
-            <p className="mt-1 text-sm text-white/55">
-              API: <span className="text-white">/api/seo?page={selectedPage}</span>
-            </p>
-          </div>
-          <SeoPreview
-            title={form.metaTitle}
-            description={form.metaDescription}
-            canonicalUrl={form.canonicalUrl}
-            ogTitle={form.metaTitle}
-            ogDescription={form.metaDescription}
-            ogImage={form.ogImage}
-          />
-        </div>
+      <div className="mb-5 flex items-center gap-2">
+        <Globe className="h-4 w-4 text-primary" />
+        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          Pages
+        </h2>
       </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-dashed bg-muted/20 py-16 text-center">
+          <Inbox className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+          <p className="font-semibold text-muted-foreground">No SEO entries found</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          {filtered.map((row, index) => {
+            const gradient = GRADIENTS[index % GRADIENTS.length];
+            return (
+              <div
+                key={row.id}
+                className="group relative overflow-hidden rounded-2xl border bg-card p-5 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/30 hover:shadow-lg"
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 transition-opacity group-hover:opacity-100`} />
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                        {row.isIndexed ? (
+                          <Globe className="h-5 w-5 text-primary" />
+                        ) : (
+                          <ShieldOff className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{pageLabel(row.page)}</h3>
+                        <p className="text-xs text-muted-foreground">{row.page}</p>
+                      </div>
+                    </div>
+                    <Badge variant={row.isIndexed ? "default" : "secondary"}>
+                      {row.isIndexed ? "index,follow" : "noindex,follow"}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <p className="line-clamp-2">
+                      <span className="text-muted-foreground">Meta Title: </span>
+                      {row.metaTitle}
+                    </p>
+                    <p className="line-clamp-3">
+                      <span className="text-muted-foreground">Meta Description: </span>
+                      {row.metaDescription}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openEditor(row)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit
+                    </Button>
+                    <a
+                      href={publicHref(row.page)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-8 items-center justify-center gap-2 rounded-md px-3 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                      title="Preview page"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Preview
+                    </a>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleting(row)} className="text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add SEO for a page</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="new-page">Page key</Label>
+            <Input
+              id="new-page"
+              placeholder="home, services, blog"
+              value={newPageKey}
+              onChange={(event) => setNewPageKey(event.target.value.trim().toLowerCase())}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                reset({ ...EMPTY, page: newPageKey || "home" });
+                setEditing({ ...EMPTY, page: newPageKey || "home", id: "", keywords: [], updatedAt: "" });
+                setAddOpen(false);
+              }}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? "Edit SEO" : "Add Page SEO"}</DialogTitle>
+          </DialogHeader>
+          <form id="seo-form" onSubmit={handleSubmit(saveSeo)} className="space-y-5">
+            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border bg-card p-4">
+                <Label htmlFor="page">Page</Label>
+                <Input id="page" className="mt-2" {...register("page", { required: true })} />
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <Label htmlFor="metaTitle">Meta Title</Label>
+                <Input id="metaTitle" className="mt-2" {...register("metaTitle", { required: "Meta title is required" })} />
+                {errors.metaTitle ? <p className="mt-2 text-xs text-destructive">{errors.metaTitle.message}</p> : null}
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <Label htmlFor="keywords">Keywords</Label>
+                <div className="relative mt-2">
+                  <Tags className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="keywords" className="pl-9" {...register("keywords")} placeholder="seo, web design" />
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card p-4 md:col-span-2">
+                <Label htmlFor="metaDescription">Meta Description</Label>
+                <Textarea id="metaDescription" className="mt-2" rows={4} {...register("metaDescription", { required: "Meta description is required" })} />
+                {errors.metaDescription ? <p className="mt-2 text-xs text-destructive">{errors.metaDescription.message}</p> : null}
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <Label htmlFor="canonicalUrl">Canonical URL</Label>
+                <Input id="canonicalUrl" className="mt-2" {...register("canonicalUrl")} />
+              </div>
+              <div className="flex items-center justify-between rounded-xl border bg-card p-4">
+                <div>
+                  <Label>Index status</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {form.isIndexed ? "Indexed" : "No-Index"}
+                  </p>
+                </div>
+                <Switch checked={form.isIndexed} onCheckedChange={(checked) => setValue("isIndexed", checked)} />
+              </div>
+              <div className="rounded-xl border bg-card p-4 lg:col-span-3">
+                <Label>OG Image</Label>
+                <div className="mt-2">
+                  <ImageUpload value={form.ogImage} onChange={(value) => setValue("ogImage", value, { shouldDirty: true })} />
+                </div>
+              </div>
+            </div>
+          </form>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <a
+              href={publicHref(form.page)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/10"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Preview
+            </a>
+            <Button
+              type="submit"
+              form="seo-form"
+              variant="outline"
+              disabled={submitting}
+              className="h-9 rounded-lg bg-blue-500 text-white hover:bg-blue-600 hover:text-white"
+            >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete SEO for {deleting?.page}?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">This page will fall back to default metadata.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={deleteSeo} disabled={submitting}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function FormControl({
-  children,
-  error,
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
 }: {
-  children: ReactNode;
-  error?: string;
+  icon: ElementType;
+  label: string;
+  value: number;
+  tone?: string;
 }) {
   return (
-    <div>
-      {children}
-      {error ? <p className="mt-1.5 text-xs text-red-400">{error}</p> : null}
+    <div className="rounded-xl border bg-card px-4 py-3">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <div className={`mt-1 text-2xl font-bold ${tone ?? ""}`}>{value}</div>
     </div>
   );
-}
-
-function FieldHint({ value }: { value: string }) {
-  return <p className="mt-1.5 text-xs text-white/45">{value}</p>;
 }
