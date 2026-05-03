@@ -1,29 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requirePermission } from "@/middleware/permission";
+import { createNavLink, getAllNavLinks } from "@/modules/navbar/actions";
 
 export async function GET() {
   try {
     await requirePermission("MANAGE_NAVBAR");
-
-    const links = await db.navLink.findMany({
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    });
-
-    const parents = links.filter((l) => !l.parentId);
-    const children = links.filter((l) => l.parentId);
-
-    const navData = parents.map((parent) => ({
-      ...parent,
-      children: children
-        .filter((c) => c.parentId === parent.id)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-    }));
-
-    return NextResponse.json({ links: navData });
+    const data = await getAllNavLinks();
+    return NextResponse.json({ success: true, data });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unauthorized";
-    return NextResponse.json({ error: message }, { status: 401 });
+    return NextResponse.json({ success: false, error: message }, { status: 401 });
   }
 }
 
@@ -31,20 +17,15 @@ export async function POST(req: NextRequest) {
   try {
     await requirePermission("MANAGE_NAVBAR");
     const body = await req.json();
+    const result = await createNavLink(body);
 
-    const link = await db.navLink.create({
-      data: {
-        title: body.title,
-        href: body.href,
-        parentId: body.parentId || null,
-        isVisible: body.isVisible ?? true,
-        sortOrder: body.sortOrder ?? 0,
-      },
-    });
+    if (!result.success) {
+      return NextResponse.json(result, { status: 400 });
+    }
 
-    return NextResponse.json({ link });
+    return NextResponse.json(result, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to create";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }

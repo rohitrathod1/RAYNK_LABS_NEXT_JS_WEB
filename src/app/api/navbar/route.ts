@@ -1,30 +1,57 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/require-admin';
+import {
+  getVisibleNavLinks,
+  getAllNavLinks,
+  createNavLink,
+} from '@/modules/navbar/actions';
 
-export async function GET() {
+export const runtime = 'nodejs';
+
+// GET /api/navbar — Public (visible) | Admin (?all=true → everything)
+export async function GET(req: NextRequest) {
   try {
-    const links = await db.navLink.findMany({
-      where: { isVisible: true },
-      orderBy: { sortOrder: "asc" },
-    });
+    const showAll = req.nextUrl.searchParams.get('all') === 'true';
 
-    const parents = links.filter((l) => !l.parentId);
-    const children = links.filter((l) => l.parentId);
+    if (showAll) {
+      const session = await auth();
+      const role = session?.user?.role;
+      if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden' },
+          { status: 403 },
+        );
+      }
+      const data = await getAllNavLinks();
+      return NextResponse.json({ success: true, data });
+    }
 
-    const navData = parents.map((parent) => ({
-      title: parent.title,
-      href: parent.href,
-      subLinks: children
-        .filter((c) => c.parentId === parent.id)
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((c) => ({
-          title: c.title,
-          href: c.href,
-        })),
-    }));
+    const data = await getVisibleNavLinks();
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error('[GET /api/navbar]', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch nav links' },
+      { status: 500 },
+    );
+  }
+}
 
-    return NextResponse.json({ links: navData });
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch navbar" }, { status: 500 });
+// POST /api/navbar — Admin only
+export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin();
+    const body = await req.json();
+    const result = await createNavLink(body);
+    if (!result.success) return NextResponse.json(result, { status: 400 });
+    return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    const status = (error as { status?: number }).status ?? 500;
+    console.error('[POST /api/navbar]', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to create nav link' },
+      { status },
+    );
   }
 }

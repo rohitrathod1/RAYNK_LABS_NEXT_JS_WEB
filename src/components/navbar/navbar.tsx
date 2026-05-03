@@ -5,11 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown, Moon, Sun } from 'lucide-react';
-import { useScroll } from '@/hooks/use-scroll';
-import { useTheme } from '@/providers/theme-provider';
+import { useScroll } from '@/hooks';
 import { SITE_NAME } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import { toSrc } from '@/components/common/image-upload';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '@/providers/theme-provider';
 
 type NavbarSubLink = {
   title: string;
@@ -32,12 +33,12 @@ export type NavbarProps = {
 
 export function Navbar({ logoUrl, logoAlt, links: navLinks }: NavbarProps) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
   const links = useMemo<NavbarLink[]>(
     () => (pathname === '/' ? navLinks : [HOME_LINK, ...navLinks]),
     [pathname, navLinks],
   );
   const scrolled = useScroll(40);
-  const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -45,21 +46,25 @@ export function Navbar({ logoUrl, logoAlt, links: navLinks }: NavbarProps) {
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const altText = logoAlt?.trim() || SITE_NAME;
 
+  // Hover open
   const openDropdown = useCallback((key: string) => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
     setActiveDropdown(key);
   }, []);
 
+  // Hover close
   const closeDropdown = useCallback(() => {
     leaveTimer.current = setTimeout(() => setActiveDropdown(null), 200);
   }, []);
 
+  // Click outside close
   useEffect(() => {
     const handleClickOutside = () => setActiveDropdown(null);
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
+  // Clear any pending hover-close timer on unmount
   useEffect(() => {
     return () => {
       if (leaveTimer.current) clearTimeout(leaveTimer.current);
@@ -85,7 +90,7 @@ export function Navbar({ logoUrl, logoAlt, links: navLinks }: NavbarProps) {
         <Link href="/" className="flex items-center" aria-label={altText}>
           {logoUrl ? (
             <Image
-              src={logoUrl}
+              src={toSrc(logoUrl)}
               alt={altText}
               width={160}
               height={56}
@@ -114,7 +119,7 @@ export function Navbar({ logoUrl, logoAlt, links: navLinks }: NavbarProps) {
                 onMouseLeave={closeDropdown}
               >
 
-                {/* MAIN LINK */}
+                {/* MAIN LINK (Disabled navigation - acts as dropdown trigger) */}
                 {hasSubLinks ? (
                   <button
                     type="button"
@@ -184,27 +189,31 @@ export function Navbar({ logoUrl, logoAlt, links: navLinks }: NavbarProps) {
           })}
         </nav>
 
-        {/* Theme Toggle (Desktop) */}
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="hidden h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white backdrop-blur-md hover:border-blue-500 transition-all duration-200 md:flex"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-
-        {/* Mobile Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center md:flex">
           <button
+            type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white backdrop-blur-md hover:border-blue-500 transition-all duration-200 md:hidden"
             aria-label="Toggle theme"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition hover:bg-white/15 2xl:h-11 2xl:w-11"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4 2xl:h-5 2xl:w-5" /> : <Moon className="h-4 w-4 2xl:h-5 2xl:w-5" />}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            aria-label="Toggle theme"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+
+          {/* Mobile Toggle */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -293,6 +302,17 @@ export function Navbar({ logoUrl, logoAlt, links: navLinks }: NavbarProps) {
               })}
 
             </nav>
+
+            <div className="border-t border-white/10 px-8 pb-6 pt-2">
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white/10 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/15"
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
