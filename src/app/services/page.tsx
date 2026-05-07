@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import { getServicesPageData } from "@/modules/services/data/queries";
 import { ServicesPageClient } from "@/modules/services/components/main";
-import { getSeoData, resolveSeo } from "@/lib/seo";
+import { defaultServicesSeo } from "@/modules/services/data/defaults";
+import { resolveSeo, getStructuredData } from "@/modules/seo/utils";
+import { JsonLd } from "@/components/shared";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await getSeoData("services");
-  return resolveSeo(seo, "Our Services - RaYnk Labs");
+  return resolveSeo("services", defaultServicesSeo);
 }
 
 export default async function ServicesPage() {
-  const data = await getServicesPageData();
-  return <ServicesPageClient data={data} />;
+  const [data, structuredData] = await Promise.all([
+    getServicesPageData(),
+    getStructuredData("services", defaultServicesSeo),
+  ]);
+  return (
+    <>
+      {structuredData && <JsonLd data={structuredData} />}
+      <ServicesPageClient data={data} />
+    </>
+  );
 }

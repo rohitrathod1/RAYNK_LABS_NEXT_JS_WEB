@@ -63,7 +63,7 @@ export async function getPortfolioSection(section: string) {
 }
 
 export async function getPortfolioSeo() {
-  return db.seoPage.findUnique({ where: { page: "portfolio" } });
+  return db.seoMeta.findUnique({ where: { page: "portfolio" } });
 }
 
 export async function getAllPortfolioProjectsAdmin() {

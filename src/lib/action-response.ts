@@ -3,7 +3,7 @@
 
 export type ActionResponse<T = undefined> =
   | { success: true; data?: T; message?: string }
-  | { success: false; error: string; issues?: Record<string, string[]> };
+  | { success: false; error: string; issues?: Record<string, string[]>; fieldErrors?: Record<string, string[]> };
 
 export function ok<T>(data?: T, message?: string): ActionResponse<T> {
   return { success: true, data, message };

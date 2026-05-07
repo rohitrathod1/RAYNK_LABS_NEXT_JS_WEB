@@ -52,5 +52,5 @@ export async function getTeamMemberById(id: string) {
 }
 
 export async function getTeamSeo() {
-  return db.seoPage.findUnique({ where: { page: "team" } });
+  return db.seoMeta.findUnique({ where: { page: "team" } });
 }

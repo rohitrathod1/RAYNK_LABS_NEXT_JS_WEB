@@ -13,17 +13,23 @@ interface NavLink {
 interface ApiNavLink {
   title: string;
   href: string;
-  subLinks?: ApiNavLink[];
+  subLinks?: { title: string; href: string }[];
+}
+
+interface NavbarSetting {
+  logoUrl: string | null;
+  logoAlt: string | null;
 }
 
 export function NavbarWrapper() {
   const [navLinks, setNavLinks] = useState<NavLink[]>([]);
+  const [setting, setSetting] = useState<NavbarSetting | null>(null);
 
   useEffect(() => {
     fetch('/api/navbar')
       .then((r) => r.json())
-      .then(({ links }: { links?: ApiNavLink[] }) => {
-        const mapped = (links || []).map((link) => ({
+      .then(({ data }: { data?: ApiNavLink[] }) => {
+        const mapped = (data || []).map((link) => ({
           title: link.title,
           href: link.href,
           subLinks: link.subLinks?.map((child) => ({
@@ -34,7 +40,18 @@ export function NavbarWrapper() {
         setNavLinks(mapped);
       })
       .catch((err) => console.error('Failed to load nav links', err));
+
+    fetch('/api/navbar/settings')
+      .then((r) => r.json())
+      .then(({ data }: { data?: NavbarSetting }) => setSetting(data ?? null))
+      .catch((err) => console.error('Failed to load navbar settings', err));
   }, []);
 
-  return <Navbar logoUrl={null} logoAlt={SITE_NAME} links={navLinks} />;
+  return (
+    <Navbar
+      logoUrl={setting?.logoUrl ?? null}
+      logoAlt={setting?.logoAlt ?? SITE_NAME}
+      links={navLinks}
+    />
+  );
 }

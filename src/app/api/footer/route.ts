@@ -1,33 +1,34 @@
-import { NextResponse } from "next/server";
-import { getFooterData } from "@/modules/footer/data/queries";
-import { withFooterFallback } from "@/modules/footer/data/defaults";
-import type { FooterData } from "@/modules/footer/types";
+import { NextResponse } from 'next/server';
+import { getVisibleFooter, getAllColumns } from '@/modules/footer';
+import { requirePermission } from '@/middleware/permission';
 
-function flattenFooterData(data: FooterData) {
-  const settings = data.settings ?? {};
-  const socialSection = data.sections.find((section) =>
-    section.title.toLowerCase().includes("social"),
-  );
-  const socialLinks = Object.fromEntries(
-    (socialSection?.links ?? []).map((link) => [link.label.toLowerCase(), link.href]),
-  );
+export const runtime = 'nodejs';
 
-  return {
-    logo: settings.logo,
-    description: settings.description,
-    contact: settings.email,
-    address: settings.address,
-    socialLinks,
-  };
-}
-
-export async function GET() {
+// GET /api/footer — Public: visible columns + visible links + setting.
+// Admin (?all=true): every column + every link, including hidden.
+export async function GET(req: Request) {
   try {
-    const data = withFooterFallback(await getFooterData());
-    return NextResponse.json({ success: true, data, footer: flattenFooterData(data) });
-  } catch (err) {
-    console.error("Failed to fetch footer data", err);
-    const data = withFooterFallback(null);
-    return NextResponse.json({ success: true, data, footer: flattenFooterData(data), fallback: true });
+    const url = new URL(req.url);
+    const showAll = url.searchParams.get('all') === 'true';
+
+    if (showAll) {
+      await requirePermission('MANAGE_FOOTER');
+      const columns = await getAllColumns();
+      return NextResponse.json({ success: true, data: { columns } });
+    }
+
+    const data = await getVisibleFooter();
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error('[GET /api/footer]', error);
+    const status = (error as { status?: number }).status;
+    if (status === 401 || status === 403) {
+      const msg = error instanceof Error ? error.message : 'Forbidden';
+      return NextResponse.json({ success: false, error: msg }, { status });
+    }
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch footer' },
+      { status: 500 },
+    );
   }
 }

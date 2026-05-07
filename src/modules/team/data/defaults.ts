@@ -1,15 +1,18 @@
-import type { PageSEO } from "@/lib/seo";
+import { definePageSeo } from "@/modules/seo";
 import type { TeamPageData } from "../types";
 
-export const defaultSeo: PageSEO = {
-  title: "Our Team — RaYnk Labs",
-  description:
-    "Meet the talented team behind RaYnk Labs. Discover our founders, developers, designers, and the values that drive us.",
-  keywords: "raynk labs team, developers, designers, tech team, company culture",
-  ogImage: "/api/uploads/og-team.png",
-  noIndex: false,
-};
-
+export const defaultSeo = definePageSeo({
+  metaTitle: "Our Team - RaYnk Labs",
+  metaDescription: "Meet the founders, developers, designers, and collaborators behind RaYnk Labs and the values that drive our work.",
+  keywords: ["raynk labs team", "developers", "designers", "tech team", "company culture"],
+  ogTitle: "Meet the RaYnk Labs Team",
+  ogDescription: "The people building digital solutions at RaYnk Labs.",
+  ogImage: "og-team.png",
+  twitterCard: "summary_large_image",
+  canonicalUrl: "http://localhost:3000/team",
+  structuredData: { "@type": "Organization", name: "RaYnk Labs" },
+  robots: "index,follow",
+});
 export const defaultTeamContent: TeamPageData = {
   hero: {
     title: "Meet Our Team",

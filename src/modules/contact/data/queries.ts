@@ -38,7 +38,7 @@ export async function getContactInquiryById(id: string) {
 }
 
 export async function getContactSeo() {
-  return db.seoPage.findUnique({ where: { page: "contact" } });
+  return db.seoMeta.findUnique({ where: { page: "contact" } });
 }
 
 export async function getUnreadInquiryCount() {

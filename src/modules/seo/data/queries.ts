@@ -1,9 +1,18 @@
-import { db } from "@/lib/db";
+import { cache } from 'react';
+import { db } from '@/lib/db';
+import type { SeoMeta } from '@prisma/client';
 
-export async function getSeoByPage(page: string) {
-  return db.seoPage.findUnique({ where: { page } });
-}
+/**
+ * Request-scoped memoization: `resolveSeo()` and `getStructuredData()` both
+ * look up the same SeoMeta row for a given page. React's `cache()` dedupes
+ * within a single render pass — second call is free.
+ */
+export const getSeoByPage = cache(
+  async (page: string): Promise<SeoMeta | null> => {
+    return db.seoMeta.findUnique({ where: { page } });
+  },
+);
 
-export async function getAllSeo() {
-  return db.seoPage.findMany({ orderBy: { page: "asc" } });
+export async function getAllSeo(): Promise<SeoMeta[]> {
+  return db.seoMeta.findMany({ orderBy: { page: 'asc' } });
 }

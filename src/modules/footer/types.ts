@@ -1,30 +1,16 @@
-export interface FooterSection {
-  id: string;
-  title: string;
-  sortOrder: number;
-  isActive: boolean;
+import type { FooterColumn, FooterLink, FooterSetting } from '@prisma/client';
+
+export type FooterColumnRow = FooterColumn;
+export type FooterLinkRow = FooterLink;
+export type FooterSettingRow = FooterSetting;
+
+/** Column + its links, joined — returned by getVisibleFooter() */
+export interface FooterColumnWithLinks extends FooterColumn {
   links: FooterLink[];
 }
 
-export interface FooterLink {
-  id: string;
-  label: string;
-  href: string;
-  sectionId: string;
-  sortOrder: number;
-}
-
-export interface FooterSettings {
-  id?: string;
-  logo?: string | null;
-  description?: string | null;
-  address?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  copyright?: string | null;
-}
-
+/** Everything the public footer needs in one shot */
 export interface FooterData {
-  sections: FooterSection[];
-  settings: FooterSettings | null;
+  columns: FooterColumnWithLinks[];
+  setting: FooterSetting;
 }

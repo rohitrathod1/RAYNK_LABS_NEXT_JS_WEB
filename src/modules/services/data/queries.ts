@@ -26,5 +26,5 @@ export async function getServicesSection(section: string) {
 }
 
 export async function getServicesSeo() {
-  return db.seoPage.findUnique({ where: { page: "services" } });
+  return db.seoMeta.findUnique({ where: { page: "services" } });
 }

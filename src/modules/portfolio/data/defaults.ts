@@ -1,15 +1,18 @@
-import type { PageSEO } from "@/lib/seo";
+import { definePageSeo } from "@/modules/seo";
 import type { PortfolioPageData } from "../types";
 
-export const defaultSeo: PageSEO = {
-  title: "RaYnk Labs — Portfolio | Our Work & Projects",
-  description:
-    "Explore our portfolio of successful projects — web development, graphic design, SEO, and digital solutions that deliver results.",
-  keywords: "portfolio, web design, graphic design, SEO projects, RaYnk Labs work, case studies",
-  ogImage: "/api/uploads/og-portfolio.png",
-  noIndex: false,
-};
-
+export const defaultSeo = definePageSeo({
+  metaTitle: "RaYnk Labs Portfolio - Our Work & Projects",
+  metaDescription: "Explore RaYnk Labs projects across web development, graphic design, SEO, and digital products built for results.",
+  keywords: ["portfolio", "web design", "graphic design", "seo projects", "raynk labs work", "case studies"],
+  ogTitle: "RaYnk Labs Portfolio",
+  ogDescription: "Selected websites, software, SEO, and design work by RaYnk Labs.",
+  ogImage: "og-portfolio.png",
+  twitterCard: "summary_large_image",
+  canonicalUrl: "http://localhost:3000/portfolio",
+  structuredData: { "@type": "CollectionPage", name: "RaYnk Labs Portfolio" },
+  robots: "index,follow",
+});
 export const defaultPortfolioContent: PortfolioPageData = {
   hero: {
     title: "Our Portfolio",

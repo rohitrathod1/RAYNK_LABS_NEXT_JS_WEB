@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import { Providers } from "@/providers";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { AdminCheck } from "@/components/admin-check";
-import { Footer } from "@/components/footer";
+import { Footer } from "@/components/layout/footer";
 import { headers } from "next/headers";
 import "./globals.css";
 

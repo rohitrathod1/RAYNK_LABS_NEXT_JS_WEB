@@ -151,18 +151,29 @@ export default auth(async (req: AuthRequest) => {
 
     // ── 3c. Page-level permission checks ──────────────────────────
     const pagePermissions: Record<string, string> = {
-      "/admin/dashboard/home": "EDIT_HOME",
-      "/admin/dashboard/about": "EDIT_ABOUT",
-      "/admin/dashboard/services": "MANAGE_SERVICES",
-      "/admin/dashboard/portfolio": "MANAGE_PORTFOLIO",
-      "/admin/dashboard/blogs": "MANAGE_BLOG",
-      "/admin/dashboard/team": "MANAGE_TEAM",
-      "/admin/dashboard/contact": "MANAGE_CONTACT",
-      "/admin/dashboard/navbar": "MANAGE_NAVBAR",
-      "/admin/dashboard/footer": "MANAGE_FOOTER",
+      "/admin/home": "EDIT_HOME",
+      "/admin/about": "EDIT_ABOUT",
+      "/admin/services": "MANAGE_SERVICES",
+      "/admin/portfolio": "MANAGE_PORTFOLIO",
+      "/admin/blogs": "MANAGE_BLOG",
+      "/admin/contact": "MANAGE_CONTACT",
+      "/admin/navbar": "MANAGE_NAVBAR",
       "/admin/footer": "MANAGE_FOOTER",
-      "/admin/dashboard/seo": "MANAGE_SEO",
-      "/admin/dashboard/users": "MANAGE_USERS",
+      "/admin/seo": "MANAGE_SEO",
+      "/admin/team": "MANAGE_TEAM",
+      "/admin/users": "MANAGE_USERS",
+    };
+
+    const seoPagePermissions: Record<string, string> = {
+      home: "EDIT_HOME",
+      about: "EDIT_ABOUT",
+      services: "MANAGE_SERVICES",
+      portfolio: "MANAGE_PORTFOLIO",
+      blog: "MANAGE_BLOG",
+      contact: "MANAGE_CONTACT",
+      navbar: "MANAGE_NAVBAR",
+      footer: "MANAGE_FOOTER",
+      team: "MANAGE_TEAM",
     };
 
     for (const [path, perm] of Object.entries(pagePermissions)) {
@@ -173,6 +184,16 @@ export default auth(async (req: AuthRequest) => {
           );
         }
         break;
+      }
+    }
+
+    const seoPage = pathname === "/admin/seo" ? req.nextUrl.searchParams.get("page") : null;
+    if (seoPage && role !== "SUPER_ADMIN") {
+      const permission = seoPagePermissions[seoPage];
+      if (permission && !permissions.includes(permission)) {
+        return addSecurityHeaders(
+          NextResponse.redirect(new URL("/admin", req.url)),
+        );
       }
     }
 

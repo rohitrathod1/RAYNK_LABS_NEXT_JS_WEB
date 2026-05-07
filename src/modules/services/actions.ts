@@ -14,6 +14,7 @@ import {
   seoSchema,
 } from "./validations";
 import { upsertServicesSection } from "./data/mutations";
+import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidateServices() {
   revalidatePath("/services");
@@ -96,11 +97,7 @@ export async function updateServicesSeo(raw: unknown) {
   try {
     await requirePermission("MANAGE_SERVICES");
     const data = seoSchema.parse(raw);
-    await db.seo.upsert({
-      where: { page: "services" },
-      update: { ...data, updatedAt: new Date() },
-      create: { page: "services", ...data },
-    });
+    await upsertLegacyPageSeo("services", data);
     revalidatePath("/services");
     return ok(null);
   } catch (err) {

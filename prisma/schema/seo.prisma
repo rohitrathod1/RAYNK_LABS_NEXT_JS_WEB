@@ -1,35 +1,24 @@
-// seo.prisma — Per-page SEO metadata.
-// Extended to support full search + social metadata.
+// ==========================================
+// SEO METADATA — per-page SEO settings
+// One row per indexed public page (keyed by `page` slug)
+// Read by generateMetadata() via resolveSeo() helper
+// ==========================================
 
-model Seo {
-  id            String   @id @default(cuid())
-  page          String   @unique       // "home", "about", "services", etc.
-  title         String?                // meta title (shown in browser tab + Google)
-  description   String?                // meta description
-  keywords      String?                // comma-separated keywords
-  ogTitle       String?                // OG title for social sharing
-  ogDescription String?                // OG description for social sharing
-  ogImage       String?                // OG image (bare filename or full URL)
-  twitterCard   String   @default("summary_large_image")
-  canonicalUrl  String?
-  robots        String   @default("index,follow")
-  noIndex       Boolean  @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([page])
-}
-
-model SeoPage {
+model SeoMeta {
   id              String   @id @default(cuid())
-  page            String   @unique
+  page            String   @unique // "home", "about", "products", "blog", "contact", ...
   metaTitle       String
-  metaDescription String
-  keywords        String[]
+  metaDescription String?  @db.Text
+  keywords        String[] // PostgreSQL text[]
+  ogTitle         String?
+  ogDescription   String?  @db.Text
   ogImage         String?
+  twitterCard     String   @default("summary_large_image") // "summary" | "summary_large_image"
   canonicalUrl    String?
-  isIndexed       Boolean  @default(true)
+  structuredData  Json? // JSON-LD blob
+  robots          String   @default("index,follow") // or "noindex,nofollow"
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([page])
 }

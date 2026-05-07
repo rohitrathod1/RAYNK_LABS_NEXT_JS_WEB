@@ -21,6 +21,7 @@ import {
   markInquiryAsRead,
   deleteInquiry,
 } from "./data/mutations";
+import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidateContact() {
   revalidatePath("/contact");
@@ -136,11 +137,7 @@ export async function updateContactSeo(raw: unknown) {
   try {
     await requirePermission("MANAGE_CONTACT");
     const data = seoSchema.parse(raw);
-    await db.seo.upsert({
-      where: { page: "contact" },
-      update: { ...data, updatedAt: new Date() },
-      create: { page: "contact", ...data },
-    });
+    await upsertLegacyPageSeo("contact", data);
     revalidatePath("/contact");
     return ok(null);
   } catch (err) {

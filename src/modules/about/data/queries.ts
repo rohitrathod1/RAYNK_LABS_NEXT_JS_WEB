@@ -26,5 +26,5 @@ export async function getAboutSection(section: string) {
 }
 
 export async function getAboutSeo() {
-  return db.seoPage.findUnique({ where: { page: "about" } });
+  return db.seoMeta.findUnique({ where: { page: "about" } });
 }

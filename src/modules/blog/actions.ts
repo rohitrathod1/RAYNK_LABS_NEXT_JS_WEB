@@ -17,6 +17,7 @@ import {
   updateBlogPost,
   deleteBlogPost,
 } from "./data/mutations";
+import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidateBlog() {
   revalidatePath("/blog");
@@ -51,11 +52,7 @@ export async function updateBlogSeo(raw: unknown) {
   try {
     await requirePermission("MANAGE_BLOG");
     const data = seoSchema.parse(raw);
-    await db.seo.upsert({
-      where: { page: "blog" },
-      update: { ...data, updatedAt: new Date() },
-      create: { page: "blog", ...data },
-    });
+    await upsertLegacyPageSeo("blog", data);
     revalidatePath("/blog");
     return ok(null);
   } catch (err) {

@@ -1,93 +1,168 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ChevronDown, BookOpen } from "lucide-react";
+import { useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { toast } from 'sonner';
+import { ChevronDown, BookOpen, Copy, Check, Search, MessageCircle, Image as ImageIcon } from 'lucide-react';
+import seoGuideContent from '../docs/seo-guide-content';
 
-const SECTIONS = [
-  {
-    title: "Meta Title",
-    color: "text-emerald-400",
-    items: [
-      "Shown as the blue link in Google search results.",
-      "Keep under 60 characters — Google cuts off longer titles.",
-      "Include your main keyword near the start.",
-      "Example: RaYnk Labs | Student Tech Innovation Lab",
-    ],
-  },
-  {
-    title: "Meta Description",
-    color: "text-sky-400",
-    items: [
-      "The snippet shown below the link in Google results.",
-      "Keep under 160 characters.",
-      "Write it like a short ad — explain what the page is about and why to click.",
-      "Google may ignore it and generate its own, but it's still worth setting.",
-    ],
-  },
-  {
-    title: "Keywords",
-    color: "text-amber-400",
-    items: [
-      "Comma-separated words that describe the page.",
-      "Not a direct Google ranking signal, but used by some other search engines.",
-      "Example: raynk labs, student tech lab, software development",
-    ],
-  },
-  {
-    title: "OG Title & Description",
-    color: "text-violet-400",
-    items: [
-      "Title and description shown when sharing on WhatsApp, LinkedIn, Facebook, Twitter.",
-      "Falls back to Meta Title / Meta Description if left empty.",
-      "Can be different from the search title — make it more social/engaging.",
-    ],
-  },
-  {
-    title: "OG Image",
-    color: "text-rose-400",
-    items: [
-      "Image shown in social sharing cards (WhatsApp, Slack, Facebook).",
-      "Recommended size: 1200×630 px (16:9 ratio).",
-      "Use a clear, visually striking image — it directly affects click-through rate.",
-      "Stored as a bare filename uploaded via the upload system.",
-    ],
-  },
-  {
-    title: "Twitter Card",
-    color: "text-cyan-400",
-    items: [
-      "Summary Large Image: shows a big image thumbnail on Twitter/X — recommended.",
-      "Summary: shows only a small icon thumbnail.",
-      "Use Large Image for all public-facing pages.",
-    ],
-  },
-  {
-    title: "Canonical URL",
-    color: "text-orange-400",
-    items: [
-      "The official URL for this page.",
-      "Prevents duplicate content penalties when a page is accessible from multiple URLs.",
-      "Usually the full production URL: https://raynklabs.com/about",
-      "Leave empty for most pages — Next.js sets it automatically.",
-    ],
-  },
-  {
-    title: "Robots",
-    color: "text-fuchsia-400",
-    items: [
-      "Index + Follow: Google indexes this page and follows its links. (Default, use for all public pages.)",
-      "No-index, Follow: Page won't appear in Google but its links will be crawled.",
-      "No-index, No-follow: Completely hidden from Google. Use for admin pages and staging.",
-      "Never set no-index on your homepage or key content pages.",
-    ],
-  },
-];
+/* ── Google Search Result mock card ─────────────────────────── */
+function GooglePreviewMock({
+  title,
+  url,
+  description,
+  highlight,
+  richResult,
+}: {
+  title: string;
+  url: string;
+  description: string;
+  highlight?: 'title' | 'url' | 'description';
+  richResult?: string;
+}) {
+  return (
+    <div className="my-3 space-y-2">
+      <div className="flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+        <Search className="h-3 w-3" />
+        <span>Google Search Result</span>
+      </div>
+      <div className="overflow-hidden rounded-xl border bg-card px-5 py-4 shadow-sm">
+        <p
+          className={`truncate text-base font-medium leading-snug ${highlight === 'title' ? 'rounded bg-primary/20 px-1' : ''}`}
+          style={{ color: '#1a0dab' }}
+        >
+          {title}
+        </p>
+        <p
+          className={`mt-0.5 truncate text-[13px] leading-tight ${highlight === 'url' ? 'rounded bg-primary/20 px-1' : ''}`}
+          style={{ color: '#006621' }}
+        >
+          {url}
+        </p>
+        <p
+          className={`mt-1 text-[13px] leading-relaxed ${highlight === 'description' ? 'rounded bg-primary/20 px-1 text-foreground' : 'text-muted-foreground'}`}
+        >
+          {description}
+        </p>
+        {richResult && (
+          <p className="mt-1 rounded bg-primary/20 px-1 text-[12px] font-medium text-primary">
+            {richResult}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
+/* ── WhatsApp / Social Card mock ─────────────────────────────── */
+function SocialPreviewMock({
+  domain,
+  title,
+  description,
+  highlight,
+}: {
+  domain: string;
+  title: string;
+  description?: string;
+  highlight?: 'title' | 'description' | 'image';
+}) {
+  return (
+    <div className="my-3 space-y-2">
+      <div className="flex w-fit items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-500">
+        <MessageCircle className="h-3 w-3" />
+        <span>WhatsApp / Social Card</span>
+      </div>
+      <div className="flex justify-start rounded-xl bg-muted/30 p-4">
+        <div className="w-full max-w-[320px] overflow-hidden rounded-lg border bg-card shadow-md">
+          <div
+            className={`flex aspect-video w-full items-center justify-center bg-muted/60 ${highlight === 'image' ? 'ring-2 ring-inset ring-primary/60' : ''}`}
+          >
+            <div className="text-center text-muted-foreground/40">
+              <ImageIcon className="mx-auto mb-1.5 h-8 w-8" />
+              <p className="text-[11px]">1200 × 630 OG Image</p>
+            </div>
+          </div>
+          <div className="border-t bg-muted/20 px-3 py-2.5">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              {domain}
+            </p>
+            <p
+              className={`mt-0.5 line-clamp-2 text-[13px] font-semibold leading-snug ${highlight === 'title' ? 'rounded bg-primary/20 px-1 text-foreground' : 'text-foreground'}`}
+            >
+              {title}
+            </p>
+            {description && (
+              <p
+                className={`mt-0.5 line-clamp-2 text-[11px] leading-relaxed ${highlight === 'description' ? 'rounded bg-primary/20 px-1 text-foreground' : 'text-muted-foreground'}`}
+              >
+                {description}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Code block with copy button ──────────────────────────── */
+function CodeBlock({ language, code }: { language: string; code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    void navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      toast.success('Copied!');
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }, [code]);
+
+  return (
+    <div className="my-3 overflow-hidden rounded-lg border border-border/50">
+      <div className="flex items-center justify-between border-b border-border/50 bg-[#1e1e2e] px-3 py-1.5">
+        <span className="font-mono text-[10px] text-zinc-400">{language}</span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-zinc-400 transition-all hover:bg-white/10 hover:text-zinc-100"
+        >
+          {copied ? (
+            <><Check className="h-2.5 w-2.5 text-green-400" /><span className="text-green-400">Copied!</span></>
+          ) : (
+            <><Copy className="h-2.5 w-2.5" /><span>Copy</span></>
+          )}
+        </button>
+      </div>
+      <SyntaxHighlighter
+        language={language}
+        style={oneDark}
+        PreTag="div"
+        customStyle={{
+          margin: 0,
+          borderRadius: 0,
+          background: '#1e1e2e',
+          padding: '0.75rem 1rem',
+          fontSize: '0.7rem',
+          lineHeight: '1.6',
+        }}
+        codeTagProps={{ style: { fontFamily: 'ui-monospace, monospace' } }}
+      >
+        {code}
+      </SyntaxHighlighter>
+    </div>
+  );
+}
+
+/* ── Main guide component ─────────────────────────────────── */
 export function SeoGuide() {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="mt-8 overflow-hidden rounded-2xl border bg-card">
+      {/* Toggle header */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -99,57 +174,184 @@ export function SeoGuide() {
             <BookOpen className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-bold">SEO Guide for All Pages</p>
-            <p className="text-xs text-muted-foreground">Simple explanations for every field</p>
+            <p className="text-sm font-jost-bold">SEO Guide for All Pages</p>
+            <p className="text-xs text-muted-foreground">
+              Simple explanations for every field
+            </p>
           </div>
         </div>
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
+      {/* Collapsible content */}
       {open && (
-        <div className="border-t px-5 py-6 sm:px-8">
-          <h2 className="mb-6 text-lg font-bold text-primary">
-            SEO Fields — What Each One Does
-          </h2>
-          <div className="space-y-6">
-            {SECTIONS.map((section) => (
-              <div key={section.title} className="space-y-2">
-                <h3
-                  className={`border-l-2 border-primary/60 pl-3 text-sm font-bold ${section.color}`}
-                >
-                  {section.title}
-                </h3>
-                <ul className="space-y-1.5 pl-4">
-                  {section.items.map((item, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground"
-                    >
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/50" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+        <div className="overflow-x-hidden border-t px-5 py-6 sm:px-8">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              /* ── Headings ── */
+              h1({ children }) {
+                return (
+                  <h1 className="mb-4 mt-0 text-xl font-jost-bold text-primary">
+                    {children}
+                  </h1>
+                );
+              },
+              h2({ children }) {
+                return (
+                  <h2 className="mb-2 mt-7 flex items-center gap-2 text-base font-jost-bold text-violet-400 first:mt-0">
+                    <span className="h-px flex-1 bg-violet-400/20" />
+                    <span>{children}</span>
+                    <span className="h-px flex-1 bg-violet-400/20" />
+                  </h2>
+                );
+              },
+              h3({ children }) {
+                return (
+                  <h3 className="mb-1.5 mt-5 border-l-2 border-primary/60 pl-2.5 text-sm font-jost-bold text-amber-400">
+                    {children}
+                  </h3>
+                );
+              },
 
-          <div className="mt-8 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-            <p className="text-sm font-bold text-amber-400">Fallback Chain</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              If no DB row exists for a page, the module&apos;s{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs text-primary">
-                defaultSeo
-              </code>{" "}
-              is used. If that is also empty, the site-wide fallback in{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs text-primary">
-                src/lib/seo.ts
-              </code>{" "}
-              is the last resort.
-            </p>
-          </div>
+              /* ── Body text ── */
+              p({ children }) {
+                return (
+                  <p className="my-2 text-sm leading-relaxed text-muted-foreground">
+                    {children}
+                  </p>
+                );
+              },
+              strong({ children }) {
+                return <strong className="font-jost-bold text-foreground">{children}</strong>;
+              },
+              del({ children }) {
+                return (
+                  <span className="rounded-sm bg-primary/20 px-0.5 font-medium text-primary">
+                    {children}
+                  </span>
+                );
+              },
+
+              /* ── Lists ── */
+              ul({ children }) {
+                return <ul className="my-2 space-y-1 pl-4">{children}</ul>;
+              },
+              ol({ children }) {
+                return <ol className="my-2 list-decimal space-y-1 pl-4">{children}</ol>;
+              },
+              li({ children }) {
+                return (
+                  <li className="text-sm leading-relaxed text-muted-foreground before:mr-1.5 before:text-primary before:content-['•']">
+                    {children}
+                  </li>
+                );
+              },
+
+              /* ── Code blocks — special preview types + syntax highlighter ── */
+              code({ className, children }) {
+                const match = /language-([\w-]+)/.exec(className ?? '');
+                if (match) {
+                  const lang = match[1];
+                  const raw = String(children).replace(/\n$/, '');
+
+                  if (lang === 'google-preview') {
+                    try {
+                      const data = JSON.parse(raw) as {
+                        title: string;
+                        url: string;
+                        description: string;
+                        highlight?: 'title' | 'url' | 'description';
+                        richResult?: string;
+                      };
+                      return <GooglePreviewMock {...data} />;
+                    } catch { /* fall through to syntax highlighter */ }
+                  }
+
+                  if (lang === 'social-preview') {
+                    try {
+                      const data = JSON.parse(raw) as {
+                        domain: string;
+                        title: string;
+                        description?: string;
+                        highlight?: 'title' | 'description' | 'image';
+                      };
+                      return <SocialPreviewMock {...data} />;
+                    } catch { /* fall through to syntax highlighter */ }
+                  }
+
+                  return <CodeBlock language={lang} code={raw} />;
+                }
+                return (
+                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs text-primary">
+                    {children}
+                  </code>
+                );
+              },
+              pre({ children }) {
+                return <>{children}</>;
+              },
+
+              /* ── Table — scrollable, compact ── */
+              table({ children }) {
+                return (
+                  <div className="my-3 overflow-x-auto rounded-lg border border-border">
+                    <table className="w-full border-collapse text-xs">
+                      {children}
+                    </table>
+                  </div>
+                );
+              },
+              thead({ children }) {
+                return <thead className="bg-primary/10">{children}</thead>;
+              },
+              tbody({ children }) {
+                return <tbody className="divide-y divide-border">{children}</tbody>;
+              },
+              tr({ children }) {
+                return <tr className="transition-colors hover:bg-muted/20">{children}</tr>;
+              },
+              th({ children }) {
+                return (
+                  <th className="px-3 py-2 text-left text-xs font-jost-bold uppercase tracking-wider text-primary">
+                    {children}
+                  </th>
+                );
+              },
+              td({ children }) {
+                return (
+                  <td className="px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                    {children}
+                  </td>
+                );
+              },
+
+              /* ── HR ── */
+              hr() {
+                return <hr className="my-5 border-border/50" />;
+              },
+
+              /* ── Blockquote ── */
+              blockquote({ children }) {
+                return (
+                  <blockquote className="my-3 border-l-2 border-amber-400/60 bg-amber-400/5 px-3 py-1.5 text-sm italic text-muted-foreground">
+                    {children}
+                  </blockquote>
+                );
+              },
+
+              /* ── Links → plain highlighted text, no navigation ── */
+              a({ children }) {
+                return (
+                  <span className="font-medium text-primary/80">{children}</span>
+                );
+              },
+            }}
+          >
+            {seoGuideContent}
+          </ReactMarkdown>
         </div>
       )}
     </div>

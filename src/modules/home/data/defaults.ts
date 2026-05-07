@@ -1,15 +1,18 @@
-import type { PageSEO } from "@/lib/seo";
+import { definePageSeo } from "@/modules/seo";
 import type { HomePageData } from "../types";
 
-export const defaultSeo: PageSEO = {
-  title: "RaYnk Labs — Digital Solutions & Innovation",
-  description:
-    "RaYnk Labs delivers cutting-edge digital solutions — web development, software, branding, and innovation that drives business growth.",
-  keywords: "raynk labs, digital solutions, web development, software development, tech innovation, branding",
-  ogImage: "/api/uploads/og-home.png",
-  noIndex: false,
-};
-
+export const defaultSeo = definePageSeo({
+  metaTitle: "RaYnk Labs - Digital Solutions & Innovation",
+  metaDescription: "RaYnk Labs delivers web development, software, branding, SEO, and digital products that help businesses grow.",
+  keywords: ["raynk labs", "digital solutions", "web development", "software development", "tech innovation"],
+  ogTitle: "RaYnk Labs - Digital Solutions & Innovation",
+  ogDescription: "Websites, software, branding, SEO, and digital products built for modern business growth.",
+  ogImage: "og-home.png",
+  twitterCard: "summary_large_image",
+  canonicalUrl: "http://localhost:3000",
+  structuredData: { "@type": "WebSite", name: "RaYnk Labs" },
+  robots: "index,follow",
+});
 export const defaultHomeContent: HomePageData = {
   hero: {
     heading: "Grow Your Business with Digital Solutions",

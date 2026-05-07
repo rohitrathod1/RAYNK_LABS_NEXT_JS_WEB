@@ -1,3 +1,4 @@
-export { SeoTabPanel } from "./SeoTabPanel";
-export { SeoPreview } from "./SeoPreview";
-export { SeoGuide } from "./SeoGuide";
+export { SeoTabPanel } from './SeoTabPanel';
+export { SeoListTable } from './SeoListTable';
+export { SeoPreview } from './SeoPreview';
+export { SeoGuide } from './SeoGuide';

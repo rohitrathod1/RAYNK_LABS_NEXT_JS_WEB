@@ -1,26 +1,30 @@
 import type { Metadata } from "next";
-import { getPortfolioPageData, getPortfolioProjects, getPortfolioSeo } from "@/modules/portfolio/data/queries";
+import { getPortfolioPageData, getPortfolioProjects } from "@/modules/portfolio/data/queries";
 import { defaultSeo } from "@/modules/portfolio/data/defaults";
-import { resolveSeo } from "@/lib/seo";
+import { resolveSeo, getStructuredData } from "@/modules/seo/utils";
+import { JsonLd } from "@/components/shared";
 import PortfolioPageClient from "./page-content";
 
 export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await getPortfolioSeo();
-  return resolveSeo(seo, defaultSeo.title ?? undefined);
+  return resolveSeo("portfolio", defaultSeo);
 }
 
 export default async function PortfolioPageServer() {
-  const [data, projects] = await Promise.all([
+  const [data, projects, structuredData] = await Promise.all([
     getPortfolioPageData(),
     getPortfolioProjects(),
+    getStructuredData("portfolio", defaultSeo),
   ]);
 
   return (
-    <PortfolioPageClient
-      data={JSON.parse(JSON.stringify(data))}
-      projects={JSON.parse(JSON.stringify(projects))}
-    />
+    <>
+      {structuredData && <JsonLd data={structuredData} />}
+      <PortfolioPageClient
+        data={JSON.parse(JSON.stringify(data))}
+        projects={JSON.parse(JSON.stringify(projects))}
+      />
+    </>
   );
 }

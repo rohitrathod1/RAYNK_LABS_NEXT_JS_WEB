@@ -1,21 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSeoData } from "@/lib/seo";
+import { NextResponse } from 'next/server';
+import { getAllSeo } from '@/modules/seo/data/queries';
 
-export async function GET(req: NextRequest) {
-  const page = req.nextUrl.searchParams.get("page");
+export const runtime = 'nodejs';
 
-  if (!page) {
-    return NextResponse.json(
-      { success: false, error: "Missing page query parameter" },
-      { status: 400 },
-    );
-  }
-
+// GET /api/admin/seo — list every SEO entry (admin overview page)
+export async function GET() {
   try {
-    const data = await getSeoData(page);
+    const data = await getAllSeo();
     return NextResponse.json({ success: true, data });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to fetch SEO data";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+  } catch (error) {
+    console.error('[GET /api/admin/seo]', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch SEO list' },
+      { status: 500 },
+    );
   }
 }

@@ -1,21 +1,23 @@
 import { Metadata } from "next";
-import { getContactPageData, getContactSeo } from "@/modules/contact";
+import { getContactPageData } from "@/modules/contact";
 import { ContactPageContent } from "@/modules/contact";
-import { resolveSeo } from "@/lib/seo";
+import { defaultSeo } from "@/modules/contact/data/defaults";
+import { resolveSeo, getStructuredData } from "@/modules/seo/utils";
+import { JsonLd } from "@/components/shared";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await getContactSeo();
-  return resolveSeo(seo);
+  return resolveSeo("contact", defaultSeo);
 }
 
 export default async function ContactPage() {
-  const [data, seo] = await Promise.all([
+  const [data, structuredData] = await Promise.all([
     getContactPageData(),
-    getContactSeo(),
+    getStructuredData("contact", defaultSeo),
   ]);
 
   return (
     <>
+      {structuredData && <JsonLd data={structuredData} />}
       <ContactPageContent data={data} />
     </>
   );

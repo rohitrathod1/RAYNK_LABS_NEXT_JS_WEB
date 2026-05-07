@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getBlogBySlug, getRelatedPosts, getBlogSeo } from "@/modules/blog/data/queries";
+import { getBlogBySlug, getRelatedPosts } from "@/modules/blog/data/queries";
 import { defaultSeo } from "@/modules/blog/data/defaults";
-import { resolveSeo } from "@/lib/seo";
+import { resolveSeo } from "@/modules/seo/utils";
+import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { BlogDetail } from "@/modules/blog/components/blog-detail";
 
 export const revalidate = 60;
@@ -14,19 +15,37 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const post = await getBlogBySlug(slug);
 
   if (!post) {
-    return resolveSeo(await getBlogSeo(), defaultSeo.title ?? undefined);
+    return resolveSeo("blog", defaultSeo);
   }
 
-  const seo = await getBlogSeo();
-  return resolveSeo(
-    {
-      title: post.metaTitle || post.title,
-      description: post.metaDescription || post.excerpt,
-      keywords: post.tags?.join(", ") ?? undefined,
-      ogImage: post.coverImage ?? undefined,
+  const title = post.metaTitle || post.title;
+  const description = post.metaDescription || post.excerpt || undefined;
+  const image = post.coverImage
+    ? post.coverImage.startsWith("http") || post.coverImage.startsWith("/")
+      ? post.coverImage
+      : `/api/uploads/${post.coverImage}`
+    : undefined;
+
+  return {
+    title: title.includes(SITE_NAME) ? { absolute: title } : title,
+    description,
+    keywords: post.tags ?? undefined,
+    alternates: { canonical: `${SITE_URL}/blog/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}/blog/${slug}`,
+      siteName: SITE_NAME,
+      type: "article",
+      images: image ? [{ url: image, width: 1200, height: 630, alt: title }] : [],
     },
-    seo?.metaTitle ?? undefined
-  );
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
 }
 
 export default async function BlogDetailPage({ params }: Params) {

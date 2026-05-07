@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
@@ -14,6 +14,14 @@ import {
   Users,
   Globe,
   FileText,
+  Home,
+  Info,
+  Briefcase,
+  FolderKanban,
+  Newspaper,
+  Mail,
+  Navigation,
+  PanelBottom,
   ChevronDown,
   LogOut,
   ArrowLeft,
@@ -31,6 +39,7 @@ interface NavChild {
   href: string;
   icon: React.ElementType;
   query?: string;
+  permission: PermissionKey | null;
 }
 
 interface NavSection {
@@ -41,45 +50,21 @@ interface NavSection {
   children: NavChild[];
 }
 
-const BASE_SIDEBAR_SECTIONS: NavSection[] = [
-  {
-    title: 'Dashboard',
-    href: '/admin',
-    icon: LayoutDashboard,
-    permission: null,
-    children: [],
-  },
-  {
-    title: 'SEO Manager',
-    href: '/admin/seo',
-    icon: Globe,
-    permission: PERMISSIONS.MANAGE_SEO,
-    children: [
-      { title: 'All Pages SEO', href: '/admin/seo', icon: Globe },
-      { title: 'Add Page SEO', href: '/admin/seo', icon: Globe, query: 'mode=add' },
-    ],
-  },
-  {
-    title: 'Team',
-    href: '/admin/team',
-    icon: Users,
-    permission: PERMISSIONS.MANAGE_TEAM,
-    children: [],
-  },
-  {
-    title: 'Users',
-    href: '/admin/users',
-    icon: UserCog,
-    permission: PERMISSIONS.MANAGE_USERS,
-    children: [],
-  },
-  {
-    title: 'Profile',
-    href: '/admin/profile',
-    icon: Users,
-    permission: null,
-    children: [],
-  },
+const CMS_PAGES: NavChild[] = [
+  { title: 'Home', href: '/admin/home', icon: Home, permission: PERMISSIONS.EDIT_HOME },
+  { title: 'About', href: '/admin/about', icon: Info, permission: PERMISSIONS.EDIT_ABOUT },
+  { title: 'Services', href: '/admin/services', icon: Briefcase, permission: PERMISSIONS.MANAGE_SERVICES },
+  { title: 'Portfolio', href: '/admin/portfolio', icon: FolderKanban, permission: PERMISSIONS.MANAGE_PORTFOLIO },
+  { title: 'Blog', href: '/admin/blogs', icon: Newspaper, permission: PERMISSIONS.MANAGE_BLOG },
+  { title: 'Contact', href: '/admin/contact', icon: Mail, permission: PERMISSIONS.MANAGE_CONTACT },
+  { title: 'Navbar', href: '/admin/navbar', icon: Navigation, permission: PERMISSIONS.MANAGE_NAVBAR },
+  { title: 'Footer', href: '/admin/footer', icon: PanelBottom, permission: PERMISSIONS.MANAGE_FOOTER },
+];
+
+const TEAM_PAGES: NavChild[] = [
+  { title: 'Team Page', href: '/admin/team', icon: Users, permission: PERMISSIONS.MANAGE_TEAM },
+  { title: 'Users', href: '/admin/users', icon: UserCog, permission: PERMISSIONS.MANAGE_USERS },
+  { title: 'Profile', href: '/admin/profile', icon: Users, permission: null },
 ];
 
 interface SeoSidebarPage {
@@ -94,7 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ 'SEO Manager': true, Pages: true });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Dashboard: true, SEO: true, Team: true });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [seoPages, setSeoPages] = useState<SeoSidebarPage[]>([]);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -106,7 +91,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     [rawPermissions],
   );
 
-  const canManageSeo = userRole === 'SUPER_ADMIN' || userPermissions.includes(PERMISSIONS.MANAGE_SEO);
+  const can = useCallback((permission: PermissionKey | null) => {
+    if (!permission) return true;
+    if (userRole === 'SUPER_ADMIN') return true;
+    return userPermissions.includes(permission);
+  }, [userRole, userPermissions]);
+
+  const canManageSeo = can(PERMISSIONS.MANAGE_SEO);
 
   useEffect(() => {
     if (!session || !canManageSeo) return;
@@ -123,32 +114,56 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [canManageSeo, session]);
 
   const sidebarSections = useMemo<NavSection[]>(() => {
-    const pageChildren = canManageSeo ? seoPages.map((seoPage) => ({
-      title: seoPage.page.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
-      href: '/admin/seo',
-      icon: FileText,
-      query: `page=${encodeURIComponent(seoPage.page)}`,
-    })) : [];
+    const dashboardChildren = CMS_PAGES.filter((page) => can(page.permission));
+    const seoChildren = canManageSeo
+      ? seoPages
+          .map((seoPage) => {
+            const matchingPage = CMS_PAGES.find((page) => page.title.toLowerCase().replace(/\s+/g, '-') === seoPage.page || page.href.endsWith(`/${seoPage.page}`));
+            if (matchingPage && !can(matchingPage.permission)) return null;
+            return {
+              title: seoPage.page.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
+              href: '/admin/seo',
+              icon: FileText,
+              query: `page=${encodeURIComponent(seoPage.page)}`,
+              permission: matchingPage?.permission ?? PERMISSIONS.MANAGE_SEO,
+            };
+          })
+          .filter(Boolean) as NavChild[]
+      : [];
+    const teamChildren = TEAM_PAGES.filter((page) => can(page.permission));
 
     return [
-      ...BASE_SIDEBAR_SECTIONS,
       {
-        title: 'Pages',
+        title: 'Dashboard',
+        href: '/admin',
+        icon: LayoutDashboard,
+        permission: null,
+        children: dashboardChildren,
+      },
+      {
+        title: 'SEO',
         href: '/admin/seo',
-        icon: FileText,
+        icon: Globe,
         permission: PERMISSIONS.MANAGE_SEO,
-        children: pageChildren,
+        children: seoChildren,
+      },
+      {
+        title: 'Team',
+        href: teamChildren[0]?.href ?? '/admin/profile',
+        icon: Users,
+        permission: null,
+        children: teamChildren,
       },
     ];
-  }, [canManageSeo, seoPages]);
+  }, [can, canManageSeo, seoPages]);
 
   const visibleSections = useMemo(() => {
     return sidebarSections.filter((section) => {
-      if (!section.permission) return true;
-      if (userRole === 'SUPER_ADMIN') return true;
-      return userPermissions.includes(section.permission);
+      if (section.children.length === 0 && section.title !== 'SEO') return false;
+      if (!section.permission) return section.children.length > 0 || section.href === '/admin';
+      return can(section.permission);
     });
-  }, [sidebarSections, userRole, userPermissions]);
+  }, [can, sidebarSections]);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {

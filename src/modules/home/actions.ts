@@ -17,6 +17,7 @@ import {
   seoSchema,
 } from "./validations";
 import { upsertHomeSection } from "./data/mutations";
+import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidateHome() {
   revalidatePath("/");
@@ -123,11 +124,7 @@ export async function updateHomeSeo(raw: unknown) {
   try {
     await requirePermission("EDIT_HOME");
     const data = seoSchema.parse(raw);
-    await db.seo.upsert({
-      where: { page: "home" },
-      update: { ...data, updatedAt: new Date() },
-      create: { page: "home", ...data },
-    });
+    await upsertLegacyPageSeo("home", data);
     revalidatePath("/");
     return ok(null);
   } catch (err) {

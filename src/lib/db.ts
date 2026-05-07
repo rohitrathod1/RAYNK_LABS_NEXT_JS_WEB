@@ -20,6 +20,7 @@ function createPrismaClient(): PrismaClient {
 }
 
 export const db: PrismaClient = globalForPrisma.db ?? createPrismaClient();
+export const prisma = db;
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.db = db;

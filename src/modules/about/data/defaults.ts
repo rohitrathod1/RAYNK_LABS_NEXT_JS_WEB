@@ -1,15 +1,18 @@
-import type { PageSEO } from "@/lib/seo";
+import { definePageSeo } from "@/modules/seo";
 import type { AboutPageData } from "../types";
 
-export const defaultSeo: PageSEO = {
-  title: "About RaYnk Labs — Our Story, Mission & Team",
-  description:
-    "Learn about RaYnk Labs — our story, mission, vision, and the team driving digital innovation forward.",
-  keywords: "raynk labs, about us, digital agency, tech team, company story",
-  ogImage: "/api/uploads/og-about.png",
-  noIndex: false,
-};
-
+export const defaultSeo = definePageSeo({
+  metaTitle: "About RaYnk Labs - Our Story, Mission & Team",
+  metaDescription: "Learn about RaYnk Labs, our story, mission, vision, and the team driving digital innovation forward.",
+  keywords: ["raynk labs", "about us", "digital agency", "tech team", "company story"],
+  ogTitle: "About RaYnk Labs",
+  ogDescription: "Meet the team and mission behind RaYnk Labs.",
+  ogImage: "og-about.png",
+  twitterCard: "summary_large_image",
+  canonicalUrl: "http://localhost:3000/about",
+  structuredData: { "@type": "AboutPage", name: "About RaYnk Labs" },
+  robots: "index,follow",
+});
 export const defaultAboutContent: AboutPageData = {
   hero: {
     title: "Who We Are",

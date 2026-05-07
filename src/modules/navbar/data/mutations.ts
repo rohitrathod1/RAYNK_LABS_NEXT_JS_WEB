@@ -1,47 +1,41 @@
 import { db } from "@/lib/db";
-import type { NavLinkSchema, NavLinkUpdateSchema, ReorderSchema } from "../validations";
+import type {
+  NavLinkSchemaInput,
+  NavLinkUpdateSchemaInput,
+  NavSubLinkSchemaInput,
+  NavSubLinkUpdateSchemaInput,
+} from "../validations";
 
-export async function createNavLink(data: NavLinkSchema) {
+export async function createNavLink(data: NavLinkSchemaInput) {
   return db.navLink.create({
     data: {
       title: data.title,
-      href: data.href,
-      parentId: data.parentId || null,
+      href: data.href ?? "",
       isVisible: data.isVisible ?? true,
       sortOrder: data.sortOrder ?? 0,
     },
   });
 }
 
-export async function updateNavLink(data: NavLinkUpdateSchema) {
-  const { id, ...rest } = data;
+export async function updateNavLink(id: string, data: NavLinkUpdateSchemaInput) {
   return db.navLink.update({
     where: { id },
-    data: {
-      ...(rest.title !== undefined && { title: rest.title }),
-      ...(rest.href !== undefined && { href: rest.href }),
-      ...(rest.parentId !== undefined && { parentId: rest.parentId || null }),
-      ...(rest.isVisible !== undefined && { isVisible: rest.isVisible }),
-      ...(rest.sortOrder !== undefined && { sortOrder: rest.sortOrder }),
-    },
+    data,
   });
 }
 
 export async function deleteNavLink(id: string) {
-  // Delete children first
-  await db.navLink.deleteMany({ where: { parentId: id } });
   return db.navLink.delete({ where: { id } });
 }
 
-export async function reorderNavLinks(data: ReorderSchema) {
-  const updates = data.items.map((item) =>
-    db.navLink.update({
-      where: { id: item.id },
-      data: {
-        sortOrder: item.sortOrder,
-        ...(item.parentId !== undefined && { parentId: item.parentId || null }),
-      },
-    })
-  );
-  return Promise.all(updates);
+export async function createNavSubLink(data: NavSubLinkSchemaInput) {
+  return db.navSubLink.create({ data });
+}
+
+export async function updateNavSubLink(id: string, data: NavSubLinkUpdateSchemaInput) {
+  return db.navSubLink.update({ where: { id }, data });
+}
+
+export async function deleteNavSubLink(id: string) {
+  return db.navSubLink.delete({ where: { id } });
 }

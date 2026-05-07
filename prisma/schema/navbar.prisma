@@ -1,23 +1,33 @@
-// ==========================================
-// NAVBAR — top navigation for the public site
-// Managed from /admin/dashboard/navbar (CRUD)
-// Uses self-relation for parent-child dropdown structure
-// ==========================================
-
 model NavLink {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   title     String
   href      String
-  parentId  String?      // for dropdown (null = top-level)
-  isVisible Boolean  @default(true)
+  sortOrder Int          @default(0)
+  isVisible Boolean      @default(true)
+  subLinks  NavSubLink[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([sortOrder])
+}
+
+model NavSubLink {
+  id        String   @id @default(cuid())
+  navLinkId String
+  navLink   NavLink  @relation(fields: [navLinkId], references: [id], onDelete: Cascade)
+  title     String
+  href      String
   sortOrder Int      @default(0)
-
-  parent    NavLink? @relation("NavHierarchy", fields: [parentId], references: [id])
-  children  NavLink[] @relation("NavHierarchy")
-
+  isVisible Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([parentId])
-  @@index([sortOrder])
+  @@index([navLinkId, sortOrder])
+}
+
+model NavbarSetting {
+  id        String   @id @default("default")
+  logoUrl   String?
+  logoAlt   String?
+  updatedAt DateTime @updatedAt
 }

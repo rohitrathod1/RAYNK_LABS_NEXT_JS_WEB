@@ -28,5 +28,5 @@ export async function getHomeSection(section: string) {
 }
 
 export async function getHomeSeo() {
-  return db.seoPage.findUnique({ where: { page: "home" } });
+  return db.seoMeta.findUnique({ where: { page: "home" } });
 }

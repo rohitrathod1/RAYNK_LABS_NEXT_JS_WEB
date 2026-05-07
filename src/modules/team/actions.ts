@@ -21,6 +21,7 @@ import {
   updateTeamMember,
   deleteTeamMember,
 } from "./data/mutations";
+import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidateTeam() {
   revalidatePath("/team");
@@ -138,11 +139,7 @@ export async function updateTeamSeo(raw: unknown) {
   try {
     await requirePermission("MANAGE_TEAM");
     const data = seoSchema.parse(raw);
-    await db.seo.upsert({
-      where: { page: "team" },
-      update: { ...data, updatedAt: new Date() },
-      create: { page: "team", ...data },
-    });
+    await upsertLegacyPageSeo("team", data);
     revalidatePath("/team");
     return ok(null);
   } catch (err) {

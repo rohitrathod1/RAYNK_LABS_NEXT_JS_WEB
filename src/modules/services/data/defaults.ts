@@ -1,15 +1,18 @@
-import type { PageSEO } from "@/lib/seo";
+import { definePageSeo } from "@/modules/seo";
 import type { ServicesPageData } from "../types";
 
-export const defaultServicesSeo: PageSEO = {
-  title: "Our Services — RaYnk Labs",
-  description:
-    "Explore our comprehensive digital services including web design, SEO optimization, and graphic design.",
-  keywords: "web design, SEO, graphic design, digital services, RaYnk Labs",
-  ogImage: "/api/uploads/og-services.png",
-  noIndex: false,
-};
-
+export const defaultServicesSeo = definePageSeo({
+  metaTitle: "Our Services - RaYnk Labs",
+  metaDescription: "Explore RaYnk Labs digital services including web design, SEO optimization, graphic design, and software development.",
+  keywords: ["web design", "seo", "graphic design", "digital services", "raynk labs"],
+  ogTitle: "Digital Services by RaYnk Labs",
+  ogDescription: "Web design, SEO, graphic design, and software services for growing brands.",
+  ogImage: "og-services.png",
+  twitterCard: "summary_large_image",
+  canonicalUrl: "http://localhost:3000/services",
+  structuredData: { "@type": "Service", name: "RaYnk Labs Digital Services" },
+  robots: "index,follow",
+});
 export const defaultServicesContent: ServicesPageData = {
   hero: {
     title: "Our Services",

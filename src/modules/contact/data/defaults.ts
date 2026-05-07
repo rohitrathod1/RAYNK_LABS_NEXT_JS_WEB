@@ -1,14 +1,18 @@
-import type { PageSEO } from "@/lib/seo";
+import { definePageSeo } from "@/modules/seo";
 import type { ContactPageData } from "../types";
 
-export const defaultSeo: PageSEO = {
-  title: "Contact Us — RaYnk Labs",
-  description: "Get in touch with RaYnk Labs. Reach out to discuss your project, ask questions, or explore collaboration opportunities.",
-  keywords: "contact raynk labs, get in touch, project inquiry, web development contact",
-  ogImage: "/api/uploads/og-contact.png",
-  noIndex: false,
-};
-
+export const defaultSeo = definePageSeo({
+  metaTitle: "Contact RaYnk Labs - Start Your Project",
+  metaDescription: "Contact RaYnk Labs to discuss websites, software, branding, SEO, or digital product ideas for your business.",
+  keywords: ["contact raynk labs", "get in touch", "project inquiry", "web development contact"],
+  ogTitle: "Contact RaYnk Labs",
+  ogDescription: "Start your next digital project with RaYnk Labs.",
+  ogImage: "og-contact.png",
+  twitterCard: "summary_large_image",
+  canonicalUrl: "http://localhost:3000/contact",
+  structuredData: { "@type": "ContactPage", name: "Contact RaYnk Labs" },
+  robots: "index,follow",
+});
 export const defaultContactContent: ContactPageData = {
   hero: {
     title: "Contact Us",

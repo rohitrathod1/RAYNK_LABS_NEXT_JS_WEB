@@ -22,6 +22,7 @@ import {
   toggleProjectFeatured,
   toggleProjectActive,
 } from "./data/mutations";
+import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidatePortfolio() {
   revalidatePath("/portfolio");
@@ -92,11 +93,7 @@ export async function updatePortfolioSeo(raw: unknown) {
   try {
     await requirePermission("MANAGE_PORTFOLIO");
     const data = seoSchema.parse(raw);
-    await db.seo.upsert({
-      where: { page: "portfolio" },
-      update: { ...data, updatedAt: new Date() },
-      create: { page: "portfolio", ...data },
-    });
+    await upsertLegacyPageSeo("portfolio", data);
     revalidatePath("/portfolio");
     return ok(null);
   } catch (err) {
