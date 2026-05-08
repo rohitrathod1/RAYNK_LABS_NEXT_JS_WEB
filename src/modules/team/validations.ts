@@ -49,16 +49,16 @@ export const ctaSchema = z.object({
 });
 
 export const teamMemberInputSchema = z.object({
-  name: z.string().min(1, "Name required"),
-  role: z.string().min(1, "Role required"),
+  displayName: z.string().min(1, "Name required"),
+  role: z.string().optional(),
   bio: z.string().optional().default(""),
-  image: z.string().min(1, "Image required"),
-  linkedin: z.string().optional().default(""),
-  twitter: z.string().optional().default(""),
-  github: z.string().optional().default(""),
-  portfolio: z.string().optional().default(""),
-  isActive: z.boolean().optional().default(true),
-  sortOrder: z.number().optional().default(0),
+  avatar: z.string().optional().default(""),
+  githubUrl: z.string().optional().default(""),
+  linkedinUrl: z.string().optional().default(""),
+  instagramUrl: z.string().optional().default(""),
+  youtubeUrl: z.string().optional().default(""),
+  isVisible: z.boolean().optional().default(true),
+  isFeatured: z.boolean().optional().default(false),
 });
 
 export const seoSchema = z.object({

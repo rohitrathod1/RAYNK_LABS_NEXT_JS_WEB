@@ -38,6 +38,7 @@ model Admin {
 
   // RBAC
   permissions UserPermission[]
+  teamMember  TeamMember?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

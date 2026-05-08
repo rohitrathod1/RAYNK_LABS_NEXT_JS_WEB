@@ -24,14 +24,17 @@ export interface FoundersSection {
 
 export interface TeamMember {
   id: string;
-  name: string;
+  displayName: string;
   role: string;
   bio?: string | null;
-  image: string;
-  linkedin?: string | null;
-  twitter?: string | null;
-  github?: string | null;
-  portfolio?: string | null;
+  avatar?: string | null;
+  githubUrl?: string | null;
+  linkedinUrl?: string | null;
+  instagramUrl?: string | null;
+  youtubeUrl?: string | null;
+  email?: string | null;
+  isVisible?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface TeamMembersSection {
@@ -68,14 +71,14 @@ export interface TeamPageData {
 }
 
 export interface TeamMemberInput {
-  name: string;
-  role: string;
+  displayName: string;
+  role?: string;
   bio?: string;
-  image: string;
-  linkedin?: string;
-  twitter?: string;
-  github?: string;
-  portfolio?: string;
-  isActive?: boolean;
-  sortOrder?: number;
+  avatar?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  instagramUrl?: string;
+  youtubeUrl?: string;
+  isVisible?: boolean;
+  isFeatured?: boolean;
 }

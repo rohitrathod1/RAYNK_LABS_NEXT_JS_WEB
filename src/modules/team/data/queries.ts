@@ -26,24 +26,82 @@ export async function getTeamSection(section: string) {
 }
 
 export async function getTeamMembers() {
-  const members = await db.teamMember.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
+  const teamMemberModel = db.teamMember as unknown as {
+    findMany: (args: unknown) => Promise<Array<{
+      id: string;
+      displayName?: string;
+      name?: string;
+      role: string;
+      bio?: string | null;
+      avatar?: string | null;
+      image?: string | null;
+      githubUrl?: string | null;
+      github?: string | null;
+      linkedinUrl?: string | null;
+      linkedin?: string | null;
+      instagramUrl?: string | null;
+      youtubeUrl?: string | null;
+      isFeatured?: boolean;
+      createdAt?: Date | string;
+      user?: { email: string } | null;
+    }>>;
+  };
+
+  let members: Awaited<ReturnType<typeof teamMemberModel.findMany>>;
+  try {
+    members = await teamMemberModel.findMany({
+      where: { isVisible: true },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { email: true } } },
+    });
+  } catch {
+    members = await teamMemberModel.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  const sorted = members.sort((a, b) => {
+    const featured = Number(Boolean(b.isFeatured)) - Number(Boolean(a.isFeatured));
+    if (featured !== 0) return featured;
+    return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
   });
   
-  return members.map(m => ({
-    ...m,
+  return sorted.map((m) => ({
+    id: m.id,
+    displayName: m.displayName ?? m.name ?? "Team Member",
+    role: m.role,
     bio: m.bio ?? undefined,
-    linkedin: m.linkedin ?? undefined,
-    twitter: m.twitter ?? undefined,
-    github: m.github ?? undefined,
-    portfolio: m.portfolio ?? undefined,
+    avatar: m.avatar ?? m.image ?? undefined,
+    githubUrl: m.githubUrl ?? m.github ?? undefined,
+    linkedinUrl: m.linkedinUrl ?? m.linkedin ?? undefined,
+    instagramUrl: m.instagramUrl ?? undefined,
+    youtubeUrl: m.youtubeUrl ?? undefined,
+    email: m.user?.email ?? undefined,
+    isFeatured: m.isFeatured ?? false,
   }));
 }
 
 export async function getAllTeamMembers() {
   return db.teamMember.findMany({
-    orderBy: { sortOrder: "asc" },
+    orderBy: { createdAt: "asc" },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+          role: true,
+          status: true,
+          imageUrl: true,
+          bio: true,
+          github: true,
+          linkedin: true,
+          instagram: true,
+          youtube: true,
+          createdAt: true,
+        },
+      },
+    },
   });
 }
 

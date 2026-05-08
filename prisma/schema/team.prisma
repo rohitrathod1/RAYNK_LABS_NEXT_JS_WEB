@@ -1,6 +1,5 @@
-// team.prisma — CMS content for the team page.
-// TeamPage: Each row is a section (hero, intro, founders, team_members, values, contact_cta).
-// TeamMember: Individual team member profiles.
+// team.prisma - CMS content for the team page.
+// Team members are synced from Admin profile data.
 
 model TeamPage {
   id        String   @id @default(cuid())
@@ -16,19 +15,24 @@ model TeamPage {
 }
 
 model TeamMember {
-  id        String   @id @default(cuid())
-  name      String
-  role      String
-  bio       String?
-  image     String
-  linkedin  String?
-  twitter   String?
-  github    String?
-  portfolio String?
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String @id @default(cuid())
 
-  @@index([sortOrder])
+  userId       String? @unique
+  user         Admin?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  displayName  String
+  role         String
+  bio          String? @db.Text
+  avatar       String?
+
+  githubUrl    String?
+  linkedinUrl  String?
+  instagramUrl String?
+  youtubeUrl   String?
+
+  isVisible    Boolean @default(true)
+  isFeatured   Boolean @default(false)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

@@ -18,7 +18,9 @@ export async function GET() {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: user });
+    const { password: _password, ...safeUser } = user;
+    void _password;
+    return NextResponse.json({ success: true, data: safeUser });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error";
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
@@ -47,8 +49,12 @@ export async function PUT(req: NextRequest) {
       where: { id: user.id },
       data,
     });
+    const { syncTeamMemberFromAdmin } = await import("@/modules/team/data/mutations");
+    await syncTeamMemberFromAdmin(updated);
 
-    return NextResponse.json({ success: true, data: updated });
+    const { password: _password, ...safeUser } = updated;
+    void _password;
+    return NextResponse.json({ success: true, data: safeUser });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error";
     return NextResponse.json({ success: false, error: msg }, { status: 500 });

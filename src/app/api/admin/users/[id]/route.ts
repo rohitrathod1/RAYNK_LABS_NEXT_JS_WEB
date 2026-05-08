@@ -11,7 +11,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, email, password, status, imageUrl, bio, mobile } = body;
+    const { name, email, password, status, imageUrl, bio, mobile, github, linkedin, instagram, youtube } = body;
 
     const existing = await getAdminById(id);
     if (!existing) {
@@ -29,6 +29,10 @@ export async function PUT(
       imageUrl,
       bio,
       mobile,
+      github,
+      linkedin,
+      instagram,
+      youtube,
     });
 
     return NextResponse.json({

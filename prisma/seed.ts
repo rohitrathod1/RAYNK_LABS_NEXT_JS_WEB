@@ -26,6 +26,7 @@ async function main() {
     await prisma.footerLink.deleteMany();
     await prisma.footerColumn.deleteMany();
     await prisma.footerSetting.deleteMany();
+    await prisma.teamMember.deleteMany();
     await prisma.admin.deleteMany();
     // Add more deleteMany() calls here as models are added
     console.log("✅ Reset complete");
