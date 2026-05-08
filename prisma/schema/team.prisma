@@ -32,7 +32,10 @@ model TeamMember {
 
   isVisible    Boolean @default(true)
   isFeatured   Boolean @default(false)
+  sortOrder    Int     @default(0)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([sortOrder])
 }

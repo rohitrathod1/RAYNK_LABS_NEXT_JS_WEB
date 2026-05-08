@@ -220,6 +220,7 @@ export const config = {
     "/admin/:path*",
     "/api/admin/:path*",
     "/api/upload",
+    "/api/team/:path*",
     // Add public-GET / admin-mutation routes here as they are built:
     // "/api/home/:path*",
     // "/api/hero-slides/:path*",

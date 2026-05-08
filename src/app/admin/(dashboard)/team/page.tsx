@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  GripVertical,
   Loader2,
   Pencil,
   Save,
@@ -88,6 +89,7 @@ interface TeamMemberCard {
   status: string | null;
   isVisible: boolean;
   isFeatured: boolean;
+  sortOrder: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -316,6 +318,35 @@ export default function TeamPageManager() {
     }
   }
 
+  async function reorderMembers(orderedIds: string[]) {
+    const previousMembers = teamMembers;
+    const orderMap = new Map(orderedIds.map((id, index) => [id, index]));
+    setTeamMembers((current) =>
+      [...current]
+        .map((member) => ({
+          ...member,
+          sortOrder: orderMap.get(member.id) ?? member.sortOrder,
+        }))
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    );
+
+    try {
+      const res = await fetch("/api/team/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: orderedIds }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? "Reorder failed");
+      toast.success("Team order updated");
+      await fetchData();
+      router.refresh();
+    } catch (err) {
+      setTeamMembers(previousMembers);
+      toast.error(err instanceof Error ? err.message : "Reorder failed");
+    }
+  }
+
   if (loadingData) {
     return (
       <div className="space-y-6 p-6">
@@ -369,7 +400,9 @@ export default function TeamPageManager() {
             onEdit={openEditMember}
             onToggleVisibility={toggleVisibility}
             onDelete={deleteMember}
+            onReorder={reorderMembers}
             canManageCards={isSuperAdmin}
+            canReorder={isSuperAdmin && filter === "all" && search.trim().length === 0}
           />
         ) : (
           <ContentEditor
@@ -458,7 +491,9 @@ function TeamMembersAdmin({
   onEdit,
   onToggleVisibility,
   onDelete,
+  onReorder,
   canManageCards,
+  canReorder,
 }: {
   search: string;
   setSearch: (value: string) => void;
@@ -469,14 +504,32 @@ function TeamMembersAdmin({
   onEdit: (member: TeamMemberCard) => void;
   onToggleVisibility: (member: TeamMemberCard) => void;
   onDelete: (member: TeamMemberCard) => void;
+  onReorder: (orderedIds: string[]) => void;
   canManageCards: boolean;
+  canReorder: boolean;
 }) {
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  function moveDraggedMember(targetId: string) {
+    if (!canReorder || !draggingId || draggingId === targetId) return;
+    const next = [...members];
+    const fromIndex = next.findIndex((member) => member.id === draggingId);
+    const toIndex = next.findIndex((member) => member.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    onReorder(next.map((member) => member.id));
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-lg font-bold">Team Members</h2>
-          <p className="text-sm text-muted-foreground">{allCount} admin-synced team cards</p>
+          <p className="text-sm text-muted-foreground">
+            {allCount} admin-synced team cards
+            {canManageCards ? " - Drag cards in All view to set public order" : ""}
+          </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative min-w-64">
@@ -508,6 +561,21 @@ function TeamMembersAdmin({
           {members.map((member) => (
             <article
               key={member.id}
+              draggable={canReorder}
+              onDragStart={(event) => {
+                if (!canReorder) return;
+                setDraggingId(member.id);
+                event.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(event) => {
+                if (canReorder) event.preventDefault();
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                moveDraggedMember(member.id);
+                setDraggingId(null);
+              }}
+              onDragEnd={() => setDraggingId(null)}
               className="group overflow-hidden rounded-xl border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10"
             >
               <div className="relative h-44 bg-muted">
@@ -519,6 +587,11 @@ function TeamMembersAdmin({
                   </div>
                 )}
                 <div className="absolute left-3 top-3 flex gap-2">
+                  {canReorder && (
+                    <span className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-lg border bg-background/90 text-muted-foreground shadow-sm active:cursor-grabbing">
+                      <GripVertical className="h-4 w-4" />
+                    </span>
+                  )}
                   <Badge className={member.isVisible ? "bg-green-500/20 text-green-600" : "bg-muted text-muted-foreground"}>
                     {member.isVisible ? "Visible" : "Hidden"}
                   </Badge>

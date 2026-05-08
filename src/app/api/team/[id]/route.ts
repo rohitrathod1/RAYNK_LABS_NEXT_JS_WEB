@@ -39,6 +39,7 @@ function serialize(member: (TeamMember & {
     status: member.user?.status ?? null,
     isVisible: member.isVisible,
     isFeatured: member.isFeatured,
+    sortOrder: member.sortOrder,
     createdAt: member.createdAt,
     updatedAt: member.updatedAt,
   };

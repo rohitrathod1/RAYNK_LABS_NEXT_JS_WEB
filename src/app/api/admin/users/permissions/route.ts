@@ -24,6 +24,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (admin.role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { success: false, error: "Super Admin already has all permissions" },
+        { status: 403 },
+      );
+    }
+
     await assignPermissions(userId, permissions);
 
     return NextResponse.json({

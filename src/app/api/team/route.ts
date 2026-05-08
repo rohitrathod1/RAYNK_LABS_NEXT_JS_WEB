@@ -19,6 +19,7 @@ function serializeMember(member: {
   isVisible?: boolean;
   isActive?: boolean;
   isFeatured?: boolean;
+  sortOrder?: number;
   user?: { email: string; status?: string } | null;
 }) {
   return {
@@ -34,6 +35,7 @@ function serializeMember(member: {
     email: member.user?.email ?? null,
     isVisible: member.isVisible ?? member.isActive ?? true,
     isFeatured: member.isFeatured ?? false,
+    sortOrder: member.sortOrder ?? 0,
     status: member.user?.status ?? null,
   };
 }
@@ -58,22 +60,14 @@ export async function GET(req: Request) {
       findMany: (args: unknown) => Promise<Array<ReturnType<typeof serializeMember> & { createdAt?: Date | string }>>;
     };
 
-    let teamMembers: Array<ReturnType<typeof serializeMember> & { createdAt?: Date | string }>;
-    try {
-      teamMembers = await teamMemberModel.findMany({
-        where: showAll ? undefined : { isVisible: true },
-        orderBy: { createdAt: "asc" },
-        include: { user: { select: { email: true, status: true } } },
-      });
-    } catch {
-      teamMembers = await teamMemberModel.findMany({
-        where: showAll ? undefined : { isActive: true },
-        orderBy: { createdAt: "asc" },
-      });
-    }
+    const teamMembers = await teamMemberModel.findMany({
+      where: showAll ? undefined : { isVisible: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      include: { user: { select: { email: true, status: true } } },
+    });
     const sortedMembers = teamMembers.sort((a, b) => {
-      const featured = Number(Boolean(b.isFeatured)) - Number(Boolean(a.isFeatured));
-      if (featured !== 0) return featured;
+      const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+      if (order !== 0) return order;
       return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
     });
 

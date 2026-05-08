@@ -42,28 +42,21 @@ export async function getTeamMembers() {
       instagramUrl?: string | null;
       youtubeUrl?: string | null;
       isFeatured?: boolean;
+      sortOrder?: number;
       createdAt?: Date | string;
       user?: { email: string } | null;
     }>>;
   };
 
-  let members: Awaited<ReturnType<typeof teamMemberModel.findMany>>;
-  try {
-    members = await teamMemberModel.findMany({
-      where: { isVisible: true },
-      orderBy: { createdAt: "asc" },
-      include: { user: { select: { email: true } } },
-    });
-  } catch {
-    members = await teamMemberModel.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: "asc" },
-    });
-  }
+  const members = await teamMemberModel.findMany({
+    where: { isVisible: true },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    include: { user: { select: { email: true } } },
+  });
 
   const sorted = members.sort((a, b) => {
-    const featured = Number(Boolean(b.isFeatured)) - Number(Boolean(a.isFeatured));
-    if (featured !== 0) return featured;
+    const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    if (order !== 0) return order;
     return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
   });
   
@@ -79,12 +72,13 @@ export async function getTeamMembers() {
     youtubeUrl: m.youtubeUrl ?? undefined,
     email: m.user?.email ?? undefined,
     isFeatured: m.isFeatured ?? false,
+    sortOrder: m.sortOrder ?? 0,
   }));
 }
 
 export async function getAllTeamMembers() {
   return db.teamMember.findMany({
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: {
       user: {
         select: {

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/middleware/permission";
 import { updateAdmin, deleteAdmin, getAdminById } from "@/modules/rbac";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const NAME_REGEX = /^[A-Za-z][A-Za-z\s.'-]{1,79}$/;
+const PASSWORD_MIN_LENGTH = 8;
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -21,9 +25,37 @@ export async function PUT(
       );
     }
 
+    if (existing.role === "SUPER_ADMIN") {
+      return NextResponse.json(
+        { success: false, error: "Super Admin details are managed from the Profile page" },
+        { status: 403 },
+      );
+    }
+
+    if (name !== undefined && !NAME_REGEX.test(String(name).trim())) {
+      return NextResponse.json(
+        { success: false, error: "Enter a valid name" },
+        { status: 400 },
+      );
+    }
+
+    if (email !== undefined && !EMAIL_REGEX.test(String(email).trim())) {
+      return NextResponse.json(
+        { success: false, error: "Enter a valid email address" },
+        { status: 400 },
+      );
+    }
+
+    if (password !== undefined && String(password).length > 0 && String(password).length < PASSWORD_MIN_LENGTH) {
+      return NextResponse.json(
+        { success: false, error: "Password must be at least 8 characters" },
+        { status: 400 },
+      );
+    }
+
     const updated = await updateAdmin(id, {
-      name,
-      email,
+      name: name === undefined ? undefined : String(name).trim(),
+      email: email === undefined ? undefined : String(email).trim().toLowerCase(),
       password,
       status,
       imageUrl,

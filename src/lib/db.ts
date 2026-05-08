@@ -7,9 +7,25 @@ import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as { db: PrismaClient };
 
+function normalizeDatabaseUrl(connectionString: string | undefined): string | undefined {
+  if (!connectionString) return connectionString;
+
+  try {
+    const url = new URL(connectionString);
+    const sslMode = url.searchParams.get("sslmode");
+    if (sslMode && ["prefer", "require", "verify-ca"].includes(sslMode)) {
+      url.searchParams.set("sslmode", "verify-full");
+    }
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
+}
+
 function createPrismaClient(): PrismaClient {
+  const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL);
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     ssl: { rejectUnauthorized: true }, // explicit verify-full — silences pg deprecation warning
   });
   const adapter = new PrismaPg(pool);

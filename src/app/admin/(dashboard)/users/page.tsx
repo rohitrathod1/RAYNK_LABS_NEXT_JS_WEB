@@ -9,6 +9,7 @@ import { SafeImage } from "@/components/common/safe-image";
 import {
   Plus,
   Eye,
+  EyeOff,
   Pencil,
   Trash2,
   Search,
@@ -64,6 +65,10 @@ type ModalMode = "add" | "edit" | "view" | null;
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const permissionKeys = Object.keys(PERMISSIONS) as PermissionKey[];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PASSWORD_MIN_LENGTH = 8;
+
+type FormErrors = Partial<Record<"name" | "email" | "password" | "permissions", string>>;
 
 function getInitials(name: string) {
   return name
@@ -101,6 +106,8 @@ export default function AdminUsersPage() {
   const [formPassword, setFormPassword] = useState("");
   const [formStatus, setFormStatus] = useState<AdminUser["status"]>("APPROVED");
   const [formPermissions, setFormPermissions] = useState<string[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -137,11 +144,15 @@ export default function AdminUsersPage() {
 
   // ── Filtered users ─────────────────────────────────────────────────────────
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredUsers = users.filter((u) => {
+    const query = searchQuery.trim().toLowerCase();
+    return (
+      u.role !== "SUPER_ADMIN" &&
+      (!query ||
+        u.name.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query))
+    );
+  });
 
   // ── Modal helpers ──────────────────────────────────────────────────────────
 
@@ -151,16 +162,24 @@ export default function AdminUsersPage() {
     setFormPassword("");
     setFormStatus("APPROVED");
     setFormPermissions([]);
+    setShowPassword(false);
+    setFormErrors({});
     setSelectedUser(null);
     setModalMode("add");
   };
 
   const openEditModal = (user: AdminUser) => {
+    if (user.role === "SUPER_ADMIN") {
+      toast.error("Super Admin details are managed from the Profile page");
+      return;
+    }
     setFormName(user.name);
     setFormEmail(user.email);
     setFormPassword("");
     setFormStatus(user.status);
     setFormPermissions(user.permissions.map((permission) => permission.name));
+    setShowPassword(false);
+    setFormErrors({});
     setSelectedUser(user);
     setModalMode("edit");
   };
@@ -173,19 +192,54 @@ export default function AdminUsersPage() {
   const closeModal = () => {
     setModalMode(null);
     setSelectedUser(null);
+    setShowPassword(false);
+    setFormErrors({});
   };
 
   const togglePermission = (name: string) => {
     setFormPermissions((prev) =>
       prev.includes(name) ? prev.filter((p) => p !== name) : [...prev, name],
     );
+    setFormErrors((prev) => ({ ...prev, permissions: undefined }));
+  };
+
+  const validateForm = (mode: Exclude<ModalMode, null | "view">) => {
+    const errors: FormErrors = {};
+    const name = formName.trim();
+    const email = formEmail.trim();
+    const password = formPassword.trim();
+
+    if (!name) {
+      errors.name = "Name is required.";
+    } else if (!/^[A-Za-z][A-Za-z\s.'-]{1,79}$/.test(name)) {
+      errors.name = "Use a valid name with letters, spaces, dots, apostrophes, or hyphens.";
+    }
+
+    if (!email) {
+      errors.email = "Email is required.";
+    } else if (!EMAIL_REGEX.test(email)) {
+      errors.email = "Enter a valid email address, for example admin@raynklabs.com.";
+    }
+
+    if (mode === "add" && !password) {
+      errors.password = "Password is required.";
+    } else if (password && password.length < PASSWORD_MIN_LENGTH) {
+      errors.password = "Password must be at least 8 characters.";
+    }
+
+    if (formPermissions.length === 0) {
+      errors.permissions = "Select at least one permission for this admin.";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const handleAdd = async () => {
-    if (!formName || !formEmail || !formPassword) {
-      toast.error("Name, email, and password are required");
+    if (!validateForm("add")) {
+      toast.error("Please fix the highlighted fields");
       return;
     }
 
@@ -196,7 +250,7 @@ export default function AdminUsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formName,
-          email: formEmail,
+          email: formEmail.trim().toLowerCase(),
           password: formPassword,
         }),
       });
@@ -226,8 +280,12 @@ export default function AdminUsersPage() {
 
   const handleEdit = async () => {
     if (!selectedUser) return;
-    if (!formName || !formEmail) {
-      toast.error("Name and email are required");
+    if (selectedUser.role === "SUPER_ADMIN") {
+      toast.error("Super Admin details are managed from the Profile page");
+      return;
+    }
+    if (!validateForm("edit")) {
+      toast.error("Please fix the highlighted fields");
       return;
     }
 
@@ -238,7 +296,7 @@ export default function AdminUsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formName,
-          email: formEmail,
+          email: formEmail.trim().toLowerCase(),
           password: formPassword || undefined,
           status: formStatus,
         }),
@@ -523,9 +581,14 @@ export default function AdminUsersPage() {
                 <Input
                   id="name"
                   value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  onChange={(e) => {
+                    setFormName(e.target.value);
+                    setFormErrors((prev) => ({ ...prev, name: undefined }));
+                  }}
                   placeholder="John Doe"
+                  aria-invalid={!!formErrors.name}
                 />
+                {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
               </div>
 
               {/* Email */}
@@ -535,9 +598,14 @@ export default function AdminUsersPage() {
                   id="email"
                   type="email"
                   value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
+                  onChange={(e) => {
+                    setFormEmail(e.target.value);
+                    setFormErrors((prev) => ({ ...prev, email: undefined }));
+                  }}
                   placeholder="admin@raynklabs.com"
+                  aria-invalid={!!formErrors.email}
                 />
+                {formErrors.email && <p className="text-xs text-destructive">{formErrors.email}</p>}
               </div>
 
               {/* Password */}
@@ -545,13 +613,31 @@ export default function AdminUsersPage() {
                 <Label htmlFor="password">
                   Password {modalMode === "edit" ? "(leave blank to keep current)" : "*"}
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
-                  placeholder={modalMode === "add" ? "Enter password" : "Enter new password"}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formPassword}
+                    onChange={(e) => {
+                      setFormPassword(e.target.value);
+                      setFormErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    placeholder={modalMode === "add" ? "Enter password" : "Enter new password"}
+                    className="pr-10"
+                    aria-invalid={!!formErrors.password}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowPassword((value) => !value)}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {formErrors.password && <p className="text-xs text-destructive">{formErrors.password}</p>}
               </div>
 
               {/* Status (edit only) */}
@@ -581,6 +667,9 @@ export default function AdminUsersPage() {
                 <p className="text-xs text-muted-foreground">
                   Select which sections this admin can manage.
                 </p>
+                {formErrors.permissions && (
+                  <p className="text-xs text-destructive">{formErrors.permissions}</p>
+                )}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {(permissions.length > 0
                     ? permissions

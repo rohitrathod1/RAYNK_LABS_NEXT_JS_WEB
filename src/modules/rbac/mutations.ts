@@ -24,6 +24,11 @@ export async function createAdmin(data: {
       },
     });
 
+    const lastMember = await tx.teamMember.findFirst({
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+
     await tx.teamMember.create({
       data: {
         userId: admin.id,
@@ -35,6 +40,7 @@ export async function createAdmin(data: {
         linkedinUrl: admin.linkedin,
         instagramUrl: admin.instagram,
         youtubeUrl: admin.youtube,
+        sortOrder: (lastMember?.sortOrder ?? -1) + 1,
       },
     });
 

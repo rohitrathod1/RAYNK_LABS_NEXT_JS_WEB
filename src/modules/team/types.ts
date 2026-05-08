@@ -35,6 +35,7 @@ export interface TeamMember {
   email?: string | null;
   isVisible?: boolean;
   isFeatured?: boolean;
+  sortOrder?: number;
 }
 
 export interface TeamMembersSection {

@@ -10,6 +10,11 @@ export async function upsertTeamSection(section: string, content: unknown) {
 }
 
 export async function createTeamMemberFromAdmin(user: Admin) {
+  const lastMember = await db.teamMember.findFirst({
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
   return db.teamMember.upsert({
     where: { userId: user.id },
     update: {
@@ -32,6 +37,7 @@ export async function createTeamMemberFromAdmin(user: Admin) {
       linkedinUrl: user.linkedin,
       instagramUrl: user.instagram,
       youtubeUrl: user.youtube,
+      sortOrder: (lastMember?.sortOrder ?? -1) + 1,
     },
   });
 }
