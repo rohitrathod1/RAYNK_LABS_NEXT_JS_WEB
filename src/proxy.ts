@@ -157,6 +157,7 @@ export default auth(async (req: AuthRequest) => {
       "/admin/portfolio": "MANAGE_PORTFOLIO",
       "/admin/blogs": "MANAGE_BLOG",
       "/admin/contact": "MANAGE_CONTACT",
+      "/admin/submissions": "MANAGE_SUBMISSIONS",
       "/admin/navbar": "MANAGE_NAVBAR",
       "/admin/footer": "MANAGE_FOOTER",
       "/admin/seo": "MANAGE_SEO",

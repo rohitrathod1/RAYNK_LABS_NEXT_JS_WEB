@@ -44,6 +44,7 @@ async function main() {
     { name: "MANAGE_NAVBAR", description: "Manage navigation bar" },
     { name: "MANAGE_FOOTER", description: "Manage footer content" },
     { name: "MANAGE_SEO", description: "Manage SEO settings" },
+    { name: "MANAGE_SUBMISSIONS", description: "Manage form submissions" },
     { name: "MANAGE_USERS", description: "Manage admin users and permissions" },
   ];
 

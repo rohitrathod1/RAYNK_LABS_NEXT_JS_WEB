@@ -18,6 +18,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await db.submission.create({
+      data: {
+        type: "contact",
+        name: data.name,
+        email: data.email.toLowerCase(),
+        phone: data.phone || null,
+        subject: data.subject || null,
+        message: data.message,
+        sourcePage: "/contact",
+        status: "unread",
+      },
+    });
+
     return NextResponse.json({ success: true, data: inquiry });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error";
