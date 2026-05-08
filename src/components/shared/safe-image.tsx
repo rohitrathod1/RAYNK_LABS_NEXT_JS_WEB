@@ -63,9 +63,12 @@ export function SafeImage({ src, alt, onMissing, ...rest }: SafeImageProps) {
 
   // Reset state when the prop changes (admin uploads a new image)
   useEffect(() => {
-    setPhase('initial');
-    setCurrentSrc(initial);
-    reportedRef.current = false;
+    const id = window.setTimeout(() => {
+      setPhase('initial');
+      setCurrentSrc(initial);
+      reportedRef.current = false;
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [initial]);
 
   const isFallback = phase === 'fallback';

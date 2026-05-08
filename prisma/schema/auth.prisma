@@ -24,6 +24,7 @@ model Admin {
   // Profile
   imageUrl  String?
   bio       String?
+  designation String?
   github    String?
   linkedin  String?
   instagram String?

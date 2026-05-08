@@ -1,4 +1,5 @@
 import { SafeImage } from "@/components/common/safe-image";
+import { Globe, Mail, Phone } from "lucide-react";
 import type React from "react";
 
 export function TeamCard({
@@ -14,9 +15,14 @@ export function TeamCard({
     instagramUrl?: string;
     githubUrl?: string;
     youtubeUrl?: string;
+    portfolioUrl?: string;
+    email?: string;
+    phone?: string;
   };
 }) {
   const avatar = member.avatar || "placeholder.png";
+  const roleLabel =
+    member.role === "SUPER_ADMIN" ? "Super Admin" : member.role === "ADMIN" ? "Admin" : member.role;
 
   return (
     <div id={member.id} className="overflow-hidden rounded-xl bg-background shadow-md transition-shadow hover:shadow-lg">
@@ -32,15 +38,32 @@ export function TeamCard({
       <div className="space-y-3 p-5">
         <div>
           <h3 className="text-xl font-semibold">{member.displayName}</h3>
-          <p className="text-sm font-medium text-primary">{member.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}</p>
+          <p className="text-sm font-medium text-primary">{roleLabel}</p>
         </div>
         {member.bio && (
           <p className="line-clamp-3 text-sm text-muted-foreground">{member.bio}</p>
+        )}
+        {(member.email || member.phone) && (
+          <div className="space-y-1 text-xs text-muted-foreground">
+            {member.email && (
+              <a href={`mailto:${member.email}`} className="flex items-center gap-2 transition hover:text-primary">
+                <Mail className="h-3.5 w-3.5" />
+                <span className="truncate">{member.email}</span>
+              </a>
+            )}
+            {member.phone && (
+              <a href={`tel:${member.phone}`} className="flex items-center gap-2 transition hover:text-primary">
+                <Phone className="h-3.5 w-3.5" />
+                <span className="truncate">{member.phone}</span>
+              </a>
+            )}
+          </div>
         )}
         <div className="flex items-center gap-3">
           <Social href={member.linkedinUrl} title="LinkedIn" icon={<BrandIcon name="linkedin" />} />
           <Social href={member.instagramUrl} title="Instagram" icon={<BrandIcon name="instagram" />} />
           <Social href={member.githubUrl} title="GitHub" icon={<BrandIcon name="github" />} />
+          <Social href={member.portfolioUrl} title="Portfolio" icon={<Globe className="h-5 w-5" />} />
           <Social href={member.youtubeUrl} title="YouTube" icon={<BrandIcon name="youtube" />} />
         </div>
       </div>

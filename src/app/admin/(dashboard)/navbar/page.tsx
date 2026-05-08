@@ -144,7 +144,10 @@ export default function AdminNavbarManager() {
   }, []);
 
   useEffect(() => {
-    Promise.all([fetchLinks(), fetchSetting()]).finally(() => setLoading(false));
+    const id = window.setTimeout(() => {
+      Promise.all([fetchLinks(), fetchSetting()]).finally(() => setLoading(false));
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [fetchLinks, fetchSetting]);
 
   const activeNavLink = links.find((l) => l.id === activeNavLinkId) ?? null;

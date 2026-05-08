@@ -43,7 +43,7 @@ export function OfflineIndicator() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    setIsOffline(!navigator.onLine);
+    const id = window.setTimeout(() => setIsOffline(!navigator.onLine), 0);
 
     const handleOnline = () => {
       verify();
@@ -56,6 +56,7 @@ export function OfflineIndicator() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.clearTimeout(id);
     };
   }, [verify]);
 
@@ -66,8 +67,8 @@ export function OfflineIndicator() {
         intervalRef.current = null;
       }
       sinceStartRef.current = 0;
-      setSinceMs(0);
-      return;
+      const id = window.setTimeout(() => setSinceMs(0), 0);
+      return () => window.clearTimeout(id);
     }
 
     sinceStartRef.current = Date.now();

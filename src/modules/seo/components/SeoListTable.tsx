@@ -90,7 +90,10 @@ export function SeoListTable() {
   }, []);
 
   useEffect(() => {
-    void load();
+    const id = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [load]);
 
   const filtered = useMemo(() => {
@@ -431,4 +434,3 @@ export function SeoListTable() {
     </div>
   );
 }
-

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { profileUpdateSchema } from "@/modules/profile/validations";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   try {
@@ -10,8 +11,13 @@ export async function GET() {
       return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
     }
 
-    const user = await db.admin.findUnique({
-      where: { email: session.user.email },
+    const user = await db.admin.findFirst({
+      where: {
+        OR: [
+          { id: session.user.id },
+          { email: session.user.email },
+        ],
+      },
     });
 
     if (!user) {
@@ -34,8 +40,13 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
     }
 
-    const user = await db.admin.findUnique({
-      where: { email: session.user.email },
+    const user = await db.admin.findFirst({
+      where: {
+        OR: [
+          { id: session.user.id },
+          { email: session.user.email },
+        ],
+      },
     });
 
     if (!user) {
@@ -47,10 +58,17 @@ export async function PUT(req: NextRequest) {
 
     const updated = await db.admin.update({
       where: { id: user.id },
-      data,
+      data: {
+        ...data,
+        email: data.email?.trim().toLowerCase(),
+        name: data.name?.trim(),
+        mobile: data.mobile?.trim() || null,
+      },
     });
     const { syncTeamMemberFromAdmin } = await import("@/modules/team/data/mutations");
     await syncTeamMemberFromAdmin(updated);
+    revalidatePath("/team");
+    revalidatePath("/admin/profile");
 
     const { password: _password, ...safeUser } = updated;
     void _password;

@@ -33,7 +33,7 @@ export async function createAdmin(data: {
       data: {
         userId: admin.id,
         displayName: admin.name,
-        role: admin.role,
+        role: admin.designation || admin.role,
         bio: admin.bio,
         avatar: admin.imageUrl,
         githubUrl: admin.github,

@@ -41,17 +41,18 @@ export async function getTeamMembers() {
       linkedin?: string | null;
       instagramUrl?: string | null;
       youtubeUrl?: string | null;
+      portfolioUrl?: string | null;
       isFeatured?: boolean;
       sortOrder?: number;
       createdAt?: Date | string;
-      user?: { email: string } | null;
+      user?: { email: string; mobile?: string | null; portfolio?: string | null } | null;
     }>>;
   };
 
   const members = await teamMemberModel.findMany({
     where: { isVisible: true },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    include: { user: { select: { email: true } } },
+    include: { user: { select: { email: true, mobile: true, portfolio: true } } },
   });
 
   const sorted = members.sort((a, b) => {
@@ -70,7 +71,9 @@ export async function getTeamMembers() {
     linkedinUrl: m.linkedinUrl ?? m.linkedin ?? undefined,
     instagramUrl: m.instagramUrl ?? undefined,
     youtubeUrl: m.youtubeUrl ?? undefined,
+    portfolioUrl: m.portfolioUrl ?? m.user?.portfolio ?? undefined,
     email: m.user?.email ?? undefined,
+    phone: m.user?.mobile ?? undefined,
     isFeatured: m.isFeatured ?? false,
     sortOrder: m.sortOrder ?? 0,
   }));

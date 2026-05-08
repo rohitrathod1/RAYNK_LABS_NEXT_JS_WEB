@@ -16,11 +16,12 @@ function serializeMember(member: {
   linkedin?: string | null;
   instagramUrl?: string | null;
   youtubeUrl?: string | null;
+  portfolioUrl?: string | null;
   isVisible?: boolean;
   isActive?: boolean;
   isFeatured?: boolean;
   sortOrder?: number;
-  user?: { email: string; status?: string } | null;
+  user?: { email: string; mobile?: string | null; portfolio?: string | null; status?: string } | null;
 }) {
   return {
     id: member.id,
@@ -32,7 +33,9 @@ function serializeMember(member: {
     linkedinUrl: member.linkedinUrl ?? member.linkedin ?? null,
     instagramUrl: member.instagramUrl,
     youtubeUrl: member.youtubeUrl,
+    portfolioUrl: member.portfolioUrl ?? member.user?.portfolio ?? null,
     email: member.user?.email ?? null,
+    phone: member.user?.mobile ?? null,
     isVisible: member.isVisible ?? member.isActive ?? true,
     isFeatured: member.isFeatured ?? false,
     sortOrder: member.sortOrder ?? 0,
@@ -63,7 +66,7 @@ export async function GET(req: Request) {
     const teamMembers = await teamMemberModel.findMany({
       where: showAll ? undefined : { isVisible: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      include: { user: { select: { email: true, status: true } } },
+      include: { user: { select: { email: true, mobile: true, portfolio: true, status: true } } },
     });
     const sortedMembers = teamMembers.sort((a, b) => {
       const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);

@@ -19,7 +19,7 @@ export async function createTeamMemberFromAdmin(user: Admin) {
     where: { userId: user.id },
     update: {
       displayName: user.name,
-      role: user.role,
+      role: user.designation || user.role,
       bio: user.bio,
       avatar: user.imageUrl,
       githubUrl: user.github,
@@ -30,7 +30,7 @@ export async function createTeamMemberFromAdmin(user: Admin) {
     create: {
       userId: user.id,
       displayName: user.name,
-      role: user.role,
+      role: user.designation || user.role,
       bio: user.bio,
       avatar: user.imageUrl,
       githubUrl: user.github,

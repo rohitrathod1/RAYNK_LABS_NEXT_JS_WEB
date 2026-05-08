@@ -13,6 +13,9 @@ export function TeamGrid({
     instagramUrl?: string;
     githubUrl?: string;
     youtubeUrl?: string;
+    portfolioUrl?: string;
+    email?: string;
+    phone?: string;
   }>;
 }) {
   if (members.length === 0) {

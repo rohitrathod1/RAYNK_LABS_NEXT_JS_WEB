@@ -1,34 +1,36 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useTheme } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
+import { SafeImage } from '@/components/common/safe-image';
+import { toSrc } from '@/components/common/image-upload';
 import {
-  Menu,
-  X,
-  LayoutDashboard,
-  Users,
-  Globe,
+  ArrowLeft,
+  Briefcase,
+  ChevronDown,
+  ExternalLink,
   FileText,
+  FolderKanban,
+  Globe,
   Home,
   Info,
-  Briefcase,
-  FolderKanban,
-  Newspaper,
-  Mail,
-  Navigation,
-  PanelBottom,
-  ChevronDown,
+  LayoutDashboard,
   LogOut,
-  ArrowLeft,
+  Mail,
+  Menu,
   Moon,
+  Navigation,
+  Newspaper,
+  PanelBottom,
   Sun,
-  ExternalLink,
   UserCog,
+  Users,
+  X,
 } from 'lucide-react';
 import { PERMISSIONS } from '@/modules/rbac/constants';
 import type { PermissionKey } from '@/modules/rbac/constants';
@@ -50,6 +52,19 @@ interface NavSection {
   children: NavChild[];
 }
 
+interface SeoSidebarPage {
+  id: string;
+  page: string;
+  metaTitle: string;
+}
+
+interface SidebarProfile {
+  name: string;
+  email: string;
+  role: string;
+  imageUrl?: string | null;
+}
+
 const CMS_PAGES: NavChild[] = [
   { title: 'Home', href: '/admin/home', icon: Home, permission: PERMISSIONS.EDIT_HOME },
   { title: 'About', href: '/admin/about', icon: Info, permission: PERMISSIONS.EDIT_ABOUT },
@@ -67,10 +82,14 @@ const TEAM_PAGES: NavChild[] = [
   { title: 'Profile', href: '/admin/profile', icon: Users, permission: null },
 ];
 
-interface SeoSidebarPage {
-  id: string;
-  page: string;
-  metaTitle: string;
+function profileInitials(name?: string | null, email?: string | null) {
+  const source = name || email || 'Admin';
+  return source
+    .split(/[.\s@_-]+/)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -79,9 +98,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ Dashboard: true, SEO: true, Team: true });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [seoPages, setSeoPages] = useState<SeoSidebarPage[]>([]);
+  const [sidebarProfile, setSidebarProfile] = useState<SidebarProfile | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   const userRole = session?.user?.role as string | undefined;
@@ -98,6 +120,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [userRole, userPermissions]);
 
   const canManageSeo = can(PERMISSIONS.MANAGE_SEO);
+  const displayRole = sidebarProfile?.role ?? userRole ?? 'ADMIN';
+  const displayName = sidebarProfile?.name ?? session?.user?.name ?? session?.user?.email ?? 'Admin';
+  const displayEmail = sidebarProfile?.email ?? session?.user?.email ?? '';
+  const isSidebarVisible = isDesktop ? sidebarOpen : mobileOpen;
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 768px)');
+    const sync = () => setIsDesktop(media.matches);
+    const id = window.setTimeout(sync, 0);
+    media.addEventListener('change', sync);
+    return () => {
+      window.clearTimeout(id);
+      media.removeEventListener('change', sync);
+    };
+  }, []);
 
   useEffect(() => {
     if (!session || !canManageSeo) return;
@@ -112,6 +149,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return () => window.clearTimeout(id);
   }, [canManageSeo, session]);
+
+  useEffect(() => {
+    if (!session) return;
+    const id = window.setTimeout(() => {
+      fetch('/api/admin/profile', { cache: 'no-store' })
+        .then((response) => response.json())
+        .then((payload: { success?: boolean; data?: SidebarProfile }) => {
+          if (payload.success && payload.data) setSidebarProfile(payload.data);
+        })
+        .catch(() => setSidebarProfile(null));
+    }, 0);
+
+    return () => window.clearTimeout(id);
+  }, [session]);
 
   const sidebarSections = useMemo<NavSection[]>(() => {
     const dashboardChildren = CMS_PAGES.filter((page) => can(page.permission));
@@ -133,27 +184,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const teamChildren = TEAM_PAGES.filter((page) => can(page.permission));
 
     return [
-      {
-        title: 'Dashboard',
-        href: '/admin',
-        icon: LayoutDashboard,
-        permission: null,
-        children: dashboardChildren,
-      },
-      {
-        title: 'SEO',
-        href: '/admin/seo',
-        icon: Globe,
-        permission: PERMISSIONS.MANAGE_SEO,
-        children: seoChildren,
-      },
-      {
-        title: 'Team',
-        href: teamChildren[0]?.href ?? '/admin/profile',
-        icon: Users,
-        permission: null,
-        children: teamChildren,
-      },
+      { title: 'Dashboard', href: '/admin', icon: LayoutDashboard, permission: null, children: dashboardChildren },
+      { title: 'SEO', href: '/admin/seo', icon: Globe, permission: PERMISSIONS.MANAGE_SEO, children: seoChildren },
+      { title: 'Team', href: teamChildren[0]?.href ?? '/admin/profile', icon: Users, permission: null, children: teamChildren },
     ];
   }, [can, canManageSeo, seoPages]);
 
@@ -188,40 +221,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="admin-shell flex h-screen overflow-hidden bg-background">
       {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* ── Sidebar ───────────────────────────── */}
       <aside
         ref={sidebarRef}
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col border-r border-white/10 bg-card shadow-sm 2xl:w-72',
-          'transform transition-transform duration-300',
-          mobileOpen ? 'translate-x-0' : '-translate-x-64',
-          'md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card shadow-sm 2xl:w-72',
+          'transform transition-all duration-300',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          sidebarOpen ? 'md:translate-x-0' : 'md:-translate-x-full',
         )}
       >
-        {/* Header */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4 2xl:h-20 2xl:px-6">
-          <Link
-            href="/"
-            title="Back to Website"
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft size={20} className="2xl:h-6 2xl:w-6" />
-          </Link>
-          <span className="truncate px-2 text-lg font-bold 2xl:text-xl">Admin Panel</span>
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 2xl:h-20 2xl:px-6">
+          <span className="truncate text-lg font-bold 2xl:text-xl">Admin Panel</span>
           <button
-            onClick={() => setMobileOpen(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground md:hidden"
-            aria-label="Close sidebar"
+            onClick={() => {
+              setMobileOpen(false);
+              setSidebarOpen(false);
+            }}
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Collapse sidebar"
           >
             <X size={20} />
           </button>
-          <div className="hidden h-10 w-10 md:block" />
         </div>
 
-        {/* Nav */}
         <nav className="no-scrollbar flex-1 space-y-1 overflow-y-auto p-3">
           {visibleSections.map((section) => {
             const active = isActive(section);
@@ -239,12 +264,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link
                     href={section.href}
                     onClick={() => setMobileOpen(false)}
-                    className="group flex min-h-11 flex-1 items-center gap-3 px-3 py-2.5 text-sm font-semibold 2xl:px-4 2xl:py-3 2xl:text-base"
+                    className="group flex min-h-11 flex-1 cursor-pointer items-center gap-3 px-3 py-2.5 text-sm font-semibold 2xl:px-4 2xl:py-3 2xl:text-base"
                   >
                     <span
                       className={cn(
                         'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition',
-                        active ? 'bg-white/15' : 'bg-transparent group-hover:bg-primary/10 group-hover:text-primary',
+                        active ? 'bg-background/15' : 'bg-transparent group-hover:bg-primary/10 group-hover:text-primary',
                       )}
                     >
                       <Icon size={17} />
@@ -255,7 +280,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <button
                       type="button"
                       onClick={() => setExpanded((prev) => ({ ...prev, [section.title]: !isOpen }))}
-                      className="flex min-h-11 w-10 items-center justify-center"
+                      className="flex min-h-11 w-10 cursor-pointer items-center justify-center"
                       aria-label={isOpen ? `Collapse ${section.title}` : `Expand ${section.title}`}
                     >
                       <ChevronDown size={16} className={cn('transition-transform duration-200', isOpen && 'rotate-180')} />
@@ -265,7 +290,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {section.children.length > 0 && (
                   <div className={cn('overflow-hidden transition-all duration-200', isOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0')}>
-                    <div className="no-scrollbar ml-5 max-h-72 overflow-y-auto border-l border-border/50 py-1 pl-3">
+                    <div className="no-scrollbar ml-5 max-h-72 overflow-y-auto border-l border-border py-1 pl-3">
                       {section.children.map((child) => {
                         const ChildIcon = child.icon;
                         const href = child.query ? `${child.href}?${child.query}` : child.href;
@@ -276,7 +301,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             href={href}
                             onClick={() => setMobileOpen(false)}
                             className={cn(
-                              'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition',
+                              'flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition',
                               childActive ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                             )}
                           >
@@ -299,57 +324,77 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </nav>
 
-        <div className="shrink-0 border-t border-white/10 p-4 text-xs text-muted-foreground 2xl:p-5 2xl:text-sm">
+        <div className="shrink-0 border-t border-border p-4 text-xs text-muted-foreground 2xl:p-5 2xl:text-sm">
           <p>Manage all pages from sidebar.</p>
         </div>
       </aside>
 
-      {/* ── Main content ──────────────────────── */}
-      <div className="flex h-screen min-w-0 flex-1 flex-col md:ml-64 2xl:ml-72">
-        <header className="z-20 flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-background/95 px-4 backdrop-blur md:hidden">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 transition hover:border-primary/40 hover:bg-accent"
-              aria-label="Open menu"
+      <div
+        className={cn(
+          'flex h-screen min-w-0 flex-1 flex-col transition-all duration-300',
+          sidebarOpen ? 'md:ml-64 2xl:ml-72' : 'md:ml-0',
+        )}
+      >
+        <header className="z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-background/95 px-4 backdrop-blur 2xl:h-20 2xl:px-8">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              title={isSidebarVisible ? 'Collapse sidebar' : 'Open sidebar'}
+              onClick={() => {
+                if (isDesktop) {
+                  setSidebarOpen((open) => !open);
+                } else {
+                  setMobileOpen((open) => !open);
+                }
+              }}
+              className="h-10 w-10 shrink-0 cursor-pointer rounded-xl border border-border transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
             >
-              <Menu size={24} />
-            </button>
-            <h1 className="truncate text-sm font-bold">Admin Panel</h1>
+              {isSidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
+
+            <Link
+              href="/"
+              className="hidden h-10 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-border px-3 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 sm:inline-flex"
+            >
+              <ArrowLeft className="h-4 w-4" /> Website
+            </Link>
+
+            <span className="hidden shrink-0 rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-bold uppercase tracking-wider text-secondary-foreground sm:inline-flex">
+              {displayRole === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN'}
+            </span>
+
+            <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 shadow-sm lg:flex">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-bold text-primary">
+                {sidebarProfile?.imageUrl ? (
+                  <SafeImage src={toSrc(sidebarProfile.imageUrl)} alt={displayName} width={32} height={32} className="h-full w-full object-cover" />
+                ) : (
+                  profileInitials(displayName, displayEmail)
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="max-w-40 truncate text-xs font-bold">{displayName}</p>
+                <p className="max-w-40 truncate text-[11px] text-muted-foreground">{displayEmail}</p>
+              </div>
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button variant="ghost" size="icon" title="Toggle theme" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9 rounded-xl border border-white/15 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10">
+
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="icon" title="Toggle theme" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-10 w-10 cursor-pointer rounded-xl border border-border transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10">
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <a
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/15 px-3 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
+              className="hidden h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 sm:inline-flex"
             >
-              <ExternalLink className="h-3.5 w-3.5" /> <span className="hidden sm:inline">View Site</span>
+              <ExternalLink className="h-4 w-4" /> View Site
             </a>
-            <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-9 gap-2 rounded-xl bg-red-600 px-3 text-xs shadow-lg shadow-red-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700">
-              <LogOut className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Logout</span>
+            <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-10 cursor-pointer gap-2 rounded-xl px-4 transition-all hover:opacity-90">
+              <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
-        </header>
-
-        <header className="z-20 hidden h-16 shrink-0 items-center justify-end gap-3 border-b border-white/10 bg-background/95 px-6 backdrop-blur md:flex 2xl:h-20 2xl:px-8 2xl:gap-4">
-          <Button variant="ghost" size="icon" title="Toggle theme" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-10 w-10 rounded-xl border border-white/15 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10">
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
-          >
-            <ExternalLink className="h-4 w-4" /> View Site
-          </a>
-          <Button variant="destructive" size="sm" onClick={() => setShowLogoutModal(true)} className="h-10 gap-2 rounded-xl bg-red-600 px-4 shadow-lg shadow-red-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700">
-            <LogOut className="h-4 w-4" /> Logout
-          </Button>
         </header>
 
         <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 2xl:p-10">{children}</main>
@@ -360,7 +405,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onClose={() => setShowLogoutModal(false)}
         onConfirm={handleLogout}
       />
-
     </div>
   );
 }

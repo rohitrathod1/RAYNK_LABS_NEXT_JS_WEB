@@ -32,7 +32,9 @@ export interface TeamMember {
   linkedinUrl?: string | null;
   instagramUrl?: string | null;
   youtubeUrl?: string | null;
+  portfolioUrl?: string | null;
   email?: string | null;
+  phone?: string | null;
   isVisible?: boolean;
   isFeatured?: boolean;
   sortOrder?: number;

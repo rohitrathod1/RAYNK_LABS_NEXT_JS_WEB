@@ -108,7 +108,12 @@ export default function AdminSeoPage() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [load]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -242,11 +247,11 @@ export default function AdminSeoPage() {
             <>
               <p className="font-semibold text-muted-foreground">No SEO entries yet</p>
               <p className="mt-1 text-xs text-muted-foreground/70">
-                Click "Add Page SEO" or save SEO from any page's admin editor.
+                Click &quot;Add Page SEO&quot; or save SEO from any page&apos;s admin editor.
               </p>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">No pages match "{query}"</p>
+            <p className="text-sm text-muted-foreground">No pages match &quot;{query}&quot;</p>
           )}
         </div>
       ) : (
