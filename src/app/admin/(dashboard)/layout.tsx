@@ -82,6 +82,12 @@ const CMS_PAGES: NavChild[] = [
   { title: "Blog", href: "/admin/blogs", icon: Newspaper, permission: PERMISSIONS.MANAGE_BLOG },
   { title: "Contact", href: "/admin/contact", icon: Mail, permission: PERMISSIONS.MANAGE_CONTACT },
   {
+    title: "Submissions",
+    href: "/admin/submissions",
+    icon: FileText,
+    permission: PERMISSIONS.MANAGE_SUBMISSIONS,
+  },
+  {
     title: "Navbar",
     href: "/admin/navbar",
     icon: Navigation,
@@ -279,14 +285,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside
         ref={sidebarRef}
         className={cn(
-          "border-border bg-card fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col border-r shadow-sm 2xl:w-72",
-          "transform transition-all duration-300",
+          "border-border bg-card fixed inset-y-0 left-0 z-40 flex h-screen w-[260px] flex-col border-r shadow-sm",
+          "transform overflow-hidden transition-all duration-300 ease-in-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           sidebarOpen ? "md:translate-x-0" : "md:-translate-x-full",
         )}
       >
         <div className="border-border flex h-16 shrink-0 items-center justify-between border-b px-4 2xl:h-20 2xl:px-6">
-          <div className="border-border bg-card hidden min-w-0 items-center gap-3 rounded-xl border px-3 py-2 shadow-sm lg:flex">
+          <div className="border-border bg-card flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-3 py-2 shadow-sm">
             <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold">
               {sidebarProfile?.imageUrl ? (
                 <SafeImage
@@ -305,22 +311,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="text-muted-foreground max-w-40 truncate text-[11px]">{displayEmail}</p>
             </div>
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            title={isSidebarVisible ? "Collapse sidebar" : "Open sidebar"}
-            onClick={() => {
-              if (isDesktop) {
-                setSidebarOpen((open) => !open);
-              } else {
-                setMobileOpen((open) => !open);
-              }
-            }}
-            className="border-border hover:border-primary/50 hover:bg-primary/10 h-10 w-10 shrink-0 cursor-pointer rounded-xl border transition-all duration-200 hover:-translate-y-0.5"
-          >
-            {isSidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </Button>
         </div>
 
         <nav className="no-scrollbar flex-1 space-y-1 overflow-y-auto p-3">
@@ -421,12 +411,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <div
         className={cn(
-          "flex h-screen min-w-0 flex-1 flex-col transition-all duration-300",
-          sidebarOpen ? "md:ml-64 2xl:ml-72" : "md:ml-0",
+          "flex h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out",
+          sidebarOpen ? "md:ml-[260px]" : "md:ml-0",
         )}
       >
-        <header className="border-border bg-background/95 z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4 backdrop-blur 2xl:h-20 2xl:px-8">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3"></div>
+        <header className="border-border bg-background/95 relative z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4 backdrop-blur 2xl:h-20 2xl:px-8">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              title={isSidebarVisible ? "Collapse sidebar" : "Open sidebar"}
+              aria-label={isSidebarVisible ? "Collapse sidebar" : "Open sidebar"}
+              onClick={() => {
+                if (isDesktop) {
+                  setSidebarOpen((open) => !open);
+                } else {
+                  setMobileOpen((open) => !open);
+                }
+              }}
+              className="border-border hover:border-primary/50 hover:bg-primary/10 h-10 w-10 shrink-0 cursor-pointer rounded-xl border transition-all duration-300 ease-in-out hover:-translate-y-0.5"
+            >
+              {isSidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
+          </div>
+
+          <Link
+            href="/admin"
+            aria-label="RaYnk Labs admin dashboard"
+            className="group absolute left-1/2 top-1/2 max-w-[42vw] -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none text-center"
+          >
+            <span className="text-primary inline-block truncate text-base font-black tracking-widest transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:drop-shadow-sm sm:text-xl">
+              RaYnk Labs
+            </span>
+          </Link>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Button
