@@ -5,6 +5,7 @@ import { Providers } from "@/providers";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { AdminCheck } from "@/components/admin-check";
 import { Footer } from "@/components/layout/footer";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { headers } from "next/headers";
 import "./globals.css";
 
@@ -64,7 +65,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <Providers>
           {!isAdminRoute && <AdminCheck pathname={pathname} />}
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
           {!isAdminRoute && <Footer />}
           <Toaster richColors closeButton position="top-right" />
         </Providers>

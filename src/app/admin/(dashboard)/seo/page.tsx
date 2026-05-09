@@ -31,6 +31,7 @@ import {
   DialogFooter,
 } from '@/components/ui';
 import { SeoTabPanel, SeoGuide } from '@/modules/seo';
+import { CardGridSkeleton, EmptyState } from '@/components/shared';
 import { formatSeoPageLabel, getSeoPublicPath, isValidSeoPageKey, normalizeSeoPageKey } from '@/modules/seo/page-config';
 
 interface SeoRow {
@@ -160,8 +161,8 @@ export default function AdminSeoPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="mx-auto max-w-5xl py-4 sm:py-8 2xl:max-w-7xl 2xl:py-10">
+        <CardGridSkeleton count={8} className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" />
       </div>
     );
   }
@@ -235,19 +236,27 @@ export default function AdminSeoPage() {
 
       {/* â”€â”€ Card grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-muted/20 py-16 text-center">
-          <Inbox className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
-          {rows.length === 0 ? (
-            <>
-              <p className="font-semibold text-muted-foreground">No SEO entries yet</p>
-              <p className="mt-1 text-xs text-muted-foreground/70">
-                Click &quot;Add Page SEO&quot; or save SEO from any page&apos;s admin editor.
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">No pages match &quot;{query}&quot;</p>
-          )}
-        </div>
+        <EmptyState
+          icon={<Inbox className="h-8 w-8" />}
+          eyebrow="SEO Pages"
+          title={rows.length === 0 ? 'No SEO entries yet' : 'No pages match your search'}
+          description={
+            rows.length === 0
+              ? 'Click Add Page SEO or save SEO from any page admin editor.'
+              : `No pages match "${query}". Clear the search and try again.`
+          }
+          action={
+            rows.length === 0 ? (
+              <Button onClick={openAdd} className="gap-2">
+                <Plus className="h-4 w-4" /> Add Page SEO
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => setQuery('')}>
+                Clear Search
+              </Button>
+            )
+          }
+        />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 sm:gap-5">
           {filtered.map((row, i) => {

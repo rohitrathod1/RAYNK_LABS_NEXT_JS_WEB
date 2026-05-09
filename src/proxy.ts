@@ -169,7 +169,7 @@ export default auth(async (req: AuthRequest) => {
       if (pathname.startsWith(path)) {
         if (role !== "SUPER_ADMIN" && !permissions.includes(perm)) {
           return addSecurityHeaders(
-            NextResponse.redirect(new URL("/admin", req.url)),
+            NextResponse.redirect(new URL("/admin/access-denied", req.url)),
           );
         }
         break;
