@@ -9,6 +9,7 @@ export const PERMISSIONS = {
   MANAGE_NAVBAR: "MANAGE_NAVBAR",
   MANAGE_FOOTER: "MANAGE_FOOTER",
   MANAGE_SEO: "MANAGE_SEO",
+  MANAGE_SUBMISSIONS: "MANAGE_SUBMISSIONS",
   MANAGE_USERS: "MANAGE_USERS",
 } as const;
 
@@ -25,5 +26,6 @@ export const PERMISSION_DESCRIPTIONS: Record<PermissionKey, string> = {
   MANAGE_NAVBAR: "Manage navigation bar",
   MANAGE_FOOTER: "Manage footer content",
   MANAGE_SEO: "Manage SEO settings",
+  MANAGE_SUBMISSIONS: "Manage form submissions",
   MANAGE_USERS: "Manage admin users and permissions",
 };

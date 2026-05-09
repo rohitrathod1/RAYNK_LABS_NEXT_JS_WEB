@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/middleware/permission";
 import { ok, fail } from "@/lib/action-response";
 import { getErrorMessage } from "@/lib/errors";
-import { db } from "@/lib/db";
 import {
   heroSchema,
   introSchema,
@@ -12,20 +11,14 @@ import {
   teamMembersSchema,
   valuesSchema,
   ctaSchema,
-  teamMemberInputSchema,
   seoSchema,
 } from "./validations";
-import {
-  upsertTeamSection,
-  createTeamMember,
-  updateTeamMember,
-  deleteTeamMember,
-} from "./data/mutations";
+import { upsertTeamSection } from "./data/mutations";
 import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidateTeam() {
   revalidatePath("/team");
-  revalidatePath("/admin/dashboard/team");
+  revalidatePath("/admin/team");
 }
 
 export async function updateTeamHero(raw: unknown) {
@@ -93,41 +86,6 @@ export async function updateTeamCta(raw: unknown) {
     await requirePermission("MANAGE_TEAM");
     const data = ctaSchema.parse(raw);
     await upsertTeamSection("contact_cta", data);
-    revalidateTeam();
-    return ok(null);
-  } catch (err) {
-    return fail(getErrorMessage(err));
-  }
-}
-
-export async function addTeamMember(raw: unknown) {
-  try {
-    await requirePermission("MANAGE_TEAM");
-    const data = teamMemberInputSchema.parse(raw);
-    await createTeamMember(data);
-    revalidateTeam();
-    return ok(null);
-  } catch (err) {
-    return fail(getErrorMessage(err));
-  }
-}
-
-export async function editTeamMember(id: string, raw: unknown) {
-  try {
-    await requirePermission("MANAGE_TEAM");
-    const data = teamMemberInputSchema.parse(raw);
-    await updateTeamMember(id, data);
-    revalidateTeam();
-    return ok(null);
-  } catch (err) {
-    return fail(getErrorMessage(err));
-  }
-}
-
-export async function removeTeamMember(id: string) {
-  try {
-    await requirePermission("MANAGE_TEAM");
-    await deleteTeamMember(id);
     revalidateTeam();
     return ok(null);
   } catch (err) {

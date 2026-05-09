@@ -26,8 +26,7 @@ export async function GET() {
     const sections = await db.teamPage.findMany({ orderBy: { sortOrder: "asc" } });
     const data: Record<string, unknown> = {};
     for (const s of sections) data[s.section] = s.content;
-    const teamMembers = await db.teamMember.findMany({ orderBy: { sortOrder: "asc" } });
-    return NextResponse.json({ success: true, data: { sections: data, teamMembers } });
+    return NextResponse.json({ success: true, data: { sections: data, teamMembers: [] } });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
     const msg = err instanceof Error ? err.message : "Error";

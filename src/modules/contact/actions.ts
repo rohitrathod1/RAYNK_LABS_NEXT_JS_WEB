@@ -104,6 +104,18 @@ export async function submitContactInquiry(raw: unknown) {
   try {
     const data = contactInquirySchema.parse(raw);
     await createContactInquiry({ ...data, isRead: false, createdAt: new Date() });
+    await db.submission.create({
+      data: {
+        type: "contact",
+        name: data.name,
+        email: data.email.toLowerCase(),
+        phone: data.phone || null,
+        subject: data.subject || null,
+        message: data.message,
+        sourcePage: "/contact",
+        status: "unread",
+      },
+    });
     revalidatePath("/contact");
     return ok(null);
   } catch (err) {

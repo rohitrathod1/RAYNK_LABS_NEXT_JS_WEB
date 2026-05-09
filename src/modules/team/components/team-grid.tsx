@@ -1,6 +1,23 @@
 import { TeamCard } from "./team-card";
 
-export function TeamGrid({ members }: { members: Array<{ id: string; name: string; role: string; bio?: string; image: string; linkedin?: string; twitter?: string; github?: string; portfolio?: string }> }) {
+export function TeamGrid({
+  members,
+}: {
+  members: Array<{
+    id: string;
+    displayName: string;
+    role: string;
+    bio?: string;
+    avatar?: string;
+    linkedinUrl?: string;
+    instagramUrl?: string;
+    githubUrl?: string;
+    youtubeUrl?: string;
+    portfolioUrl?: string;
+    email?: string;
+    phone?: string;
+  }>;
+}) {
   if (members.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">

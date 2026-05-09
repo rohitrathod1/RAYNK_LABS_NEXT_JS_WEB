@@ -84,7 +84,10 @@ export function SeoPreview({
   const useNextImage   = useMemo(() => isNextImageCompatible(resolvedSrc), [resolvedSrc]);
   const [imgError, setImgError] = useState(false);
 
-  useEffect(() => { setImgError(false); }, [resolvedSrc]);
+  useEffect(() => {
+    const id = window.setTimeout(() => setImgError(false), 0);
+    return () => window.clearTimeout(id);
+  }, [resolvedSrc]);
 
   const googleTitle  = useMemo(() => truncate(metaTitle || 'Page Title', 60), [metaTitle]);
   const googleUrl    = useMemo(() => resolveDisplayUrl(canonicalUrl), [canonicalUrl]);

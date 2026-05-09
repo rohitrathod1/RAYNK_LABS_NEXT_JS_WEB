@@ -1,11 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type React from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Save, Loader2, Plus, Trash2, Pencil } from "lucide-react";
-import { hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
+import {
+  ExternalLink,
+  Eye,
+  EyeOff,
+  GripVertical,
+  Loader2,
+  Pencil,
+  Save,
+  Search,
+  Shield,
+  Star,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
 import { ImageUpload } from "@/components/common/image-upload";
 import { SafeImage } from "@/components/common/safe-image";
 import {
@@ -15,13 +29,24 @@ import {
   updateTeamMembersSection,
   updateTeamValues,
   updateTeamCta,
-  addTeamMember,
-  editTeamMember,
-  removeTeamMember,
   updateTeamSeo,
 } from "@/modules/team/actions";
 import type { TeamPageData, TeamMemberInput } from "@/modules/team/types";
 import { defaultTeamContent } from "@/modules/team/data/defaults";
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Skeleton,
+  Textarea,
+} from "@/components/ui";
 
 const TABS = [
   "hero",
@@ -37,7 +62,6 @@ type Tab = (typeof TABS)[number];
 
 type FormData = TeamPageData & {
   seo: { title: string; description: string; keywords: string; ogImage: string; noIndex: boolean };
-  team_members_list?: never; // This tab doesn't have form data, it's for the member list
 };
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -51,19 +75,50 @@ const TAB_LABELS: Record<Tab, string> = {
   seo: "SEO",
 };
 
-interface TeamMember extends TeamMemberInput {
+interface TeamMemberCard {
   id: string;
-  createdAt: string;
-  updatedAt: string;
+  displayName: string;
+  role: string;
+  bio: string | null;
+  avatar: string | null;
+  githubUrl: string | null;
+  linkedinUrl: string | null;
+  instagramUrl: string | null;
+  youtubeUrl: string | null;
+  email: string | null;
+  status: string | null;
+  isVisible: boolean;
+  isFeatured: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+type Filter = "all" | "visible" | "hidden" | "featured";
+
+const EMPTY_SEO = { title: "", description: "", keywords: "", ogImage: "", noIndex: false };
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function roleLabel(role: string) {
+  return role === "SUPER_ADMIN" ? "Super Admin" : "Admin";
 }
 
 export default function TeamPageManager() {
   const router = useRouter();
   const { data: session } = useSession();
+  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
 
   useEffect(() => {
     if (session && !hasPermission(session, "MANAGE_TEAM")) {
-      router.push("/admin");
+      router.replace("/admin");
     }
   }, [session, router]);
 
@@ -71,39 +126,60 @@ export default function TeamPageManager() {
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [showMemberDialog, setShowMemberDialog] = useState(false);
-  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-  const [memberForm, setMemberForm] = useState<Partial<TeamMemberInput>>({});
+  const [teamMembers, setTeamMembers] = useState<TeamMemberCard[]>([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  const [editingMember, setEditingMember] = useState<TeamMemberCard | null>(null);
+  const [memberForm, setMemberForm] = useState<TeamMemberInput>({
+    displayName: "",
+    bio: "",
+    avatar: "",
+    githubUrl: "",
+    linkedinUrl: "",
+    instagramUrl: "",
+    youtubeUrl: "",
+    isVisible: true,
+    isFeatured: false,
+  });
+
+  const fetchData = useCallback(async () => {
+    setLoadingData(true);
+    try {
+      const [adminRes, membersRes] = await Promise.all([
+        fetch("/api/admin/team", { cache: "no-store" }),
+        fetch("/api/team?all=true", { cache: "no-store" }),
+      ]);
+      const adminJson = await adminRes.json();
+      const membersJson = await membersRes.json();
+
+      if (!adminJson.success) throw new Error(adminJson.error ?? "Failed to load sections");
+      if (!membersJson.success) throw new Error(membersJson.error ?? "Failed to load team members");
+
+      const sections = adminJson.data?.sections ?? {};
+      setFormData({
+        hero: { ...defaultTeamContent.hero, ...(sections.hero ?? {}) },
+        intro: { ...defaultTeamContent.intro, ...(sections.intro ?? {}) },
+        founders: { ...defaultTeamContent.founders, ...(sections.founders ?? {}) },
+        team_members: { ...defaultTeamContent.team_members, ...(sections.team_members ?? {}) },
+        values: { ...defaultTeamContent.values, ...(sections.values ?? {}) },
+        contact_cta: { ...defaultTeamContent.contact_cta, ...(sections.contact_cta ?? {}) },
+        seo: EMPTY_SEO,
+      });
+      setTeamMembers(membersJson.data?.teamMembers ?? []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load team data");
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch("/api/admin/team")
-      .then((r) => r.json())
-      .then(({ data }: { data: { sections: Partial<FormData>; teamMembers: TeamMember[] } }) => {
-        setFormData({
-          hero: { ...defaultTeamContent.hero, ...(data?.sections?.hero ?? {}) },
-          intro: { ...defaultTeamContent.intro, ...(data?.sections?.intro ?? {}) },
-          founders: { ...defaultTeamContent.founders, ...(data?.sections?.founders ?? {}) },
-          team_members: { ...defaultTeamContent.team_members, ...(data?.sections?.team_members ?? {}) },
-          values: { ...defaultTeamContent.values, ...(data?.sections?.values ?? {}) },
-          contact_cta: { ...defaultTeamContent.contact_cta, ...(data?.sections?.contact_cta ?? {}) },
-          seo: {
-            title: "",
-            description: "",
-            keywords: "",
-            ogImage: "",
-            noIndex: false,
-            ...((data as unknown as Partial<FormData>)?.seo ?? {}),
-          },
-        });
-        setTeamMembers(data?.teamMembers ?? []);
-        setLoadingData(false);
-      })
-      .catch(() => {
-        setLoadingData(false);
-        toast.error("Failed to load page data");
-      });
-  }, []);
+    const timer = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   function update<K extends keyof FormData>(section: K, patch: Partial<FormData[K]>) {
     setFormData((prev) => ({
@@ -113,6 +189,7 @@ export default function TeamPageManager() {
   }
 
   async function handleSave() {
+    if (activeTab === "team_members_list") return;
     setLoading(true);
     type ActionFn = (d: unknown) => Promise<{ success: boolean; error?: string }>;
     const actionMap: Record<Exclude<Tab, "team_members_list">, ActionFn> = {
@@ -124,92 +201,183 @@ export default function TeamPageManager() {
       contact_cta: (d) => updateTeamCta(d),
       seo: (d) => updateTeamSeo(d),
     };
-    const result = await actionMap[activeTab as Exclude<Tab, "team_members_list">]?.(formData[activeTab]);
-    if (result?.success) toast.success("Saved successfully!");
+    const tab = activeTab as Exclude<Tab, "team_members_list">;
+    const result = await actionMap[tab]?.(formData[tab]);
+    if (result?.success) toast.success("Saved successfully");
     else toast.error(result?.error ?? "Failed to save");
     setLoading(false);
   }
 
-  function openAddMemberDialog() {
-    setEditingMember(null);
-    setMemberForm({});
-    setShowMemberDialog(true);
-  }
+  const filteredMembers = useMemo(() => {
+    return teamMembers.filter((member) => {
+      const q = search.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        member.displayName.toLowerCase().includes(q) ||
+        member.email?.toLowerCase().includes(q) ||
+        member.role.toLowerCase().includes(q);
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "visible" && member.isVisible) ||
+        (filter === "hidden" && !member.isVisible) ||
+        (filter === "featured" && member.isFeatured);
+      return matchesSearch && matchesFilter;
+    });
+  }, [filter, search, teamMembers]);
 
-  function openEditMemberDialog(member: TeamMember) {
+  function openEditMember(member: TeamMemberCard) {
     setEditingMember(member);
     setMemberForm({
-      name: member.name,
+      displayName: member.displayName,
       role: member.role,
-      bio: member.bio,
-      image: member.image,
-      linkedin: member.linkedin,
-      twitter: member.twitter,
-      github: member.github,
-      portfolio: member.portfolio,
-      isActive: member.isActive,
-      sortOrder: member.sortOrder,
+      bio: member.bio ?? "",
+      avatar: member.avatar ?? "",
+      githubUrl: member.githubUrl ?? "",
+      linkedinUrl: member.linkedinUrl ?? "",
+      instagramUrl: member.instagramUrl ?? "",
+      youtubeUrl: member.youtubeUrl ?? "",
+      isVisible: member.isVisible,
+      isFeatured: member.isFeatured,
     });
-    setShowMemberDialog(true);
   }
 
-  async function handleSaveMember() {
-    if (!memberForm.name || !memberForm.role || !memberForm.image) {
-      toast.error("Name, role, and image are required");
+  async function saveMember() {
+    if (!editingMember) return;
+    if (!memberForm.displayName) {
+      toast.error("Display name is required");
       return;
     }
 
     setLoading(true);
-    const result = editingMember
-      ? await editTeamMember(editingMember.id, memberForm)
-      : await addTeamMember(memberForm);
+    try {
+      const res = await fetch(`/api/team/${editingMember.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(memberForm),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? "Failed to save team member");
 
-    if (result.success) {
-      toast.success(editingMember ? "Member updated!" : "Member added!");
-      setShowMemberDialog(false);
-      // Refresh members list
-      const res = await fetch("/api/admin/team/member");
-      const { data } = await res.json();
-      setTeamMembers(data ?? []);
-    } else {
-      toast.error(result.error ?? "Failed to save member");
+      toast.success("Team member updated");
+      setEditingMember(null);
+      await fetchData();
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save team member");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
-  async function handleDeleteMember(id: string) {
-    if (!confirm("Are you sure you want to delete this member?")) return;
-    setLoading(true);
-    const result = await removeTeamMember(id);
-    if (result.success) {
-      toast.success("Member deleted!");
-      setTeamMembers((prev) => prev.filter((m) => m.id !== id));
-    } else {
-      toast.error(result.error ?? "Failed to delete member");
+  async function patchMember(member: TeamMemberCard, patch: Partial<TeamMemberInput>) {
+    const payload: TeamMemberInput = {
+      displayName: member.displayName,
+      role: member.role,
+      bio: member.bio ?? "",
+      avatar: member.avatar ?? "",
+      githubUrl: member.githubUrl ?? "",
+      linkedinUrl: member.linkedinUrl ?? "",
+      instagramUrl: member.instagramUrl ?? "",
+      youtubeUrl: member.youtubeUrl ?? "",
+      isVisible: member.isVisible,
+      isFeatured: member.isFeatured,
+      ...patch,
+    };
+
+    const res = await fetch(`/api/team/${member.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error ?? "Update failed");
+    await fetchData();
+    router.refresh();
+  }
+
+  async function toggleVisibility(member: TeamMemberCard) {
+    try {
+      await patchMember(member, { isVisible: !member.isVisible });
+      toast.success(member.isVisible ? "Team card hidden" : "Team card visible");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Visibility update failed");
     }
-    setLoading(false);
+  }
+
+  async function deleteMember(member: TeamMemberCard) {
+    if (!confirm(`Delete the team card for ${member.displayName}? The admin account is not deleted.`)) return;
+    try {
+      const res = await fetch(`/api/team/${member.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? "Delete failed");
+      toast.success("Team card deleted");
+      await fetchData();
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    }
+  }
+
+  async function reorderMembers(orderedIds: string[]) {
+    const previousMembers = teamMembers;
+    const orderMap = new Map(orderedIds.map((id, index) => [id, index]));
+    setTeamMembers((current) =>
+      [...current]
+        .map((member) => ({
+          ...member,
+          sortOrder: orderMap.get(member.id) ?? member.sortOrder,
+        }))
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    );
+
+    try {
+      const res = await fetch("/api/team/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: orderedIds }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? "Reorder failed");
+      toast.success("Team order updated");
+      await fetchData();
+      router.refresh();
+    } catch (err) {
+      setTeamMembers(previousMembers);
+      toast.error(err instanceof Error ? err.message : "Reorder failed");
+    }
   }
 
   if (loadingData) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-10 w-72" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-80 rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Team Page Manager</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
+            <Users className="h-4 w-4" /> Team
+          </div>
+          <h1 className="text-2xl font-bold">Team Page Manager</h1>
+          <p className="text-sm text-muted-foreground">Team cards are synced from Admin users and profile data.</p>
+        </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap border-b">
+      <div className="scrollbar-hide flex gap-2 overflow-x-auto border-b">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -220,487 +388,411 @@ export default function TeamPageManager() {
         ))}
       </div>
 
-      <div className="rounded-lg border bg-card p-6">
-        {activeTab === "hero" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Hero Section</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <input
-                type="text"
-                value={formData.hero?.title ?? ""}
-                onChange={(e) => update("hero", { title: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subtitle</label>
-              <textarea
-                value={formData.hero?.subtitle ?? ""}
-                onChange={(e) => update("hero", { subtitle: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Background Image</label>
-              <ImageUpload
-                value={formData.hero?.backgroundImage ?? ""}
-                onChange={(url) => update("hero", { backgroundImage: url })}
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "intro" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Intro Section</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <textarea
-                value={formData.intro?.description ?? ""}
-                onChange={(e) => update("intro", { description: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-                rows={6}
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "founders" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Founders Section</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <input
-                type="text"
-                value={formData.founders?.title ?? ""}
-                onChange={(e) => update("founders", { title: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subtitle</label>
-              <input
-                type="text"
-                value={formData.founders?.subtitle ?? ""}
-                onChange={(e) => update("founders", { subtitle: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-4">
-              <label className="text-sm font-medium">Founders</label>
-              {(formData.founders?.founders ?? []).map((founder: { name: string; role: string; image: string; bio: string; portfolioUrl?: string }, index: number) => (
-                <div key={index} className="space-y-2 p-4 border rounded-md">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={founder.name}
-                    onChange={(e) => {
-                      const updated = [...(formData.founders?.founders ?? [])];
-                      updated[index] = { ...updated[index], name: e.target.value };
-                      update("founders", { founders: updated });
-                    }}
-                    className="w-full rounded-md border px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Role"
-                    value={founder.role}
-                    onChange={(e) => {
-                      const updated = [...(formData.founders?.founders ?? [])];
-                      updated[index] = { ...updated[index], role: e.target.value };
-                      update("founders", { founders: updated });
-                    }}
-                    className="w-full rounded-md border px-3 py-2"
-                  />
-                  <textarea
-                    placeholder="Bio"
-                    value={founder.bio}
-                    onChange={(e) => {
-                      const updated = [...(formData.founders?.founders ?? [])];
-                      updated[index] = { ...updated[index], bio: e.target.value };
-                      update("founders", { founders: updated });
-                    }}
-                    className="w-full rounded-md border px-3 py-2"
-                    rows={3}
-                  />
-                  <ImageUpload
-                    value={founder.image}
-                    onChange={(url) => {
-                      const updated = [...(formData.founders?.founders ?? [])];
-                      updated[index] = { ...updated[index], image: url };
-                      update("founders", { founders: updated });
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "team_members" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Team Members Section</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <input
-                type="text"
-                value={formData.team_members?.title ?? ""}
-                onChange={(e) => update("team_members", { title: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subtitle</label>
-              <textarea
-                value={formData.team_members?.subtitle ?? ""}
-                onChange={(e) => update("team_members", { subtitle: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-                rows={3}
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "values" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Values Section</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <input
-                type="text"
-                value={formData.values?.title ?? ""}
-                onChange={(e) => update("values", { title: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subtitle</label>
-              <input
-                type="text"
-                value={formData.values?.subtitle ?? ""}
-                onChange={(e) => update("values", { subtitle: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-4">
-              <label className="text-sm font-medium">Value Points</label>
-              {(formData.values?.points ?? []).map((point: { icon: string; title: string; description: string }, index: number) => (
-                <div key={index} className="space-y-2 p-4 border rounded-md">
-                  <input
-                    type="text"
-                    placeholder="Icon"
-                    value={point.icon}
-                    onChange={(e) => {
-                      const updated = [...(formData.values?.points ?? [])];
-                      updated[index] = { ...updated[index], icon: e.target.value };
-                      update("values", { points: updated });
-                    }}
-                    className="w-full rounded-md border px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Title"
-                    value={point.title}
-                    onChange={(e) => {
-                      const updated = [...(formData.values?.points ?? [])];
-                      updated[index] = { ...updated[index], title: e.target.value };
-                      update("values", { points: updated });
-                    }}
-                    className="w-full rounded-md border px-3 py-2"
-                  />
-                  <textarea
-                    placeholder="Description"
-                    value={point.description}
-                    onChange={(e) => {
-                      const updated = [...(formData.values?.points ?? [])];
-                      updated[index] = { ...updated[index], description: e.target.value };
-                      update("values", { points: updated });
-                    }}
-                    className="w-full rounded-md border px-3 py-2"
-                    rows={2}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "contact_cta" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Contact CTA Section</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <input
-                type="text"
-                value={formData.contact_cta?.title ?? ""}
-                onChange={(e) => update("contact_cta", { title: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subtitle</label>
-              <textarea
-                value={formData.contact_cta?.subtitle ?? ""}
-                onChange={(e) => update("contact_cta", { subtitle: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Button Text</label>
-              <input
-                type="text"
-                value={formData.contact_cta?.buttonText ?? ""}
-                onChange={(e) => update("contact_cta", { buttonText: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Button Link</label>
-              <input
-                type="text"
-                value={formData.contact_cta?.buttonLink ?? ""}
-                onChange={(e) => update("contact_cta", { buttonLink: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "team_members_list" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Team Members</h2>
-              <button
-                onClick={openAddMemberDialog}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                <Plus className="w-4 h-4" />
-                Add Member
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {teamMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-4 border rounded-md">
-                  <div className="flex items-center gap-4">
-                    <SafeImage
-                      src={member.image}
-                      alt={member.name}
-                      width={48}
-                      height={48}
-                      className="rounded-full object-cover"
-                    />
-                    <div>
-                      <h3 className="font-medium">{member.name}</h3>
-                      <p className="text-sm text-muted-foreground">{member.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => openEditMemberDialog(member)}
-                      className="p-2 hover:bg-muted rounded-md"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteMember(member.id)}
-                      className="p-2 hover:bg-muted rounded-md text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "seo" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">SEO Settings</h2>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Meta Title</label>
-              <input
-                type="text"
-                value={formData.seo?.title ?? ""}
-                onChange={(e) => update("seo", { title: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Meta Description</label>
-              <textarea
-                value={formData.seo?.description ?? ""}
-                onChange={(e) => update("seo", { description: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Keywords</label>
-              <input
-                type="text"
-                value={formData.seo?.keywords ?? ""}
-                onChange={(e) => update("seo", { keywords: e.target.value })}
-                className="w-full rounded-md border px-3 py-2"
-                placeholder="Comma-separated keywords"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">OG Image</label>
-              <ImageUpload
-                value={formData.seo?.ogImage ?? ""}
-                onChange={(url) => update("seo", { ogImage: url })}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="noIndex"
-                checked={formData.seo?.noIndex ?? false}
-                onChange={(e) => update("seo", { noIndex: e.target.checked })}
-              />
-              <label htmlFor="noIndex" className="text-sm font-medium">
-                No Index
-              </label>
-            </div>
-          </div>
-        )}
-
-        {activeTab !== "team_members_list" && (
-          <div className="flex justify-end pt-4">
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save
-            </button>
-          </div>
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        {activeTab === "team_members_list" ? (
+          <TeamMembersAdmin
+            search={search}
+            setSearch={setSearch}
+            filter={filter}
+            setFilter={setFilter}
+            members={filteredMembers}
+            allCount={teamMembers.length}
+            onEdit={openEditMember}
+            onToggleVisibility={toggleVisibility}
+            onDelete={deleteMember}
+            onReorder={reorderMembers}
+            canManageCards={isSuperAdmin}
+            canReorder={isSuperAdmin && filter === "all" && search.trim().length === 0}
+          />
+        ) : (
+          <ContentEditor
+            activeTab={activeTab as Exclude<Tab, "team_members_list">}
+            formData={formData}
+            update={update}
+            handleSave={handleSave}
+            loading={loading}
+          />
         )}
       </div>
 
-      {showMemberDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingMember ? "Edit Member" : "Add Member"}
-            </h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Name *</label>
-                <input
-                  type="text"
-                  value={memberForm.name ?? ""}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-md border px-3 py-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Role *</label>
-                <input
-                  type="text"
-                  value={memberForm.role ?? ""}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, role: e.target.value }))}
-                  className="w-full rounded-md border px-3 py-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Bio</label>
-                <textarea
-                  value={memberForm.bio ?? ""}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, bio: e.target.value }))}
-                  className="w-full rounded-md border px-3 py-2"
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Image *</label>
-                <ImageUpload
-                  value={memberForm.image ?? ""}
-                  onChange={(url) => setMemberForm((prev) => ({ ...prev, image: url }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">LinkedIn</label>
-                <input
-                  type="text"
-                  value={memberForm.linkedin ?? ""}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, linkedin: e.target.value }))}
-                  className="w-full rounded-md border px-3 py-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Twitter</label>
-                <input
-                  type="text"
-                  value={memberForm.twitter ?? ""}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, twitter: e.target.value }))}
-                  className="w-full rounded-md border px-3 py-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">GitHub</label>
-                <input
-                  type="text"
-                  value={memberForm.github ?? ""}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, github: e.target.value }))}
-                  className="w-full rounded-md border px-3 py-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Portfolio</label>
-                <input
-                  type="text"
-                  value={memberForm.portfolio ?? ""}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, portfolio: e.target.value }))}
-                  className="w-full rounded-md border px-3 py-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Sort Order</label>
-                <input
-                  type="number"
-                  value={memberForm.sortOrder ?? 0}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, sortOrder: parseInt(e.target.value) || 0 }))}
-                  className="w-full rounded-md border px-3 py-2"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={memberForm.isActive ?? true}
-                  onChange={(e) => setMemberForm((prev) => ({ ...prev, isActive: e.target.checked }))}
-                />
-                <label htmlFor="isActive" className="text-sm font-medium">
-                  Active
-                </label>
-              </div>
+      <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+            <DialogDescription>
+              This edits the public-safe team card synced from the admin profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Display name</Label>
+              <Input
+                value={memberForm.displayName}
+                onChange={(e) => setMemberForm((prev) => ({ ...prev, displayName: e.target.value }))}
+              />
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowMemberDialog(false)}
-                className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveMember}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save
-              </button>
+            <div className="space-y-2">
+              <Label>Bio</Label>
+              <Textarea
+                rows={4}
+                value={memberForm.bio ?? ""}
+                onChange={(e) => setMemberForm((prev) => ({ ...prev, bio: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Avatar</Label>
+              <ImageUpload
+                value={memberForm.avatar ?? ""}
+                onChange={(url) => setMemberForm((prev) => ({ ...prev, avatar: url }))}
+                onRemove={() => setMemberForm((prev) => ({ ...prev, avatar: "" }))}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SocialInput label="GitHub" value={memberForm.githubUrl ?? ""} onChange={(value) => setMemberForm((prev) => ({ ...prev, githubUrl: value }))} />
+              <SocialInput label="LinkedIn" value={memberForm.linkedinUrl ?? ""} onChange={(value) => setMemberForm((prev) => ({ ...prev, linkedinUrl: value }))} />
+              <SocialInput label="Instagram" value={memberForm.instagramUrl ?? ""} onChange={(value) => setMemberForm((prev) => ({ ...prev, instagramUrl: value }))} />
+              <SocialInput label="YouTube" value={memberForm.youtubeUrl ?? ""} onChange={(value) => setMemberForm((prev) => ({ ...prev, youtubeUrl: value }))} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <ToggleButton
+                active={!!memberForm.isVisible}
+                onClick={() => setMemberForm((prev) => ({ ...prev, isVisible: !prev.isVisible }))}
+                activeLabel="Visible"
+                inactiveLabel="Hidden"
+              />
+              <ToggleButton
+                active={!!memberForm.isFeatured}
+                onClick={() => setMemberForm((prev) => ({ ...prev, isFeatured: !prev.isFeatured }))}
+                activeLabel="Featured"
+                inactiveLabel="Not featured"
+              />
             </div>
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingMember(null)}>Cancel</Button>
+            <Button onClick={saveMember} disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function TeamMembersAdmin({
+  search,
+  setSearch,
+  filter,
+  setFilter,
+  members,
+  allCount,
+  onEdit,
+  onToggleVisibility,
+  onDelete,
+  onReorder,
+  canManageCards,
+  canReorder,
+}: {
+  search: string;
+  setSearch: (value: string) => void;
+  filter: Filter;
+  setFilter: (value: Filter) => void;
+  members: TeamMemberCard[];
+  allCount: number;
+  onEdit: (member: TeamMemberCard) => void;
+  onToggleVisibility: (member: TeamMemberCard) => void;
+  onDelete: (member: TeamMemberCard) => void;
+  onReorder: (orderedIds: string[]) => void;
+  canManageCards: boolean;
+  canReorder: boolean;
+}) {
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  function moveDraggedMember(targetId: string) {
+    if (!canReorder || !draggingId || draggingId === targetId) return;
+    const next = [...members];
+    const fromIndex = next.findIndex((member) => member.id === draggingId);
+    const toIndex = next.findIndex((member) => member.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    onReorder(next.map((member) => member.id));
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-lg font-bold">Team Members</h2>
+          <p className="text-sm text-muted-foreground">
+            {allCount} admin-synced team cards
+            {canManageCards ? " - Drag cards in All view to set public order" : ""}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative min-w-64">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search team..." className="pl-9" />
+          </div>
+          <div className="flex gap-2 overflow-x-auto">
+            {(["all", "visible", "hidden", "featured"] as Filter[]).map((item) => (
+              <Button
+                key={item}
+                variant={filter === item ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter(item)}
+                className="shrink-0 capitalize"
+              >
+                {item}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {members.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-12 text-center text-sm text-muted-foreground">
+          No team cards match the current filters.
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {members.map((member) => (
+            <article
+              key={member.id}
+              draggable={canReorder}
+              onDragStart={(event) => {
+                if (!canReorder) return;
+                setDraggingId(member.id);
+                event.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(event) => {
+                if (canReorder) event.preventDefault();
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                moveDraggedMember(member.id);
+                setDraggingId(null);
+              }}
+              onDragEnd={() => setDraggingId(null)}
+              className="group overflow-hidden rounded-xl border bg-background shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10"
+            >
+              <div className="relative h-44 bg-muted">
+                {member.avatar ? (
+                  <SafeImage src={member.avatar} alt={member.displayName} fill sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-primary/10 text-4xl font-bold text-primary">
+                    {initials(member.displayName)}
+                  </div>
+                )}
+                <div className="absolute left-3 top-3 flex gap-2">
+                  {canReorder && (
+                    <span className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-lg border bg-background/90 text-muted-foreground shadow-sm active:cursor-grabbing">
+                      <GripVertical className="h-4 w-4" />
+                    </span>
+                  )}
+                  <Badge className={member.isVisible ? "bg-green-500/20 text-green-600" : "bg-muted text-muted-foreground"}>
+                    {member.isVisible ? "Visible" : "Hidden"}
+                  </Badge>
+                  {member.isFeatured && (
+                    <Badge className="bg-amber-500/20 text-amber-600">
+                      <Star className="mr-1 h-3 w-3" /> Featured
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-4 p-4">
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-lg font-bold">{member.displayName}</h3>
+                      <p className="truncate text-sm text-muted-foreground">{member.email}</p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0">
+                      <Shield className="mr-1 h-3 w-3" />
+                      {roleLabel(member.role)}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 line-clamp-3 min-h-[3.75rem] text-sm text-muted-foreground">
+                    {member.bio || "No bio added yet."}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <SocialLink href={member.githubUrl} title="GitHub" icon={<BrandIcon name="github" />} />
+                  <SocialLink href={member.linkedinUrl} title="LinkedIn" icon={<BrandIcon name="linkedin" />} />
+                  <SocialLink href={member.instagramUrl} title="Instagram" icon={<BrandIcon name="instagram" />} />
+                  <SocialLink href={member.youtubeUrl} title="YouTube" icon={<BrandIcon name="youtube" />} />
+                </div>
+
+                <div className="flex items-center justify-between gap-2 border-t pt-3">
+                  <div className="text-xs text-muted-foreground">
+                    Status: <span className="font-medium">{member.status ?? "Synced"}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" title="View profile" asChild>
+                      <a href={`/team#${member.id}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    {canManageCards && (
+                      <>
+                        <Button variant="ghost" size="icon" title={member.isVisible ? "Hide" : "Unhide"} onClick={() => onToggleVisibility(member)}>
+                          {member.isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Edit" onClick={() => onEdit(member)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Delete" onClick={() => onDelete(member)} className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </div>
+  );
+}
+
+function ContentEditor({
+  activeTab,
+  formData,
+  update,
+  handleSave,
+  loading,
+}: {
+  activeTab: Exclude<Tab, "team_members_list">;
+  formData: Partial<FormData>;
+  update: <K extends keyof FormData>(section: K, patch: Partial<FormData[K]>) => void;
+  handleSave: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      {activeTab === "hero" && (
+        <>
+          <Field label="Title" value={formData.hero?.title ?? ""} onChange={(value) => update("hero", { title: value })} />
+          <TextField label="Subtitle" value={formData.hero?.subtitle ?? ""} onChange={(value) => update("hero", { subtitle: value })} />
+          <ImageUpload value={formData.hero?.backgroundImage ?? ""} onChange={(url) => update("hero", { backgroundImage: url })} />
+        </>
+      )}
+      {activeTab === "intro" && (
+        <TextField label="Description" rows={6} value={formData.intro?.description ?? ""} onChange={(value) => update("intro", { description: value })} />
+      )}
+      {activeTab === "team_members" && (
+        <>
+          <Field label="Title" value={formData.team_members?.title ?? ""} onChange={(value) => update("team_members", { title: value })} />
+          <TextField label="Subtitle" value={formData.team_members?.subtitle ?? ""} onChange={(value) => update("team_members", { subtitle: value })} />
+        </>
+      )}
+      {activeTab === "contact_cta" && (
+        <>
+          <Field label="Title" value={formData.contact_cta?.title ?? ""} onChange={(value) => update("contact_cta", { title: value })} />
+          <TextField label="Subtitle" value={formData.contact_cta?.subtitle ?? ""} onChange={(value) => update("contact_cta", { subtitle: value })} />
+          <Field label="Button text" value={formData.contact_cta?.buttonText ?? ""} onChange={(value) => update("contact_cta", { buttonText: value })} />
+          <Field label="Button link" value={formData.contact_cta?.buttonLink ?? ""} onChange={(value) => update("contact_cta", { buttonLink: value })} />
+        </>
+      )}
+      {activeTab === "seo" && (
+        <>
+          <Field label="Meta title" value={formData.seo?.title ?? ""} onChange={(value) => update("seo", { title: value })} />
+          <TextField label="Meta description" value={formData.seo?.description ?? ""} onChange={(value) => update("seo", { description: value })} />
+          <Field label="Keywords" value={formData.seo?.keywords ?? ""} onChange={(value) => update("seo", { keywords: value })} />
+          <ImageUpload value={formData.seo?.ogImage ?? ""} onChange={(url) => update("seo", { ogImage: url })} />
+        </>
+      )}
+      {(activeTab === "founders" || activeTab === "values") && (
+        <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+          This structured section is still managed from seeded content. Team member cards below sync from Admin users.
+        </div>
+      )}
+      <div className="flex justify-end pt-4">
+        <Button onClick={handleSave} disabled={loading}>
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function TextField({ label, value, onChange, rows = 3 }: { label: string; value: string; onChange: (value: string) => void; rows?: number }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Textarea value={value} rows={rows} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function SocialInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={`https://${label.toLowerCase()}.com/...`} />
+    </div>
+  );
+}
+
+function ToggleButton({ active, onClick, activeLabel, inactiveLabel }: { active: boolean; onClick: () => void; activeLabel: string; inactiveLabel: string }) {
+  return (
+    <Button type="button" variant={active ? "default" : "secondary"} onClick={onClick}>
+      {active ? activeLabel : inactiveLabel}
+    </Button>
+  );
+}
+
+function SocialLink({ href, title, icon }: { href?: string | null; title: string; icon: React.ReactNode }) {
+  if (!href) {
+    return (
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border text-muted-foreground/30" title={`${title} not set`}>
+        {icon}
+      </span>
+    );
+  }
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border text-muted-foreground transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+      title={title}
+    >
+      {icon}
+    </a>
+  );
+}
+
+function BrandIcon({ name }: { name: "github" | "linkedin" | "instagram" | "youtube" }) {
+  const paths = {
+    github:
+      "M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.1.79-.25.79-.56v-2.14c-3.23.7-3.91-1.37-3.91-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.17.08 1.78 1.2 1.78 1.2 1.04 1.77 2.72 1.26 3.38.96.1-.75.4-1.26.74-1.55-2.58-.3-5.29-1.29-5.29-5.74 0-1.27.45-2.3 1.2-3.12-.12-.29-.52-1.47.11-3.07 0 0 .98-.31 3.17 1.19a10.95 10.95 0 0 1 5.76 0c2.19-1.5 3.17-1.19 3.17-1.19.63 1.6.23 2.78.11 3.07.75.82 1.2 1.85 1.2 3.12 0 4.46-2.72 5.44-5.31 5.73.42.36.79 1.08.79 2.18v3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z",
+    linkedin:
+      "M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13Zm1.78 13.02H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z",
+    instagram:
+      "M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.15-3.23 1.66-4.77 4.92-4.92C8.42 2.17 8.8 2.16 12 2.16ZM12 0C8.74 0 8.33.01 7.05.07 2.69.27.27 2.69.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.36 2.62 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.36-.2 6.78-2.62 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.36-2.62-6.78-6.98-6.98C15.67.01 15.26 0 12 0Zm0 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32ZM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm6.41-11.85a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88Z",
+    youtube:
+      "M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 0 0 .5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 0 0 2.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 0 0 2.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81ZM9.55 15.57V8.43L15.82 12l-6.27 3.57Z",
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d={paths[name]} />
+    </svg>
   );
 }

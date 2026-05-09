@@ -154,7 +154,10 @@ export default function AdminFooterPage() {
   }, []);
 
   useEffect(() => {
-    fetchAll();
+    const id = window.setTimeout(() => {
+      void fetchAll();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [fetchAll]);
 
   const activeColumn = columns.find((c) => c.id === activeColumnId) ?? null;
@@ -478,7 +481,7 @@ export default function AdminFooterPage() {
           <div>
             <h2 className="text-sm font-jost-bold">Link Columns</h2>
             <p className="text-xs text-muted-foreground">
-              Click a tab to manage that column's links.
+              Click a tab to manage that column&apos;s links.
             </p>
           </div>
           <Button onClick={openCreateColumn} size="sm" className="gap-2">

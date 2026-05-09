@@ -8,7 +8,8 @@ import { profileUpdateSchema } from "./validations";
 import { getProfileByEmail, updateProfile } from "./data/queries";
 
 function revalidateProfile() {
-  revalidatePath("/admin/dashboard/profile");
+  revalidatePath("/admin/profile");
+  revalidatePath("/team");
 }
 
 export async function updateProfileAction(raw: unknown) {
@@ -24,7 +25,9 @@ export async function updateProfileAction(raw: unknown) {
     }
 
     const data = profileUpdateSchema.parse(raw);
-    await updateProfile(user.id, data);
+    const updated = await updateProfile(user.id, data);
+    const { syncTeamMemberFromAdmin } = await import("@/modules/team/data/mutations");
+    await syncTeamMemberFromAdmin(updated);
     revalidateProfile();
     return ok(null);
   } catch (err) {

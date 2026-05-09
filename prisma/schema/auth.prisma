@@ -24,6 +24,7 @@ model Admin {
   // Profile
   imageUrl  String?
   bio       String?
+  designation String?
   github    String?
   linkedin  String?
   instagram String?
@@ -38,6 +39,7 @@ model Admin {
 
   // RBAC
   permissions UserPermission[]
+  teamMember  TeamMember?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
