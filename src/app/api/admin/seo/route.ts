@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requirePermission } from '@/middleware/permission';
-import { getAllSeo } from '@/modules/seo/data/queries';
+import { getAllSeoManagedPages } from '@/modules/seo/data/queries';
 
 export const runtime = 'nodejs';
 
@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     await requirePermission('MANAGE_SEO');
-    const data = await getAllSeo();
+    const data = await getAllSeoManagedPages();
     return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error('[GET /api/admin/seo]', error);

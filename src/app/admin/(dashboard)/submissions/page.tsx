@@ -8,11 +8,11 @@ import {
   Eye,
   FileSpreadsheet,
   Inbox,
-  Loader2,
   MailOpen,
   Search,
   Trash2,
 } from "lucide-react";
+import { EmptyState, TableSkeleton } from "@/components/shared";
 import {
   Badge,
   Button,
@@ -235,19 +235,15 @@ export default function SubmissionsPage() {
 
       <section className="overflow-hidden rounded-3xl border border-border bg-card/80 shadow-sm backdrop-blur-xl">
         {loading ? (
-          <div className="flex min-h-80 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <TableSkeleton rows={6} className="min-h-80 border-0 bg-transparent" />
         ) : submissions.length === 0 ? (
-          <div className="flex min-h-80 flex-col items-center justify-center p-10 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Inbox className="h-8 w-8" />
-            </div>
-            <h2 className="mt-5 text-xl font-bold">No submissions found</h2>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              Real website form submissions will appear here automatically after visitors submit a form.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Inbox className="h-8 w-8" />}
+            eyebrow="Submissions"
+            title="No submissions found"
+            description="Real website form submissions will appear here automatically after visitors submit a form."
+            className="min-h-80 border-0 bg-transparent"
+          />
         ) : (
           <>
             <div className="hidden lg:block">

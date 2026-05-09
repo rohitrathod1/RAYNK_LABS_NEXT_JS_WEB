@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     await requirePermission("MANAGE_USERS");
 
     const body = await request.json();
-    const { name, email, password, imageUrl, bio, mobile } = body;
+    const { name, email, password, imageUrl, bio, mobile, permissions } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -66,6 +66,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!Array.isArray(permissions) || permissions.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Select at least one permission for this admin" },
+        { status: 400 },
+      );
+    }
+
     const { createAdmin } = await import("@/modules/rbac");
     const admin = await createAdmin({
       name: String(name).trim(),
@@ -74,6 +81,7 @@ export async function POST(request: Request) {
       imageUrl,
       bio,
       mobile,
+      permissions: permissions.map((permission) => String(permission)),
     });
 
     return NextResponse.json(
@@ -85,19 +93,42 @@ export async function POST(request: Request) {
           email: admin.email,
           role: admin.role,
           status: admin.status,
+          permissions,
         },
       },
       { status: 201 },
     );
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "P2002") {
+    if (error instanceof Error && error.message === "DUPLICATE_EMAIL") {
       return NextResponse.json(
         { success: false, error: "An admin with this email already exists" },
         { status: 409 },
       );
     }
+
+    if (error instanceof Error && error.message === "DUPLICATE_MOBILE") {
+      return NextResponse.json(
+        { success: false, error: "An admin with this mobile number already exists" },
+        { status: 409 },
+      );
+    }
+
+    if (error instanceof Error && error.message === "INVALID_PERMISSIONS") {
+      return NextResponse.json(
+        { success: false, error: "One or more selected permissions are invalid" },
+        { status: 400 },
+      );
+    }
+
+    if ((error as { code?: string }).code === "P2002") {
+      return NextResponse.json(
+        { success: false, error: "An admin with this email or mobile number already exists" },
+        { status: 409 },
+      );
+    }
+
     const status = (error as { status?: number }).status ?? 500;
-    const message = error instanceof Error ? error.message : "Internal server error";
+    const message = status === 500 ? "Failed to create admin" : error instanceof Error ? error.message : "Request failed";
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }

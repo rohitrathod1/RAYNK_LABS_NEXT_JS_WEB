@@ -12,6 +12,24 @@ async function requireSuperAdminTeamManager() {
   }
 }
 
+function isTransactionStartTimeout(error: unknown) {
+  return error instanceof Error && error.message.includes("Unable to start a transaction");
+}
+
+async function withDbBusyRetry<T>(operation: () => Promise<T>) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isTransactionStartTimeout(error) || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 export async function POST(req: Request) {
   try {
     await requireSuperAdminTeamManager();
@@ -22,21 +40,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Team member order is required" }, { status: 400 });
     }
 
-    await db.$transaction(
-      ids.map((id, index) =>
+    for (const [index, id] of ids.entries()) {
+      await withDbBusyRetry(() =>
         db.teamMember.update({
           where: { id },
           data: { sortOrder: index },
+          select: { id: true },
         }),
-      ),
-    );
+      );
+    }
 
     revalidatePath("/team");
     revalidatePath("/admin/team");
     return NextResponse.json({ success: true, data: { ids } });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
-    const msg = err instanceof Error ? err.message : "Error";
+    const msg = isTransactionStartTimeout(err)
+      ? "Database is busy. Please try again."
+      : err instanceof Error
+        ? err.message
+        : "Error";
     return NextResponse.json({ success: false, error: msg }, { status });
   }
 }

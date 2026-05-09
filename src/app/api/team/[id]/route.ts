@@ -11,6 +11,24 @@ const includePublicUser = {
   user: { select: { email: true, status: true, role: true } },
 };
 
+function isTransactionStartTimeout(error: unknown) {
+  return error instanceof Error && error.message.includes("Unable to start a transaction");
+}
+
+async function withDbBusyRetry<T>(operation: () => Promise<T>) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isTransactionStartTimeout(error) || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 async function requireSuperAdminTeamManager() {
   const session = await requirePermission("MANAGE_TEAM");
   if (session.user.role !== "SUPER_ADMIN") {
@@ -70,29 +88,34 @@ export async function PUT(req: Request, { params }: Params) {
     const { id } = await params;
     const parsed = teamMemberInputSchema.parse(await req.json());
 
-    const updated = await db.teamMember.update({
-      where: { id },
-      data: {
-        displayName: parsed.displayName,
-        role: parsed.role,
-        bio: parsed.bio || null,
-        avatar: parsed.avatar || null,
-        githubUrl: parsed.githubUrl || null,
-        linkedinUrl: parsed.linkedinUrl || null,
-        instagramUrl: parsed.instagramUrl || null,
-        youtubeUrl: parsed.youtubeUrl || null,
-        isVisible: parsed.isVisible,
-        isFeatured: parsed.isFeatured,
-      },
-      include: includePublicUser,
-    });
+    const updated = await withDbBusyRetry(() =>
+      db.teamMember.update({
+        where: { id },
+        data: {
+          displayName: parsed.displayName,
+          role: parsed.role,
+          bio: parsed.bio || null,
+          avatar: parsed.avatar || null,
+          githubUrl: parsed.githubUrl || null,
+          linkedinUrl: parsed.linkedinUrl || null,
+          instagramUrl: parsed.instagramUrl || null,
+          youtubeUrl: parsed.youtubeUrl || null,
+          isVisible: parsed.isVisible,
+          isFeatured: parsed.isFeatured,
+        },
+      }),
+    );
 
     revalidatePath("/team");
     revalidatePath("/admin/team");
     return NextResponse.json({ success: true, data: serialize(updated) });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
-    const msg = err instanceof Error ? err.message : "Error";
+    const msg = isTransactionStartTimeout(err)
+      ? "Database is busy. Please try again."
+      : err instanceof Error
+        ? err.message
+        : "Error";
     return NextResponse.json({ success: false, error: msg }, { status });
   }
 }

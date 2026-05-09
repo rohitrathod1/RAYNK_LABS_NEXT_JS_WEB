@@ -138,6 +138,12 @@ body::-webkit-scrollbar,
   @apply bg-gradient-to-r from-primary via-blue-400 to-primary/50 bg-clip-text text-transparent;
 }
 
+@keyframes system-shimmer {
+  100% {
+    transform: translateX(200%);
+  }
+}
+
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;

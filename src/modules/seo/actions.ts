@@ -7,6 +7,7 @@ import { Prisma, type SeoMeta } from '@prisma/client';
 import { seoFormSchema } from './validations';
 import { getSeoByPage, getAllSeo } from './data/queries';
 import { upsertSeoMeta, deleteSeoMeta } from './data/mutations';
+import { getSeoPublicPath, isValidSeoPageKey, normalizeSeoPageKey } from './page-config';
 
 async function requireSeoAccess<T>(): Promise<ActionResponse<T> | null> {
   try {
@@ -21,7 +22,9 @@ async function requireSeoAccess<T>(): Promise<ActionResponse<T> | null> {
 }
 
 export async function getSeoMetaAction(page: string): Promise<ActionResponse<SeoMeta | null>> {
-  const data = await getSeoByPage(page);
+  const pageKey = normalizeSeoPageKey(page);
+  if (!isValidSeoPageKey(pageKey)) return { success: false, error: 'Invalid SEO page key' };
+  const data = await getSeoByPage(pageKey);
   return { success: true, data };
 }
 
@@ -42,6 +45,8 @@ export async function updateSeoMetaAction(
 ): Promise<ActionResponse<SeoMeta>> {
   const guard = await requireSeoAccess<SeoMeta>();
   if (guard) return guard;
+  const pageKey = normalizeSeoPageKey(page);
+  if (!isValidSeoPageKey(pageKey)) return { success: false, error: 'Invalid SEO page key' };
 
   const parsed = seoFormSchema.safeParse(input);
   if (!parsed.success) {
@@ -52,8 +57,8 @@ export async function updateSeoMetaAction(
     };
   }
 
-  const record = await upsertSeoMeta(page, {
-    page,
+  const record = await upsertSeoMeta(pageKey, {
+    page: pageKey,
     metaTitle: parsed.data.metaTitle,
     metaDescription: parsed.data.metaDescription,
     keywords: parsed.data.keywords,
@@ -71,8 +76,7 @@ export async function updateSeoMetaAction(
 
   // Best-effort revalidation of the affected route. `page` is a slug like
   // "home", "about", "products" — map to its public path.
-  const path = page === 'home' ? '/' : `/${page.replace(/-/g, '/')}`;
-  revalidatePath(path);
+  revalidatePath(getSeoPublicPath(pageKey));
   revalidatePath('/admin/seo');
 
   return { success: true, data: record };
@@ -81,7 +85,9 @@ export async function updateSeoMetaAction(
 export async function deleteSeoMetaAction(page: string): Promise<ActionResponse<SeoMeta>> {
   const guard = await requireSeoAccess<SeoMeta>();
   if (guard) return guard;
-  const data = await deleteSeoMeta(page);
+  const pageKey = normalizeSeoPageKey(page);
+  if (!isValidSeoPageKey(pageKey)) return { success: false, error: 'Invalid SEO page key' };
+  const data = await deleteSeoMeta(pageKey);
   revalidatePath('/admin/seo');
   return { success: true, data };
 }

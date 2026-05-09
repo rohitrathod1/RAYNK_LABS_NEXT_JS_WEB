@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Button } from '@/components/ui';
+import { AlertTriangle } from 'lucide-react';
+import { SystemState, defaultHomeAction, defaultRetryAction } from '@/components/shared/system-state';
 
 export default function Error({
   error,
@@ -15,14 +16,23 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4">
-      <h1 className="font-serif text-4xl font-jost-bold">Something went wrong</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        An unexpected error occurred. Please try again.
-      </p>
-      <Button onClick={reset} className="mt-8">
-        Try Again
-      </Button>
-    </div>
+    <SystemState
+      eyebrow="Something Went Wrong"
+      title="We could not finish loading this page"
+      description="A temporary issue stopped the page from rendering safely. Retry the page or return home."
+      icon={AlertTriangle}
+      primaryAction={defaultRetryAction(reset)}
+      secondaryAction={defaultHomeAction()}
+      details={
+        process.env.NODE_ENV === 'development' ? (
+          <details>
+            <summary className="cursor-pointer font-semibold text-foreground">Error details</summary>
+            <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap">
+              {error.stack ?? error.message}
+            </pre>
+          </details>
+        ) : null
+      }
+    />
   );
 }

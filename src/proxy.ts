@@ -165,36 +165,14 @@ export default auth(async (req: AuthRequest) => {
       "/admin/users": "MANAGE_USERS",
     };
 
-    const seoPagePermissions: Record<string, string> = {
-      home: "EDIT_HOME",
-      about: "EDIT_ABOUT",
-      services: "MANAGE_SERVICES",
-      portfolio: "MANAGE_PORTFOLIO",
-      blog: "MANAGE_BLOG",
-      contact: "MANAGE_CONTACT",
-      navbar: "MANAGE_NAVBAR",
-      footer: "MANAGE_FOOTER",
-      team: "MANAGE_TEAM",
-    };
-
     for (const [path, perm] of Object.entries(pagePermissions)) {
       if (pathname.startsWith(path)) {
         if (role !== "SUPER_ADMIN" && !permissions.includes(perm)) {
           return addSecurityHeaders(
-            NextResponse.redirect(new URL("/admin", req.url)),
+            NextResponse.redirect(new URL("/admin/access-denied", req.url)),
           );
         }
         break;
-      }
-    }
-
-    const seoPage = pathname === "/admin/seo" ? req.nextUrl.searchParams.get("page") : null;
-    if (seoPage && role !== "SUPER_ADMIN") {
-      const permission = seoPagePermissions[seoPage];
-      if (permission && !permissions.includes(permission)) {
-        return addSecurityHeaders(
-          NextResponse.redirect(new URL("/admin", req.url)),
-        );
       }
     }
 
