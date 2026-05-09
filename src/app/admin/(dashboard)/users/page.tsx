@@ -252,25 +252,16 @@ export default function AdminUsersPage() {
           name: formName,
           email: formEmail.trim().toLowerCase(),
           password: formPassword,
+          permissions: formPermissions,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Assign permissions
-      if (formPermissions.length > 0 && data.data?.id) {
-        const permRes = await fetch("/api/admin/users/permissions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.data.id, permissions: formPermissions }),
-        });
-        if (!permRes.ok) throw new Error("Failed to assign permissions");
-      }
-
       toast.success("Admin created successfully");
       closeModal();
-      fetchData();
+      await fetchData();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create admin");
     } finally {
@@ -315,7 +306,7 @@ export default function AdminUsersPage() {
 
       toast.success("Admin updated successfully");
       closeModal();
-      fetchData();
+      await fetchData();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update admin");
     } finally {
@@ -709,7 +700,13 @@ export default function AdminUsersPage() {
                 disabled={submitting}
               >
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {modalMode === "add" ? "Create Admin" : "Save Changes"}
+                {submitting
+                  ? modalMode === "add"
+                    ? "Creating..."
+                    : "Saving..."
+                  : modalMode === "add"
+                    ? "Create Admin"
+                    : "Save Changes"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -8,44 +8,71 @@ export async function createAdmin(data: {
   imageUrl?: string;
   bio?: string;
   mobile?: string;
+  permissions?: string[];
 }) {
-  const hashedPassword = await bcrypt.hash(data.password, 12);
-  return db.$transaction(async (tx) => {
-    const admin = await tx.admin.create({
-      data: {
-        name: data.name,
-        email: data.email,
-        password: hashedPassword,
-        role: "ADMIN",
-        status: "APPROVED",
-        imageUrl: data.imageUrl ?? null,
-        bio: data.bio ?? null,
-        mobile: data.mobile ?? null,
-      },
-    });
-
-    const lastMember = await tx.teamMember.findFirst({
-      orderBy: { sortOrder: "desc" },
-      select: { sortOrder: true },
-    });
-
-    await tx.teamMember.create({
-      data: {
-        userId: admin.id,
-        displayName: admin.name,
-        role: admin.designation || admin.role,
-        bio: admin.bio,
-        avatar: admin.imageUrl,
-        githubUrl: admin.github,
-        linkedinUrl: admin.linkedin,
-        instagramUrl: admin.instagram,
-        youtubeUrl: admin.youtube,
-        sortOrder: (lastMember?.sortOrder ?? -1) + 1,
-      },
-    });
-
-    return admin;
+  const email = data.email.trim().toLowerCase();
+  const mobile = data.mobile?.trim() || undefined;
+  const existing = await db.admin.findFirst({
+    where: {
+      OR: [
+        { email },
+        ...(mobile ? [{ mobile }] : []),
+      ],
+    },
+    select: { email: true, mobile: true },
   });
+
+  if (existing?.email === email) {
+    throw new Error("DUPLICATE_EMAIL");
+  }
+  if (mobile && existing?.mobile === mobile) {
+    throw new Error("DUPLICATE_MOBILE");
+  }
+
+  const permissionNames = [...new Set(data.permissions ?? [])];
+  const permissions =
+    permissionNames.length > 0
+      ? await db.permission.findMany({
+          where: { name: { in: permissionNames } },
+          select: { id: true, name: true },
+        })
+      : [];
+
+  const foundNames = new Set(permissions.map((permission) => permission.name));
+  const missing = permissionNames.filter((name) => !foundNames.has(name));
+  if (missing.length > 0) {
+    throw new Error("INVALID_PERMISSIONS");
+  }
+
+  const hashedPassword = await bcrypt.hash(data.password, 12);
+
+  const admin = await db.admin.create({
+    data: {
+      name: data.name.trim(),
+      email,
+      password: hashedPassword,
+      role: "ADMIN",
+      status: "APPROVED",
+      imageUrl: data.imageUrl ?? null,
+      bio: data.bio ?? null,
+      mobile: mobile ?? null,
+    },
+  });
+
+  if (permissions.length > 0) {
+    await db.userPermission.createMany({
+      data: permissions.map((permission) => ({
+        userId: admin.id,
+        permissionId: permission.id,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  const { createTeamMemberFromAdmin } = await import("@/modules/team/data/mutations");
+  await createTeamMemberFromAdmin(admin);
+
+  return admin;
 }
 
 export async function updateAdmin(
@@ -106,17 +133,15 @@ export async function assignPermissions(userId: string, permissionNames: string[
     throw new Error(`Unknown permissions: ${missing.join(", ")}`);
   }
 
-  await db.$transaction(async (tx) => {
-    await tx.userPermission.deleteMany({ where: { userId } });
+  await db.userPermission.deleteMany({ where: { userId } });
 
-    if (permissions.length === 0) return;
+  if (permissions.length === 0) return;
 
-    await tx.userPermission.createMany({
-      data: permissions.map((permission) => ({
-        userId,
-        permissionId: permission.id,
-      })),
-      skipDuplicates: true,
-    });
+  await db.userPermission.createMany({
+    data: permissions.map((permission) => ({
+      userId,
+      permissionId: permission.id,
+    })),
+    skipDuplicates: true,
   });
 }

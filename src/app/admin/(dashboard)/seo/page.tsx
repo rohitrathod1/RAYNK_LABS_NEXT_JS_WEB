@@ -12,7 +12,6 @@ import {
   ShieldOff,
   ExternalLink,
   Inbox,
-  X,
   CheckCircle2,
   AlertTriangle,
 } from 'lucide-react';
@@ -32,10 +31,12 @@ import {
   DialogFooter,
 } from '@/components/ui';
 import { SeoTabPanel, SeoGuide } from '@/modules/seo';
+import { formatSeoPageLabel, getSeoPublicPath, isValidSeoPageKey, normalizeSeoPageKey } from '@/modules/seo/page-config';
 
 interface SeoRow {
   id: string;
   page: string;
+  label?: string;
   metaTitle: string;
   metaDescription: string | null;
   robots: string;
@@ -43,18 +44,11 @@ interface SeoRow {
 }
 
 function publicHref(pageKey: string): string {
-  if (pageKey === 'home') return '/';
-  if (pageKey.includes(':')) {
-    const [prefix, slug] = pageKey.split(':');
-    return `/${prefix}/${slug}`;
-  }
-  return `/${pageKey.replace(/-/g, '/')}`;
+  return getSeoPublicPath(pageKey);
 }
 
 function pageLabel(pageKey: string): string {
-  return pageKey
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return formatSeoPageLabel(pageKey);
 }
 
 // Gradient colors for cards
@@ -132,9 +126,9 @@ export default function AdminSeoPage() {
   const openAdd = () => { setNewPageKey(''); setNewPageError(null); setAddOpen(true); };
 
   const handleAddNext = () => {
-    const key = newPageKey.trim().toLowerCase();
+    const key = normalizeSeoPageKey(newPageKey);
     if (!key) { setNewPageError('Page key is required'); return; }
-    if (!/^[a-z0-9:_/\-]+$/.test(key)) {
+    if (!isValidSeoPageKey(key)) {
       setNewPageError('Lowercase letters, numbers, hyphens and / : _ only');
       return;
     }
@@ -286,7 +280,7 @@ export default function AdminSeoPage() {
                 {/* Title + description */}
                 <div className="relative z-10">
                   <span className="text-xs font-semibold text-foreground transition-colors duration-200 group-hover:text-primary sm:text-sm">
-                    {pageLabel(row.page)}
+                    {row.label ?? pageLabel(row.page)}
                   </span>
                   <p className="mt-0.5 line-clamp-1 text-[10px] leading-tight text-muted-foreground sm:text-[11px]">
                     {row.metaTitle}

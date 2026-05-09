@@ -34,6 +34,7 @@ import {
 import { PERMISSIONS } from "@/modules/rbac/constants";
 import type { PermissionKey } from "@/modules/rbac/constants";
 import { LogoutModal } from "@/components/admin/logout-modal";
+import { formatSeoPageLabel } from "@/modules/seo/page-config";
 
 interface NavChild {
   title: string;
@@ -199,23 +200,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const sidebarSections = useMemo<NavSection[]>(() => {
     const dashboardChildren = CMS_PAGES.filter((page) => can(page.permission));
     const seoChildren = canManageSeo
-      ? (seoPages
-          .map((seoPage) => {
-            const matchingPage = CMS_PAGES.find(
-              (page) =>
-                page.title.toLowerCase().replace(/\s+/g, "-") === seoPage.page ||
-                page.href.endsWith(`/${seoPage.page}`),
-            );
-            if (matchingPage && !can(matchingPage.permission)) return null;
-            return {
-              title: seoPage.page.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
-              href: "/admin/seo",
-              icon: FileText,
-              query: `page=${encodeURIComponent(seoPage.page)}`,
-              permission: matchingPage?.permission ?? PERMISSIONS.MANAGE_SEO,
-            };
-          })
-          .filter(Boolean) as NavChild[])
+      ? seoPages.map((seoPage) => ({
+          title: formatSeoPageLabel(seoPage.page),
+          href: "/admin/seo",
+          icon: FileText,
+          query: `page=${encodeURIComponent(seoPage.page)}`,
+          permission: PERMISSIONS.MANAGE_SEO,
+        }))
       : [];
     const teamChildren = TEAM_PAGES.filter((page) => can(page.permission));
 
@@ -291,7 +282,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           sidebarOpen ? "md:translate-x-0" : "md:-translate-x-full",
         )}
       >
-        <div className="border-border flex h-16 shrink-0 items-center justify-between border-b px-4 2xl:h-20 2xl:px-6">
+        <div className="border-border flex h-16 shrink-0 items-center gap-3 border-b px-4 2xl:h-20 2xl:px-6">
           <div className="border-border bg-card flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-3 py-2 shadow-sm">
             <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold">
               {sidebarProfile?.imageUrl ? (
@@ -438,11 +429,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link
             href="/admin"
             aria-label="RaYnk Labs admin dashboard"
-            className="group absolute left-1/2 top-1/2 max-w-[42vw] -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none text-center"
+            className="group absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none"
           >
-            <span className="text-primary inline-block truncate text-base font-black tracking-widest transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:drop-shadow-sm sm:text-xl">
-              RaYnk Labs
-            </span>
+            <div className="relative flex items-center justify-center">
+              {/* Animated Glow */}
+              <div className="from-primary/20 via-secondary/20 to-accent/20 absolute inset-0 rounded-full bg-gradient-to-r blur-3xl transition-all duration-500 group-hover:scale-125 group-hover:blur-[80px]" />
+
+              {/* Brand Name */}
+              <h1 className="relative flex items-center gap-1 text-2xl font-black tracking-[0.08em] transition-all duration-300 ease-out group-hover:scale-[1.05] sm:text-3xl">
+                {/* RaYnk */}
+                <span className="via-primary bg-gradient-to-r from-lime-300 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(132,255,0,0.45)] transition-all duration-300 group-hover:drop-shadow-[0_0_24px_rgba(132,255,0,0.8)]">
+                  RaYnk
+                </span>
+
+                {/* Labs */}
+                <span className="via-secondary bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(168,85,247,0.45)] transition-all duration-300 group-hover:drop-shadow-[0_0_24px_rgba(168,85,247,0.8)]">
+                  Labs
+                </span>
+              </h1>
+            </div>
           </Link>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -467,9 +472,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               variant="destructive"
               size="sm"
               onClick={() => setShowLogoutModal(true)}
-              className="h-10 cursor-pointer gap-2 rounded-xl px-4 transition-all hover:opacity-90"
+              className="h-10 cursor-pointer gap-2 rounded-xl border border-red-500/20 bg-red-600 px-4 text-white shadow-lg shadow-red-500/10 transition-all duration-300 ease-in-out hover:scale-[1.03] hover:bg-red-500 hover:shadow-red-500/30 active:scale-[0.98]"
             >
-              <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </header>
