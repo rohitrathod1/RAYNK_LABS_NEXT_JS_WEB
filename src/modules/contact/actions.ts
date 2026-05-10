@@ -103,15 +103,38 @@ export async function updateContactCta(raw: unknown) {
 export async function submitContactInquiry(raw: unknown) {
   try {
     const data = contactInquirySchema.parse(raw);
-    await createContactInquiry({ ...data, isRead: false, createdAt: new Date() });
+    if (data.website) return ok(null);
+
+    const subject = data.subject || data.serviceType || "Project inquiry";
+    const enrichedMessage = [
+      data.message,
+      "",
+      "Project details:",
+      data.company ? `Company: ${data.company}` : null,
+      data.serviceType ? `Service: ${data.serviceType}` : null,
+      data.budgetRange ? `Budget: ${data.budgetRange}` : null,
+      data.projectTimeline ? `Timeline: ${data.projectTimeline}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    await createContactInquiry({
+      name: data.name,
+      email: data.email.toLowerCase(),
+      phone: data.phone,
+      subject,
+      message: enrichedMessage,
+      isRead: false,
+      createdAt: new Date(),
+    });
     await db.submission.create({
       data: {
         type: "contact",
         name: data.name,
         email: data.email.toLowerCase(),
         phone: data.phone || null,
-        subject: data.subject || null,
-        message: data.message,
+        subject,
+        message: enrichedMessage,
         sourcePage: "/contact",
         status: "unread",
       },

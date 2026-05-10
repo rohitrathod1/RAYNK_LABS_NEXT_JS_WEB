@@ -7,6 +7,7 @@ import { PERMISSIONS } from '@/modules/rbac/constants';
 import type { ActionResponse } from '@/lib/action-response';
 import type { FooterColumn, FooterLink, FooterSetting } from '@prisma/client';
 import type { FooterColumnWithLinks, FooterData } from './types';
+import { DEFAULT_FOOTER_COLUMNS, DEFAULT_FOOTER_SETTING } from './constants';
 import {
   footerColumnSchema,
   footerColumnUpdateSchema,
@@ -38,21 +39,34 @@ async function requireAdmin<T>(): Promise<ActionResponse<T> | null> {
 
 /** Get all visible columns (with visible links) + setting. Used by public footer. */
 export async function getVisibleFooter(): Promise<FooterData> {
-  const [columns, setting] = await Promise.all([
-    prisma.footerColumn.findMany({
-      where: { isVisible: true },
-      orderBy: { sortOrder: 'asc' },
-      include: {
-        links: {
-          where: { isVisible: true },
-          orderBy: { sortOrder: 'asc' },
+  try {
+    const [columns, setting] = await Promise.all([
+      prisma.footerColumn.findMany({
+        where: { isVisible: true },
+        orderBy: { sortOrder: 'asc' },
+        include: {
+          links: {
+            where: { isVisible: true },
+            orderBy: { sortOrder: 'asc' },
+          },
         },
-      },
-    }),
-    getFooterSetting(),
-  ]);
+      }),
+      getFooterSetting(),
+    ]);
 
-  return { columns, setting };
+    return {
+      columns: columns.length > 0 ? columns : DEFAULT_FOOTER_COLUMNS,
+      setting: {
+        ...DEFAULT_FOOTER_SETTING,
+        ...setting,
+      },
+    };
+  } catch {
+    return {
+      columns: DEFAULT_FOOTER_COLUMNS,
+      setting: DEFAULT_FOOTER_SETTING,
+    };
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -198,7 +212,16 @@ export async function getFooterSetting(): Promise<FooterSetting> {
   return prisma.footerSetting.upsert({
     where: { id: SETTING_ID },
     update: {},
-    create: { id: SETTING_ID },
+    create: {
+      id: SETTING_ID,
+      logoUrl: DEFAULT_FOOTER_SETTING.logoUrl,
+      logoAlt: DEFAULT_FOOTER_SETTING.logoAlt,
+      copyrightText: DEFAULT_FOOTER_SETTING.copyrightText,
+      address: DEFAULT_FOOTER_SETTING.address,
+      email: DEFAULT_FOOTER_SETTING.email,
+      phone: DEFAULT_FOOTER_SETTING.phone,
+      phoneLabel: DEFAULT_FOOTER_SETTING.phoneLabel,
+    },
   });
 }
 

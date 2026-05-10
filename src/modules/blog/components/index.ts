@@ -1,5 +1,9 @@
 export { BlogContent } from "./main";
+export { BlogHero } from "./blog-hero";
+export { BlogExperience } from "./blog-experience";
+export { LazyBlogSections } from "./lazy-blog-sections";
 export { BlogCard } from "./blog-card";
 export { BlogList } from "./blog-list";
 export { BlogDetail } from "./blog-detail";
+export { ReadingProgress } from "./reading-progress";
 export { BlogEditor } from "./editor";

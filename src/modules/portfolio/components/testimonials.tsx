@@ -5,10 +5,11 @@ import { Star } from "lucide-react";
 import { SafeImage } from "@/components/common/safe-image";
 import type { TestimonialsSection } from "../types";
 import { fadeIn, staggerContainer, staggerItem } from "@/lib/animation-variants";
+import { PORTFOLIO_SECTIONS } from "../constants";
 
 export function PortfolioTestimonials({ data }: { data: TestimonialsSection }) {
   return (
-    <section className="section-padding bg-background">
+    <section id={PORTFOLIO_SECTIONS.testimonials} className="section-padding scroll-mt-24 bg-background">
       <div className="section-container">
         <motion.div
           initial="hidden"
@@ -30,10 +31,10 @@ export function PortfolioTestimonials({ data }: { data: TestimonialsSection }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.testimonials.map((testimonial, index) => (
-              <motion.div
+              <motion.figure
                 key={index}
                 variants={staggerItem}
-                className="p-6 rounded-xl border border-border bg-card hover:shadow-lg transition-all duration-300"
+                className="rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -48,12 +49,12 @@ export function PortfolioTestimonials({ data }: { data: TestimonialsSection }) {
                   ))}
                 </div>
 
-                <blockquote className="text-muted-foreground leading-relaxed mb-6 italic">
+                <blockquote className="mb-6 leading-relaxed text-muted-foreground italic">
                   &ldquo;{testimonial.quote}&rdquo;
                 </blockquote>
 
-                <div className="flex items-center gap-3 pt-4 border-t border-border">
-                  <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+                <figcaption className="flex items-center gap-3 border-t border-border pt-4">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">
                     <SafeImage
                       src={testimonial.avatar}
                       alt={testimonial.name}
@@ -66,8 +67,8 @@ export function PortfolioTestimonials({ data }: { data: TestimonialsSection }) {
                     <p className="font-semibold text-sm">{testimonial.name}</p>
                     <p className="text-xs text-muted-foreground">{testimonial.role}</p>
                   </div>
-                </div>
-              </motion.div>
+                </figcaption>
+              </motion.figure>
             ))}
           </div>
         </motion.div>

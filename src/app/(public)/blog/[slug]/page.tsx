@@ -5,6 +5,8 @@ import { defaultSeo } from "@/modules/blog/data/defaults";
 import { resolveSeo } from "@/modules/seo/utils";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { BlogDetail } from "@/modules/blog/components/blog-detail";
+import { JsonLd } from "@/components/shared";
+import { resolveImageSrc } from "@/lib/image-url";
 
 export const revalidate = 60;
 
@@ -20,11 +22,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
   const title = post.metaTitle || post.title;
   const description = post.metaDescription || post.excerpt || undefined;
-  const image = post.coverImage
-    ? post.coverImage.startsWith("http") || post.coverImage.startsWith("/")
-      ? post.coverImage
-      : `/api/uploads/${post.coverImage}`
-    : undefined;
+  const image = post.coverImage ? resolveImageSrc(post.coverImage) : undefined;
 
   return {
     title: title.includes(SITE_NAME) ? { absolute: title } : title,
@@ -59,9 +57,25 @@ export default async function BlogDetailPage({ params }: Params) {
   const related = await getRelatedPosts(post.id, post.tags ?? [], 3);
 
   return (
-    <BlogDetail
-      post={JSON.parse(JSON.stringify(post))}
-      relatedPosts={JSON.parse(JSON.stringify(related))}
-    />
+    <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: post.title,
+          description: post.metaDescription || post.excerpt,
+          image: post.coverImage ? resolveImageSrc(post.coverImage) : undefined,
+          datePublished: post.publishedAt ?? post.createdAt,
+          dateModified: post.updatedAt,
+          author: { "@type": "Person", name: post.author },
+          publisher: { "@type": "Organization", name: SITE_NAME },
+          mainEntityOfPage: `${SITE_URL}/blog/${post.slug}`,
+        }}
+      />
+      <BlogDetail
+        post={JSON.parse(JSON.stringify(post))}
+        relatedPosts={JSON.parse(JSON.stringify(related))}
+      />
+    </>
   );
 }

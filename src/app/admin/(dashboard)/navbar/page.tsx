@@ -46,6 +46,7 @@ interface NavSubLinkRow {
   href: string;
   sortOrder: number;
   isVisible: boolean;
+  openInNewTab?: boolean;
 }
 
 interface NavLinkRow {
@@ -54,6 +55,8 @@ interface NavLinkRow {
   href?: string | null;
   sortOrder: number;
   isVisible: boolean;
+  hasDropdown?: boolean;
+  openInNewTab?: boolean;
   subLinks: NavSubLinkRow[];
   createdAt: string;
   updatedAt: string;
@@ -80,8 +83,11 @@ export default function AdminNavbarManager() {
   const [editingLink, setEditingLink] = useState<NavLinkRow | null>(null);
   const [linkForm, setLinkForm] = useState({
     title: '',
+    href: '',
     sortOrder: 0,
     isVisible: true,
+    hasDropdown: false,
+    openInNewTab: false,
   });
 
   // SubLink dialog
@@ -93,6 +99,7 @@ export default function AdminNavbarManager() {
     href: '',
     sortOrder: 0,
     isVisible: true,
+    openInNewTab: false,
   });
 
   // Delete confirmation
@@ -190,7 +197,14 @@ export default function AdminNavbarManager() {
 
   const openCreateLink = () => {
     setEditingLink(null);
-    setLinkForm({ title: '', sortOrder: links.length, isVisible: true });
+    setLinkForm({
+      title: '',
+      href: '',
+      sortOrder: links.length,
+      isVisible: true,
+      hasDropdown: false,
+      openInNewTab: false,
+    });
     setError('');
     setLinkDialogOpen(true);
   };
@@ -199,8 +213,11 @@ export default function AdminNavbarManager() {
     setEditingLink(link);
     setLinkForm({
       title: link.title,
+      href: link.href ?? '',
       sortOrder: link.sortOrder,
       isVisible: link.isVisible,
+      hasDropdown: link.hasDropdown ?? link.subLinks.length > 0,
+      openInNewTab: link.openInNewTab ?? false,
     });
     setError('');
     setLinkDialogOpen(true);
@@ -210,13 +227,29 @@ export default function AdminNavbarManager() {
     setSaving(true);
     setError('');
     try {
+      const normalizedHref = linkForm.href.trim();
+      const duplicate = links.some(
+        (link) =>
+          link.id !== editingLink?.id &&
+          link.title.trim().toLowerCase() === linkForm.title.trim().toLowerCase(),
+      );
+      if (duplicate) {
+        setError('A main link with this title already exists.');
+        toast.error('Duplicate main link title');
+        return;
+      }
+      if (!normalizedHref) {
+        setError('Path / URL is required.');
+        toast.error('Path / URL is required');
+        return;
+      }
       const isEdit = !!editingLink;
       const url = isEdit ? `/api/navbar/${editingLink.id}` : '/api/navbar';
       const method = isEdit ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(linkForm),
+        body: JSON.stringify({ ...linkForm, href: normalizedHref }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -267,6 +300,7 @@ export default function AdminNavbarManager() {
       href: '',
       sortOrder: activeNavLink.subLinks.length,
       isVisible: true,
+      openInNewTab: false,
     });
     setError('');
     setSubLinkDialogOpen(true);
@@ -280,6 +314,7 @@ export default function AdminNavbarManager() {
       href: sub.href,
       sortOrder: sub.sortOrder,
       isVisible: sub.isVisible,
+      openInNewTab: sub.openInNewTab ?? false,
     });
     setError('');
     setSubLinkDialogOpen(true);
@@ -289,6 +324,24 @@ export default function AdminNavbarManager() {
     setSaving(true);
     setError('');
     try {
+      const normalizedHref = subLinkForm.href.trim();
+      const duplicate = links
+        .find((link) => link.id === subLinkForm.navLinkId)
+        ?.subLinks.some(
+          (sub) =>
+            sub.id !== editingSubLink?.id &&
+            sub.title.trim().toLowerCase() === subLinkForm.title.trim().toLowerCase(),
+        );
+      if (duplicate) {
+        setError('A sub-link with this title already exists under this parent.');
+        toast.error('Duplicate sub-link title');
+        return;
+      }
+      if (!normalizedHref) {
+        setError('Sub-link path is required.');
+        toast.error('Sub-link path is required');
+        return;
+      }
       const isEdit = !!editingSubLink;
       const url = isEdit
         ? `/api/navbar/sublinks/${editingSubLink.id}`
@@ -297,7 +350,7 @@ export default function AdminNavbarManager() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subLinkForm),
+        body: JSON.stringify({ ...subLinkForm, href: normalizedHref }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -589,6 +642,15 @@ export default function AdminNavbarManager() {
                 <span className="text-xs text-muted-foreground">
                   Order #{activeNavLink.sortOrder}
                 </span>
+                <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+                  {activeNavLink.href || 'No path'}
+                </span>
+                {activeNavLink.openInNewTab && (
+                  <Badge variant="secondary">New tab</Badge>
+                )}
+                {activeNavLink.hasDropdown && (
+                  <Badge variant="outline">Dropdown</Badge>
+                )}
               </div>
 
               <div className="scrollbar-hide flex w-full items-center gap-2 overflow-x-auto sm:w-auto">
@@ -777,6 +839,20 @@ export default function AdminNavbarManager() {
               </p>
             </div>
 
+            <div className="space-y-1.5">
+              <Label htmlFor="nav-href">Path / URL</Label>
+              <Input
+                id="nav-href"
+                placeholder="/services, /services#section2-services-grid, /about#section6-about-team"
+                value={linkForm.href}
+                onChange={(e) => setLinkForm({ ...linkForm, href: e.target.value })}
+                maxLength={300}
+              />
+              <p className="text-xs text-muted-foreground">
+                Use #section-id to navigate directly to a section, for example /#section3-home-services or /services#section2-services-grid.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/20 p-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Sort order</Label>
@@ -807,6 +883,30 @@ export default function AdminNavbarManager() {
                     </>
                   )}
                 </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-3">
+              <Button
+                type="button"
+                variant={linkForm.hasDropdown ? 'default' : 'secondary'}
+                onClick={() =>
+                  setLinkForm({ ...linkForm, hasDropdown: !linkForm.hasDropdown })
+                }
+              >
+                {linkForm.hasDropdown ? 'Dropdown On' : 'Dropdown Off'}
+              </Button>
+              <Button
+                type="button"
+                variant={linkForm.openInNewTab ? 'default' : 'secondary'}
+                onClick={() =>
+                  setLinkForm({ ...linkForm, openInNewTab: !linkForm.openInNewTab })
+                }
+              >
+                {linkForm.openInNewTab ? 'New Tab On' : 'Same Tab'}
+              </Button>
+              <div className="rounded-md bg-background px-3 py-2 text-xs text-muted-foreground">
+                Main link still navigates even when dropdown is enabled.
               </div>
             </div>
 
@@ -872,9 +972,12 @@ export default function AdminNavbarManager() {
               <Input
                 value={subLinkForm.href}
                 onChange={(e) => setSubLinkForm({ ...subLinkForm, href: e.target.value })}
-                placeholder="/our-essence/story"
+                placeholder="/#section3-home-services, /about#section6-about-team, /services#section4-services-work-process"
                 maxLength={300}
               />
+              <p className="text-xs text-muted-foreground">
+                Use #section-id to navigate directly to a section.
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -902,6 +1005,19 @@ export default function AdminNavbarManager() {
                 </Button>
               </div>
             </div>
+            <Button
+              type="button"
+              variant={subLinkForm.openInNewTab ? 'default' : 'secondary'}
+              className="w-full"
+              onClick={() =>
+                setSubLinkForm({
+                  ...subLinkForm,
+                  openInNewTab: !subLinkForm.openInNewTab,
+                })
+              }
+            >
+              {subLinkForm.openInNewTab ? 'Open In New Tab' : 'Open In Same Tab'}
+            </Button>
 
             {error && (
               <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">

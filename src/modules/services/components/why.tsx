@@ -1,11 +1,8 @@
-import dynamic from "next/dynamic";
 import type { WhyChooseSection } from "../types";
-
-const Button = dynamic(() => import("@/components/ui/button").then((mod) => mod.Button));
 
 export function WhyChoose({ title, subtitle, points }: WhyChooseSection) {
   return (
-    <section className="py-16 px-4 bg-muted/30">
+    <section id="section3-services-benefits" className="scroll-mt-24 py-16 px-4 bg-muted/30">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-3">{title}</h2>

@@ -8,6 +8,20 @@ export const heroSchema = z.object({
   ctaSecondaryText: z.string().optional().default(""),
   ctaSecondaryHref: z.string().optional().default(""),
   backgroundImage: z.string().optional().default(""),
+  slides: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        heading: z.string().min(1),
+        subtitle: z.string().min(1),
+        backgroundImage: z.string().optional().default(""),
+        ctaPrimaryText: z.string().optional(),
+        ctaPrimaryHref: z.string().optional(),
+        ctaSecondaryText: z.string().optional(),
+        ctaSecondaryHref: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const initiativeCardSchema = z.object({

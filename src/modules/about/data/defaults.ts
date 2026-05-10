@@ -1,4 +1,5 @@
 import { definePageSeo } from "@/modules/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import type { AboutPageData } from "../types";
 
 export const defaultSeo = definePageSeo({
@@ -9,8 +10,45 @@ export const defaultSeo = definePageSeo({
   ogDescription: "Meet the team and mission behind RaYnk Labs.",
   ogImage: "og-about.png",
   twitterCard: "summary_large_image",
-  canonicalUrl: "http://localhost:3000/about",
-  structuredData: { "@type": "AboutPage", name: "About RaYnk Labs" },
+  canonicalUrl: `${SITE_URL}/about`,
+  structuredData: [
+    {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      description:
+        "RaYnk Labs is a digital solutions and innovation team building software, websites, branding, SEO systems, and scalable products.",
+    },
+    {
+      "@type": "AboutPage",
+      name: "About RaYnk Labs",
+      url: `${SITE_URL}/about`,
+      description:
+        "Learn about RaYnk Labs, our mission, company story, digital innovation approach, and core team.",
+      isPartOf: {
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: SITE_URL,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "About",
+          item: `${SITE_URL}/about`,
+        },
+      ],
+    },
+  ],
   robots: "index,follow",
 });
 export const defaultAboutContent: AboutPageData = {

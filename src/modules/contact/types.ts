@@ -59,6 +59,11 @@ export interface ContactInquiryInput {
   name: string;
   email: string;
   phone?: string;
+  company?: string;
+  serviceType?: string;
   subject?: string;
+  budgetRange?: string;
+  projectTimeline?: string;
   message: string;
+  website?: string;
 }

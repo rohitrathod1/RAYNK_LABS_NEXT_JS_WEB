@@ -49,11 +49,16 @@ export const ctaSchema = z.object({
 });
 
 export const contactInquirySchema = z.object({
-  name: z.string().min(1, "Name required"),
+  name: z.string().min(2, "Full name required"),
   email: z.string().email("Valid email required"),
   phone: z.string().optional().default(""),
+  company: z.string().optional().default(""),
+  serviceType: z.string().optional().default(""),
   subject: z.string().optional().default(""),
-  message: z.string().min(1, "Message required"),
+  budgetRange: z.string().optional().default(""),
+  projectTimeline: z.string().optional().default(""),
+  message: z.string().min(10, "Message should be at least 10 characters"),
+  website: z.string().optional().default(""),
 });
 
 export const seoSchema = z.object({

@@ -10,6 +10,17 @@ export const runtime = 'nodejs';
 
 type Params = { params: Promise<{ id: string }> };
 
+async function readJsonBody(req: NextRequest) {
+  const text = await req.text();
+  if (!text.trim()) return {};
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 // GET /api/navbar/:id — Admin only
 export async function GET(_req: NextRequest, { params }: Params) {
   await requireAdmin();
@@ -34,7 +45,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   try {
     const { id } = await params;
-    const body = await req.json();
+    const body = await readJsonBody(req);
+    if (body === null) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON request body' },
+        { status: 400 },
+      );
+    }
     const result = await updateNavLink(id, body);
     if (!result.success) {
       const status = result.error === 'Nav link not found' ? 404 : 400;

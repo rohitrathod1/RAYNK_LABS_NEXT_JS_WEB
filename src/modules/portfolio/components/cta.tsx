@@ -5,10 +5,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { CtaSection } from "../types";
 import { fadeIn } from "@/lib/animation-variants";
+import { PORTFOLIO_SECTIONS } from "../constants";
 
 export function PortfolioCta({ data }: { data: CtaSection }) {
   return (
-    <section className="section-padding bg-primary text-primary-foreground">
+    <section id={PORTFOLIO_SECTIONS.cta} className="section-padding scroll-mt-24 bg-primary text-primary-foreground">
       <div className="section-container">
         <motion.div
           initial="hidden"

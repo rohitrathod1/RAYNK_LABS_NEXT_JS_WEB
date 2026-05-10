@@ -6,13 +6,30 @@ export const runtime = 'nodejs';
 
 type Params = { params: Promise<{ id: string }> };
 
+async function readJsonBody(req: Request) {
+  const text = await req.text();
+  if (!text.trim()) return {};
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 // PUT /api/navbar/sublinks/:id — Admin only
 export async function PUT(req: Request, { params }: Params) {
   await requireAdmin();
 
   try {
     const { id } = await params;
-    const body = await req.json();
+    const body = await readJsonBody(req);
+    if (body === null) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON request body' },
+        { status: 400 },
+      );
+    }
     const result = await updateNavSubLink(id, body);
     if (!result.success) {
       const status = result.error === 'Sub-link not found' ? 404 : 400;

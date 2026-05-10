@@ -11,11 +11,26 @@ import {
   navbarSettingSchema,
 } from './validations';
 import type { ActionResponse } from '@/lib/action-response';
-import type { NavLink, NavSubLink, NavbarSetting } from '@prisma/client';
+import { Prisma, type NavLink, type NavSubLink, type NavbarSetting } from '@prisma/client';
 
 const SETTING_ID = 'default';
 
 type NavLinkWithSubs = NavLink & { subLinks: NavSubLink[] };
+
+function getModelFieldNames(modelName: string) {
+  return new Set(
+    Prisma.dmmf.datamodel.models.find((model) => model.name === modelName)?.fields.map((field) => field.name) ?? [],
+  );
+}
+
+const NAV_LINK_FIELDS = getModelFieldNames('NavLink');
+const NAV_SUB_LINK_FIELDS = getModelFieldNames('NavSubLink');
+
+function pickPrismaData<T extends Record<string, unknown>>(data: T, allowedFields: Set<string>) {
+  return Object.fromEntries(
+    Object.entries(data).filter(([key]) => allowedFields.has(key)),
+  ) as Partial<T>;
+}
 
 async function requireAdmin<T>(): Promise<ActionResponse<T> | null> {
   const session = await auth();
@@ -78,11 +93,8 @@ export async function createNavLink(input: unknown): Promise<ActionResponse<NavL
   }
 
   const created = await prisma.navLink.create({
-  data: {
-    ...parsed.data,
-    href: parsed.data.href ?? ""  
-  }
-});
+    data: pickPrismaData(parsed.data, NAV_LINK_FIELDS) as Prisma.NavLinkCreateInput,
+  });
 
   revalidatePath('/', 'layout');
   revalidatePath('/');
@@ -111,7 +123,7 @@ export async function updateNavLink(
 
   const updated = await prisma.navLink.update({
     where: { id },
-    data: parsed.data,
+    data: pickPrismaData(parsed.data, NAV_LINK_FIELDS) as Prisma.NavLinkUpdateInput,
   });
 
   revalidatePath('/', 'layout');
@@ -154,7 +166,9 @@ export async function createNavSubLink(input: unknown): Promise<ActionResponse<N
   const parent = await prisma.navLink.findUnique({ where: { id: parsed.data.navLinkId } });
   if (!parent) return { success: false, error: 'Parent nav link not found' };
 
-  const created = await prisma.navSubLink.create({ data: parsed.data });
+  const created = await prisma.navSubLink.create({
+    data: pickPrismaData(parsed.data, NAV_SUB_LINK_FIELDS) as Prisma.NavSubLinkUncheckedCreateInput,
+  });
 
   revalidatePath('/', 'layout');
   revalidatePath('/');
@@ -189,7 +203,7 @@ export async function updateNavSubLink(
 
   const updated = await prisma.navSubLink.update({
     where: { id },
-    data: parsed.data,
+    data: pickPrismaData(parsed.data, NAV_SUB_LINK_FIELDS) as Prisma.NavSubLinkUncheckedUpdateInput,
   });
 
   revalidatePath('/', 'layout');

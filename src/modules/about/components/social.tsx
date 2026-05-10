@@ -1,31 +1,38 @@
-import { dynamicIcon } from "@/lib/icon-map";
+"use client";
 
-export function SocialLinksSection({ data }: { data: { title: string; subtitle: string; links: Array<{ platform: string; url: string; icon: string }> } }) {
+import type { SocialLinksSection as SocialLinksSectionData } from "../types";
+import { AboutIcon } from "./shared/icon";
+import { Reveal } from "./shared/reveal";
+import { AboutSectionHeading } from "./shared/section-heading";
+
+export function SocialLinksSection({ data }: { data: SocialLinksSectionData }) {
   return (
     <section className="section-padding bg-background">
       <div className="section-container">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{data.title}</h2>
-          {data.subtitle && <p className="text-lg text-muted-foreground">{data.subtitle}</p>}
-        </div>
-        <div className="flex flex-wrap justify-center gap-6">
-          {data.links.map((link, i) => {
-            const Icon = dynamicIcon(link.icon);
-            return (
-              <a
-                key={i}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-6 py-4 bg-muted rounded-2xl hover:bg-muted/80 hover:shadow-md transition-all"
-              >
-                {Icon && <Icon className="w-6 h-6 text-primary" />}
-                <span className="font-medium">{link.platform}</span>
-              </a>
-            );
-          })}
+        <div className="space-y-10">
+          <Reveal>
+            <AboutSectionHeading title={data.title} subtitle={data.subtitle} />
+          </Reveal>
+
+          <div className="flex flex-wrap justify-center gap-6">
+            {data.links.map((link, index) => (
+              <Reveal key={`${link.platform}-${index}`} delay={index * 0.05}>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-6 py-4 transition-all hover:-translate-y-1 hover:bg-muted/80 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label={`Follow RaYnk Labs on ${link.platform}`}
+                >
+                  <AboutIcon name={link.icon} className="h-6 w-6 text-primary" />
+                  <span className="font-medium">{link.platform}</span>
+                </a>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 }
+

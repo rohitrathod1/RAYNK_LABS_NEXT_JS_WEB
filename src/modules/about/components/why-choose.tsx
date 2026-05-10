@@ -1,30 +1,39 @@
-import { dynamicIcon } from "@/lib/icon-map";
+"use client";
 
-export function WhyChooseSection({ data }: { data: { title: string; subtitle: string; points: Array<{ icon: string; title: string; description: string }> } }) {
+import type { WhyChooseSection as WhyChooseSectionData } from "../types";
+import { AboutIcon } from "./shared/icon";
+import { Reveal } from "./shared/reveal";
+import { AboutSectionHeading } from "./shared/section-heading";
+
+export function WhyChooseSection({ data }: { data: WhyChooseSectionData }) {
   return (
     <section className="section-padding bg-background">
       <div className="section-container">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{data.title}</h2>
-          {data.subtitle && <p className="text-lg text-muted-foreground">{data.subtitle}</p>}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {data.points.map((point, i) => {
-            const Icon = dynamicIcon(point.icon);
-            return (
-              <div key={i} className="flex gap-4 p-6 rounded-2xl border bg-card hover:shadow-md transition-shadow">
-                <div className="flex-shrink-0">
-                  {Icon && <Icon className="w-8 h-8 text-primary" />}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">{point.title}</h3>
-                  <p className="text-sm text-muted-foreground">{point.description}</p>
-                </div>
-              </div>
-            );
-          })}
+        <div className="space-y-12">
+          <Reveal>
+            <AboutSectionHeading title={data.title} subtitle={data.subtitle} />
+          </Reveal>
+
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {data.points.map((point, index) => (
+              <Reveal key={`${point.title}-${index}`} delay={index * 0.035}>
+                <article className="group flex h-full gap-4 rounded-2xl border border-border bg-card p-6 transition duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition group-hover:bg-primary/20">
+                    <AboutIcon name={point.icon} className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-lg font-semibold">{point.title}</h3>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {point.description}
+                    </p>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 }
+

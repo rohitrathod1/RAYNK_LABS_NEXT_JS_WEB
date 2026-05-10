@@ -39,6 +39,11 @@ export const teamMemberSchema = z.object({
   name: z.string().min(1),
   role: z.string().min(1),
   image: z.string().optional().default(""),
+  bio: z.string().optional().default(""),
+  githubUrl: z.string().optional().default(""),
+  linkedinUrl: z.string().optional().default(""),
+  instagramUrl: z.string().optional().default(""),
+  youtubeUrl: z.string().optional().default(""),
   portfolioUrl: z.string().optional().default(""),
 });
 

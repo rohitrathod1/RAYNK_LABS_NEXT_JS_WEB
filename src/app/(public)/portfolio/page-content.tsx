@@ -1,9 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { CategoryFilter, ProjectsGrid, PortfolioTestimonials, PortfolioCta } from "@/modules/portfolio/components";
-import { PortfolioHero } from "@/modules/portfolio/components/hero";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import { LazyOnView } from "@/components/shared/lazy-on-view";
+import { SectionSkeleton } from "@/components/common/section-skeleton";
 import type { PortfolioPageData, ProjectItem } from "@/modules/portfolio/types";
+
+const PortfolioShowcase = dynamic(
+  () => import("@/modules/portfolio/components/portfolio-showcase").then((m) => m.PortfolioShowcase),
+  { loading: () => <SectionSkeleton /> },
+);
+
+const PortfolioTestimonials = dynamic(
+  () => import("@/modules/portfolio/components/testimonials").then((m) => m.PortfolioTestimonials),
+  { loading: () => <SectionSkeleton /> },
+);
+
+const PortfolioCta = dynamic(
+  () => import("@/modules/portfolio/components/cta").then((m) => m.PortfolioCta),
+  { loading: () => <SectionSkeleton /> },
+);
 
 interface PortfolioPageProps {
   data: PortfolioPageData;
@@ -11,24 +27,29 @@ interface PortfolioPageProps {
 }
 
 export default function PortfolioPageClient({ data, projects }: PortfolioPageProps) {
-  const [activeCategory, setActiveCategory] = useState("All");
-
-  const filteredProjects =
-    activeCategory === "All"
-      ? projects
-      : projects.filter((p) => p.category === activeCategory);
-
   return (
-    <main className="flex flex-col">
-      <PortfolioHero data={data.hero} />
-      <CategoryFilter
-        data={data.categories_filter}
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-      />
-      <ProjectsGrid data={data.projects_grid} projects={filteredProjects} />
-      <PortfolioTestimonials data={data.testimonials} />
-      <PortfolioCta data={data.contact_cta} />
-    </main>
+    <>
+      <LazyOnView fallback={<SectionSkeleton />} rootMargin="450px" minHeight={520}>
+        <Suspense fallback={<SectionSkeleton />}>
+          <PortfolioShowcase
+            filter={data.categories_filter}
+            grid={data.projects_grid}
+            projects={projects}
+          />
+        </Suspense>
+      </LazyOnView>
+
+      <LazyOnView fallback={<SectionSkeleton />} rootMargin="400px" minHeight={420}>
+        <Suspense fallback={<SectionSkeleton />}>
+          <PortfolioTestimonials data={data.testimonials} />
+        </Suspense>
+      </LazyOnView>
+
+      <LazyOnView fallback={<SectionSkeleton />} rootMargin="350px" minHeight={280}>
+        <Suspense fallback={<SectionSkeleton />}>
+          <PortfolioCta data={data.contact_cta} />
+        </Suspense>
+      </LazyOnView>
+    </>
   );
 }

@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
 import type { Category, ServiceCard } from "../types";
 import { ServicesGrid } from "./services-grid";
-
-const Button = dynamic(() => import("@/components/ui/button").then((mod) => mod.Button));
 
 export function Categories({
   categories,
@@ -22,7 +20,7 @@ export function Categories({
       : services.filter((s) => s.category === activeCategory);
 
   return (
-    <section className="py-12 px-4 max-w-7xl mx-auto">
+    <section id="section2-services-grid" className="scroll-mt-24 py-12 px-4 max-w-7xl mx-auto">
       <div className="flex flex-wrap gap-3 justify-center mb-10">
         <Button
           variant={activeCategory === "all" ? "default" : "outline"}
