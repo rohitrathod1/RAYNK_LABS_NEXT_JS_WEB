@@ -7,13 +7,17 @@ import { SITE_NAME } from '@/lib/constants';
 interface NavLink {
   title: string;
   href: string;
-  subLinks?: { title: string; href: string }[];
+  hasDropdown?: boolean;
+  openInNewTab?: boolean;
+  subLinks?: { title: string; href: string; openInNewTab?: boolean }[];
 }
 
 interface ApiNavLink {
   title: string;
   href: string;
-  subLinks?: { title: string; href: string }[];
+  hasDropdown?: boolean;
+  openInNewTab?: boolean;
+  subLinks?: { title: string; href: string; openInNewTab?: boolean }[];
 }
 
 interface NavbarSetting {
@@ -32,9 +36,12 @@ export function NavbarWrapper() {
         const mapped = (data || []).map((link) => ({
           title: link.title,
           href: link.href,
+          hasDropdown: link.hasDropdown ?? Boolean(link.subLinks?.length),
+          openInNewTab: link.openInNewTab ?? false,
           subLinks: link.subLinks?.map((child) => ({
             title: child.title,
             href: child.href,
+            openInNewTab: child.openInNewTab ?? false,
           })),
         }));
         setNavLinks(mapped);

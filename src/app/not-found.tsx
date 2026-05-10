@@ -1,3 +1,5 @@
+"use client";
+
 import { Compass } from "lucide-react";
 import { SystemState, defaultHomeAction } from "@/components/shared/system-state";
 

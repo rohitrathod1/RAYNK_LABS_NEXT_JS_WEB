@@ -2,16 +2,20 @@ import { z } from 'zod';
 
 export const navLinkSchema = z.object({
   title: z.string().min(1, 'Title is required').max(60, 'Title too long'),
-  href: z.string().max(200).optional(),
+  href: z.string().trim().min(1, 'Path / URL is required').max(300, 'Path too long'),
   sortOrder: z.coerce.number().int().min(0).default(0),
   isVisible: z.boolean().default(true),
+  hasDropdown: z.boolean().default(false),
+  openInNewTab: z.boolean().default(false),
 });
 
 export const navLinkUpdateSchema = z.object({
   title: z.string().min(1).max(60).optional(),
-  href: z.string().min(1).max(200).optional(),
+  href: z.string().trim().min(1).max(300).optional(),
   sortOrder: z.coerce.number().int().min(0).optional(),
   isVisible: z.boolean().optional(),
+  hasDropdown: z.boolean().optional(),
+  openInNewTab: z.boolean().optional(),
 });
 
 export type NavLinkSchemaInput = z.infer<typeof navLinkSchema>;
@@ -25,6 +29,7 @@ export const navSubLinkSchema = z.object({
   href: z.string().min(1, 'Link is required').max(300, 'Link too long'),
   sortOrder: z.coerce.number().int().min(0).default(0),
   isVisible: z.boolean().default(true),
+  openInNewTab: z.boolean().default(false),
 });
 
 export const navSubLinkUpdateSchema = z.object({
@@ -33,6 +38,7 @@ export const navSubLinkUpdateSchema = z.object({
   href: z.string().min(1).max(300).optional(),
   sortOrder: z.coerce.number().int().min(0).optional(),
   isVisible: z.boolean().optional(),
+  openInNewTab: z.boolean().optional(),
 });
 
 export type NavSubLinkSchemaInput = z.infer<typeof navSubLinkSchema>;

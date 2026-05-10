@@ -1,1 +1,3 @@
-export { default } from "./page-content";
+export const revalidate = 60;
+
+export { default, generateMetadata } from "./page-content";

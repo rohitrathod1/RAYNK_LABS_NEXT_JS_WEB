@@ -1,5 +1,6 @@
 export type {
   HeroSection,
+  HeroSlide,
   InitiativeCard,
   InitiativesSection,
   ServiceCard,

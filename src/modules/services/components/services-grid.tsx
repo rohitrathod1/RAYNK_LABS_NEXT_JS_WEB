@@ -1,7 +1,5 @@
-import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
 import type { ServiceCard } from "../types";
-
-const Button = dynamic(() => import("@/components/ui/button").then((mod) => mod.Button));
 
 export function ServicesGrid({ services }: { services: ServiceCard[] }) {
   return (

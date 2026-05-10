@@ -6,6 +6,18 @@ export interface HeroSection {
   ctaSecondaryText: string;
   ctaSecondaryHref: string;
   backgroundImage: string;
+  slides?: HeroSlide[];
+}
+
+export interface HeroSlide {
+  id?: string;
+  heading: string;
+  subtitle: string;
+  backgroundImage: string;
+  ctaPrimaryText?: string;
+  ctaPrimaryHref?: string;
+  ctaSecondaryText?: string;
+  ctaSecondaryHref?: string;
 }
 
 export interface InitiativeCard {

@@ -1,53 +1,33 @@
 "use client";
 
-import { motion } from "framer-motion";
-import * as Icons from "lucide-react";
 import type { InitiativesSection } from "../types";
-import { fadeIn, staggerContainer, staggerItem } from "@/lib/animation-variants";
+import { HomeIcon } from "./shared/icon";
+import { Reveal } from "./shared/reveal";
+import { HomeSectionHeading } from "./shared/section-heading";
 
 export function InitiativesSection({ data }: { data: InitiativesSection }) {
   return (
     <section className="section-padding bg-background">
       <div className="section-container">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.25 }}
-          variants={staggerContainer}
-          className="space-y-12"
-        >
-          <motion.div variants={fadeIn} className="text-center space-y-4">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text">
-              {data.title}
-            </h2>
-            {data.subtitle && (
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                {data.subtitle}
-              </p>
-            )}
-          </motion.div>
+        <div className="space-y-12">
+          <Reveal>
+            <HomeSectionHeading title={data.title} subtitle={data.subtitle} />
+          </Reveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {data.cards.map((card, index) => {
-              const IconComponent = Icons[card.icon as keyof typeof Icons] as React.ElementType;
-              return (
-                <motion.div
-                  key={index}
-                  variants={staggerItem}
-                  className="group p-6 rounded-xl border border-border bg-card hover:shadow-lg hover:border-primary/30 transition-all duration-300"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    {IconComponent && (
-                      <IconComponent className="w-6 h-6 text-primary" />
-                    )}
+            {data.cards.map((card, index) => (
+              <Reveal key={`${card.title}-${index}`} delay={index * 0.04}>
+                <article className="group h-full rounded-xl border border-border bg-card p-6 transition duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
+                    <HomeIcon name={card.icon} className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
                   <p className="text-muted-foreground leading-relaxed">{card.description}</p>
-                </motion.div>
-              );
-            })}
+                </article>
+              </Reveal>
+            ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

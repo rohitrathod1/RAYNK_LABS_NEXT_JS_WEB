@@ -1,5 +1,7 @@
 export { ContactPageContent } from "./main";
 export { HeroSection } from "./hero";
+export { LazyContactSections } from "./lazy-contact-sections";
+export { ContactExperience } from "./contact-experience";
 export { InfoSection } from "./info";
 export { ContactFormSection } from "./form";
 export { MapSection } from "./map";

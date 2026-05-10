@@ -18,6 +18,7 @@ export {
   footerLinkUpdateSchema,
   footerSettingSchema,
 } from './validations';
+export * from './constants';
 
 export type {
   FooterColumnRow,

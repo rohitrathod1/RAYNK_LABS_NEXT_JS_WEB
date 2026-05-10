@@ -4,6 +4,8 @@ export interface NavLinkItem {
   href?: string | null;
   sortOrder: number;
   isVisible: boolean;
+  hasDropdown?: boolean;
+  openInNewTab?: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -13,6 +15,8 @@ export interface NavLinkInput {
   href?: string;
   sortOrder?: number;
   isVisible?: boolean;
+  hasDropdown?: boolean;
+  openInNewTab?: boolean;
 }
 
 export interface NavLinkUpdateInput {
@@ -20,6 +24,8 @@ export interface NavLinkUpdateInput {
   href?: string;
   sortOrder?: number;
   isVisible?: boolean;
+  hasDropdown?: boolean;
+  openInNewTab?: boolean;
 }
 
 // ── Sub-links (dropdown items) ────────────────────────────────
@@ -31,6 +37,7 @@ export interface NavSubLinkItem {
   href: string;
   sortOrder: number;
   isVisible: boolean;
+  openInNewTab?: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -41,6 +48,7 @@ export interface NavSubLinkInput {
   href: string;
   sortOrder?: number;
   isVisible?: boolean;
+  openInNewTab?: boolean;
 }
 
 export interface NavSubLinkUpdateInput {
@@ -49,6 +57,7 @@ export interface NavSubLinkUpdateInput {
   href?: string;
   sortOrder?: number;
   isVisible?: boolean;
+  openInNewTab?: boolean;
 }
 
 /** NavLink with its nested sub-links (used by public queries + admin) */

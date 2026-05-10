@@ -1,26 +1,29 @@
 model NavLink {
-  id        String       @id @default(cuid())
-  title     String
-  href      String
-  sortOrder Int          @default(0)
-  isVisible Boolean      @default(true)
-  subLinks  NavSubLink[]
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id           String       @id @default(cuid())
+  title        String
+  href         String
+  sortOrder    Int          @default(0)
+  isVisible    Boolean      @default(true)
+  hasDropdown  Boolean      @default(false)
+  openInNewTab Boolean      @default(false)
+  subLinks     NavSubLink[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@index([sortOrder])
 }
 
 model NavSubLink {
-  id        String   @id @default(cuid())
-  navLinkId String
-  navLink   NavLink  @relation(fields: [navLinkId], references: [id], onDelete: Cascade)
-  title     String
-  href      String
-  sortOrder Int      @default(0)
-  isVisible Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  navLinkId    String
+  navLink      NavLink  @relation(fields: [navLinkId], references: [id], onDelete: Cascade)
+  title        String
+  href         String
+  sortOrder    Int      @default(0)
+  isVisible    Boolean  @default(true)
+  openInNewTab Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([navLinkId, sortOrder])
 }

@@ -1,5 +1,7 @@
 export { TeamPageContent } from "./main";
 export { HeroSection } from "./hero";
+export { LazyTeamSections } from "./lazy-team-sections";
+export { TeamShowcase } from "./team-showcase";
 export { IntroSection } from "./intro";
 export { FoundersSection } from "./founders";
 export { TeamGrid } from "./team-grid";

@@ -1,40 +1,26 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import { SafeImage } from "@/components/common/safe-image";
+import Image from "next/image";
 import type { TestimonialsSection } from "../types";
-import { fadeIn, staggerContainer, staggerItem } from "@/lib/animation-variants";
+import { HOME_IMAGE_SIZES } from "../constants";
+import { resolveHomeImageSrc } from "./shared/image-url";
+import { Reveal } from "./shared/reveal";
+import { HomeSectionHeading } from "./shared/section-heading";
 
 export function TestimonialsSection({ data }: { data: TestimonialsSection }) {
   return (
     <section className="section-padding bg-background">
       <div className="section-container">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.25 }}
-          variants={staggerContainer}
-          className="space-y-12"
-        >
-          <motion.div variants={fadeIn} className="text-center space-y-4">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold gradient-text">
-              {data.title}
-            </h2>
-            {data.subtitle && (
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                {data.subtitle}
-              </p>
-            )}
-          </motion.div>
+        <div className="space-y-12">
+          <Reveal>
+            <HomeSectionHeading title={data.title} subtitle={data.subtitle} />
+          </Reveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.testimonials.map((testimonial, index) => (
-              <motion.div
-                key={index}
-                variants={staggerItem}
-                className="p-6 rounded-xl border border-border bg-card hover:shadow-lg transition-all duration-300"
-              >
+              <Reveal key={`${testimonial.name}-${index}`} delay={index * 0.05}>
+                <figure className="h-full rounded-xl border border-border bg-card p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
@@ -53,12 +39,13 @@ export function TestimonialsSection({ data }: { data: TestimonialsSection }) {
                 </blockquote>
 
                 <div className="flex items-center gap-3 pt-4 border-t border-border">
-                  <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
-                    <SafeImage
-                      src={testimonial.avatar}
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-muted">
+                    <Image
+                      src={resolveHomeImageSrc(testimonial.avatar)}
                       alt={testimonial.name}
                       width={40}
                       height={40}
+                      sizes={HOME_IMAGE_SIZES.avatar}
                       className="object-cover"
                     />
                   </div>
@@ -67,10 +54,11 @@ export function TestimonialsSection({ data }: { data: TestimonialsSection }) {
                     <p className="text-xs text-muted-foreground">{testimonial.role}</p>
                   </div>
                 </div>
-              </motion.div>
+                </figure>
+              </Reveal>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

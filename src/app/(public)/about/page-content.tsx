@@ -4,8 +4,9 @@ import { getAboutPageData } from "@/modules/about/data/queries";
 import { defaultSeo } from "@/modules/about/data/defaults";
 import { resolveSeo, getStructuredData } from "@/modules/seo/utils";
 import { JsonLd } from "@/components/shared";
+import { ABOUT_REVALIDATE_SECONDS } from "@/modules/about/constants";
 
-export const revalidate = 60;
+export const revalidate = ABOUT_REVALIDATE_SECONDS;
 
 export async function generateMetadata(): Promise<Metadata> {
   return resolveSeo("about", defaultSeo);

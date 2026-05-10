@@ -1,0 +1,6 @@
+import { SectionSkeleton } from "@/components/common/section-skeleton";
+
+export default function PortfolioLoading() {
+  return <SectionSkeleton />;
+}
+

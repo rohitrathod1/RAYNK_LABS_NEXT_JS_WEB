@@ -1,4 +1,5 @@
 import { definePageSeo } from "@/modules/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import type { HomePageData } from "../types";
 
 export const defaultSeo = definePageSeo({
@@ -9,8 +10,27 @@ export const defaultSeo = definePageSeo({
   ogDescription: "Websites, software, branding, SEO, and digital products built for modern business growth.",
   ogImage: "og-home.png",
   twitterCard: "summary_large_image",
-  canonicalUrl: "http://localhost:3000",
-  structuredData: { "@type": "WebSite", name: "RaYnk Labs" },
+  canonicalUrl: SITE_URL,
+  structuredData: [
+    {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      sameAs: [],
+      description:
+        "RaYnk Labs builds websites, software, branding, SEO systems, and digital products for modern businesses.",
+    },
+    {
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${SITE_URL}/blog?search={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
   robots: "index,follow",
 });
 export const defaultHomeContent: HomePageData = {
@@ -23,6 +43,28 @@ export const defaultHomeContent: HomePageData = {
     ctaSecondaryText: "Contact Us",
     ctaSecondaryHref: "/contact",
     backgroundImage: "placeholder.png",
+    slides: [
+      {
+        heading: "Grow Your Business with Digital Solutions",
+        subtitle:
+          "We build powerful software, stunning websites, and scalable digital products that transform how you connect with customers and grow your business.",
+        ctaPrimaryText: "Get Started",
+        ctaPrimaryHref: "/contact",
+        ctaSecondaryText: "Contact Us",
+        ctaSecondaryHref: "/contact",
+        backgroundImage: "placeholder.png",
+      },
+      {
+        heading: "Launch Faster with RaYnk Labs",
+        subtitle:
+          "From strategy to scalable production systems, our team helps brands ship polished digital experiences with measurable impact.",
+        ctaPrimaryText: "View Services",
+        ctaPrimaryHref: "/services",
+        ctaSecondaryText: "See Work",
+        ctaSecondaryHref: "/portfolio",
+        backgroundImage: "placeholder.png",
+      },
+    ],
   },
   initiatives: {
     title: "Our Key Initiatives",
