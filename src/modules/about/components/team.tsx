@@ -20,7 +20,7 @@ export function TeamSection({ data }: { data: CoreTeamSection }) {
             <AboutSectionHeading title={data.title} subtitle={data.subtitle} />
           </Reveal>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2 xl:gap-6">
             {data.members.map((member, index) => {
               const socialLinks = [
                 member.linkedinUrl ? { href: member.linkedinUrl, label: "LinkedIn", icon: <BrandIcon name="linkedin" /> } : null,
@@ -32,15 +32,15 @@ export function TeamSection({ data }: { data: CoreTeamSection }) {
               return (
                 <Reveal key={`${member.name}-${index}`} delay={index * 0.05}>
                   <motion.article
-                    whileHover={{ y: -8 }}
+                    whileHover={{ y: -6 }}
                     transition={{ type: "spring", stiffness: 250, damping: 18 }}
-                    className="group relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-background/90 shadow-[0_22px_70px_-44px_rgba(15,23,42,1)]"
+                    className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-background/90 shadow-[0_18px_60px_-44px_rgba(15,23,42,1)]"
                   >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_48%),linear-gradient(180deg,transparent,rgba(168,85,247,0.08))] opacity-0 transition duration-500 group-hover:opacity-100" />
-                    <div className="absolute inset-0 rounded-[2rem] p-px opacity-60 transition duration-500 group-hover:opacity-100 [background:linear-gradient(160deg,rgba(59,130,246,0.5),rgba(255,255,255,0.06),rgba(168,85,247,0.32))]">
-                      <div className="h-full w-full rounded-[calc(2rem-1px)] bg-transparent" />
+                    <div className="absolute inset-0 rounded-[1.75rem] p-px opacity-60 transition duration-500 group-hover:opacity-100 [background:linear-gradient(160deg,rgba(59,130,246,0.5),rgba(255,255,255,0.06),rgba(168,85,247,0.32))]">
+                      <div className="h-full w-full rounded-[calc(1.75rem-1px)] bg-transparent" />
                     </div>
-                    <div className="relative aspect-[4/4.2] overflow-hidden bg-muted sm:aspect-[4/4.6] xl:aspect-[4/4.8]">
+                    <div className="relative aspect-[4/3.5] overflow-hidden bg-muted">
                       <SafeImage
                         src={member.image || "placeholder.png"}
                         alt={member.name}
@@ -49,30 +49,27 @@ export function TeamSection({ data }: { data: CoreTeamSection }) {
                         className="object-cover grayscale transition-transform duration-700 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
-                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background to-transparent" />
                     </div>
-                    <div className="relative flex flex-1 flex-col p-5 sm:p-6">
+                    <div className="relative flex flex-1 flex-col p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="text-xl font-semibold tracking-tight text-foreground">{member.name}</h3>
+                          <h3 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">{member.name}</h3>
                           <p className="mt-1 text-sm font-medium text-primary">{member.role}</p>
                         </div>
-                        <div className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Team</div>
+                        <div className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Team</div>
                       </div>
-                      {member.bio ? <p className="mt-4 text-sm leading-6 text-muted-foreground">{member.bio}</p> : null}
+                      {member.bio ? <p className="mt-3 text-sm leading-6 text-muted-foreground">{member.bio}</p> : null}
                       {member.skills?.length ? (
-                        <div className="mt-5 flex flex-wrap gap-2">
+                        <div className="mt-4 flex flex-wrap gap-2">
                           {member.skills.map((skill) => (
-                            <span
-                              key={skill}
-                              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/70"
-                            >
+                            <span key={skill} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70">
                               {skill}
                             </span>
                           ))}
                         </div>
                       ) : null}
-                      <div className="mt-6 flex flex-1 flex-col justify-end gap-4">
+                      <div className="mt-5 flex flex-1 flex-col justify-end gap-3">
                         <div className="flex flex-wrap gap-2">
                           {socialLinks.map(({ href, label, icon }) => (
                             <a
@@ -80,7 +77,7 @@ export function TeamSection({ data }: { data: CoreTeamSection }) {
                               href={href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-muted-foreground transition duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-muted-foreground transition duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                               aria-label={`${member.name} on ${label}`}
                             >
                               {icon}

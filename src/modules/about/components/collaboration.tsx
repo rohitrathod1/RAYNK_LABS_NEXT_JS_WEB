@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, MessageSquareText, Send, Sparkles } from "lucide-react";
@@ -95,7 +95,7 @@ export function CollaborationSection({ data }: { data: CollaborationCtaSection }
               Collaboration
             </div>
             <AboutSectionHeading title={data.title} subtitle={data.subtitle} align="left" />
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-3">
               {data.highlights.map((item, index) => (
                 <motion.article
                   key={item.title}
@@ -103,12 +103,12 @@ export function CollaborationSection({ data }: { data: CollaborationCtaSection }
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.16 }}
                   transition={{ duration: 0.5, delay: index * 0.08 }}
-                  className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl"
+                  className="flex h-full min-w-0 flex-col rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl sm:p-5"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
                     <AboutIcon name={item.icon} className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-4 text-base font-semibold text-foreground">{item.title}</h3>
+                  <h3 className="mt-4 text-base font-semibold leading-tight text-foreground">{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
                 </motion.article>
               ))}
@@ -139,39 +139,29 @@ export function CollaborationSection({ data }: { data: CollaborationCtaSection }
             <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_40%,rgba(168,85,247,0.08))]" />
             <div className="relative space-y-5">
               <input className="hidden" tabIndex={-1} autoComplete="off" {...register("website")} aria-hidden="true" />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FloatingField label="Full name" error={errors.fullName?.message}>
-                  <input {...register("fullName")} className="peer h-14 w-full rounded-2xl border border-white/10 bg-black/20 px-4 pt-6 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20" placeholder=" " />
-                </FloatingField>
-                <FloatingField label="Email" error={errors.email?.message}>
-                  <input type="email" {...register("email")} className="peer h-14 w-full rounded-2xl border border-white/10 bg-black/20 px-4 pt-6 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20" placeholder=" " />
-                </FloatingField>
+              <div className="grid gap-4 sm:grid-cols-2 md:items-start">
+                <FieldGroup label="Full Name" error={errors.fullName?.message}>
+                  <input {...register("fullName")} className={fieldClassName} />
+                </FieldGroup>
+                <FieldGroup label="Email" error={errors.email?.message}>
+                  <input type="email" {...register("email")} className={fieldClassName} />
+                </FieldGroup>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-[1fr_220px]">
-                <FloatingField label="Company name" error={errors.companyName?.message}>
-                  <input {...register("companyName")} className="peer h-14 w-full rounded-2xl border border-white/10 bg-black/20 px-4 pt-6 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20" placeholder=" " />
-                </FloatingField>
-                <label className="grid gap-2 text-sm font-medium text-foreground">
-                  <span className="text-xs uppercase tracking-[0.18em] text-white/55">Inquiry type</span>
-                  <select {...register("inquiryType")} className="h-14 rounded-2xl border border-white/10 bg-black/20 px-4 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20">
-                    {ABOUT_INQUIRY_TYPES.map((type) => (
-                      <option key={type} value={type} className="bg-slate-950 text-foreground">
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px] md:items-start">
+                <FieldGroup label="Company Name" error={errors.companyName?.message}>
+                  <input {...register("companyName")} className={fieldClassName} />
+                </FieldGroup>
+                <SelectField label="Inquiry Type" registration={register("inquiryType")} options={ABOUT_INQUIRY_TYPES} />
               </div>
 
-              <FloatingTextarea label="Message" error={errors.message?.message}>
+              <FieldGroup label="Message" error={errors.message?.message}>
                 <Textarea
                   {...register("message")}
                   rows={6}
-                  placeholder=" "
-                  className="peer min-h-[180px] rounded-[1.5rem] border-white/10 bg-black/20 px-4 pt-7 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20"
+                  className="min-h-[190px] rounded-[22px] border-white/10 bg-black/20 px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20"
                 />
-              </FloatingTextarea>
+              </FieldGroup>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-white/55">
@@ -204,43 +194,46 @@ export function CollaborationSection({ data }: { data: CollaborationCtaSection }
   );
 }
 
-function FloatingField({
+const fieldClassName =
+  "h-14 w-full rounded-[22px] border border-white/10 bg-black/20 px-4 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20";
+
+function FieldGroup({
   label,
   error,
   children,
 }: {
   label: string;
   error?: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <label className="relative block">
+    <label className="grid min-w-0 gap-2 text-sm font-medium text-foreground">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">{label}</span>
       {children}
-      <span className="pointer-events-none absolute left-4 top-4 text-sm text-white/48 transition-all peer-placeholder-shown:top-[1.05rem] peer-placeholder-shown:text-sm peer-focus:top-2.5 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.18em] peer-focus:text-primary peer-not-placeholder-shown:top-2.5 peer-not-placeholder-shown:text-[11px] peer-not-placeholder-shown:font-semibold peer-not-placeholder-shown:uppercase peer-not-placeholder-shown:tracking-[0.18em] peer-not-placeholder-shown:text-white/48">
-        {label}
-      </span>
-      {error ? <span className="mt-2 block text-xs text-destructive">{error}</span> : null}
+      {error ? <span className="text-xs text-destructive">{error}</span> : null}
     </label>
   );
 }
 
-function FloatingTextarea({
+function SelectField({
   label,
-  error,
-  children,
+  registration,
+  options,
 }: {
   label: string;
-  error?: string;
-  children: ReactNode;
+  registration: ReturnType<typeof useForm<AboutInquirySchema>>["register"] extends (...args: never[]) => infer R ? R : never;
+  options: readonly string[];
 }) {
   return (
-    <label className="relative block">
-      {children}
-      <span className="pointer-events-none absolute left-4 top-4 text-sm text-white/48 transition-all peer-placeholder-shown:top-4 peer-focus:top-2.5 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.18em] peer-focus:text-primary peer-not-placeholder-shown:top-2.5 peer-not-placeholder-shown:text-[11px] peer-not-placeholder-shown:font-semibold peer-not-placeholder-shown:uppercase peer-not-placeholder-shown:tracking-[0.18em] peer-not-placeholder-shown:text-white/48">
-        {label}
-      </span>
-      {error ? <span className="mt-2 block text-xs text-destructive">{error}</span> : null}
+    <label className="grid min-w-0 gap-2 text-sm font-medium text-foreground">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">{label}</span>
+      <select {...registration} className="h-14 w-full rounded-[22px] border border-white/10 bg-black/20 px-4 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-black/30 focus:ring-2 focus:ring-primary/20">
+        {options.map((type) => (
+          <option key={type} value={type} className="bg-slate-950 text-foreground">
+            {type}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }
-

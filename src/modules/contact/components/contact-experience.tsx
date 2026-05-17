@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useMemo, useState, type ComponentProps, type ReactNode } from "react";
@@ -110,26 +110,26 @@ export function ContactExperience({ data }: { data: ContactPageData }) {
           <motion.form
             variants={fadeIn}
             onSubmit={handleSubmit(onSubmit)}
-            className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:p-6 2xl:p-8"
+            className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:p-6 xl:p-7 2xl:p-8"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)] opacity-90" />
             <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: "radial-gradient(circle at top right, rgba(59,130,246,0.14), transparent 38%)" }} />
-            <div className="relative grid gap-4">
+            <div className="relative grid min-w-0 gap-4 sm:gap-5">
               <input className="hidden" tabIndex={-1} autoComplete="off" {...register("website")} aria-hidden="true" />
               <div className="grid gap-4 sm:grid-cols-2">
-                <FloatingField label="Full name" error={errors.name?.message}><Input {...register("name")} placeholder="Full name" className="peer h-12 rounded-2xl border-white/10 bg-white/[0.04] px-4 pt-5 text-white placeholder:text-transparent focus-visible:ring-primary/30" /></FloatingField>
-                <FloatingField label="Email" error={errors.email?.message}><Input type="email" {...register("email")} placeholder="Email" className="peer h-12 rounded-2xl border-white/10 bg-white/[0.04] px-4 pt-5 text-white placeholder:text-transparent focus-visible:ring-primary/30" /></FloatingField>
-                <FloatingField label="Phone" error={errors.phone?.message}><Input {...register("phone")} placeholder="Phone" className="peer h-12 rounded-2xl border-white/10 bg-white/[0.04] px-4 pt-5 text-white placeholder:text-transparent focus-visible:ring-primary/30" /></FloatingField>
-                <FloatingField label="Company" error={errors.company?.message}><Input {...register("company")} placeholder="Company" className="peer h-12 rounded-2xl border-white/10 bg-white/[0.04] px-4 pt-5 text-white placeholder:text-transparent focus-visible:ring-primary/30" /></FloatingField>
+                <FloatingField label="Full name" error={errors.name?.message}><Input {...register("name")} placeholder=" " className="peer h-14 rounded-[22px] border-white/10 bg-white/[0.04] px-4 pt-6 text-sm text-white placeholder:text-transparent focus-visible:border-primary/40 focus-visible:ring-primary/30" /></FloatingField>
+                <FloatingField label="Email" error={errors.email?.message}><Input type="email" {...register("email")} placeholder=" " className="peer h-14 rounded-[22px] border-white/10 bg-white/[0.04] px-4 pt-6 text-sm text-white placeholder:text-transparent focus-visible:border-primary/40 focus-visible:ring-primary/30" /></FloatingField>
+                <FloatingField label="Phone" error={errors.phone?.message}><Input {...register("phone")} placeholder=" " className="peer h-14 rounded-[22px] border-white/10 bg-white/[0.04] px-4 pt-6 text-sm text-white placeholder:text-transparent focus-visible:border-primary/40 focus-visible:ring-primary/30" /></FloatingField>
+                <FloatingField label="Company" error={errors.company?.message}><Input {...register("company")} placeholder=" " className="peer h-14 rounded-[22px] border-white/10 bg-white/[0.04] px-4 pt-6 text-sm text-white placeholder:text-transparent focus-visible:border-primary/40 focus-visible:ring-primary/30" /></FloatingField>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)]">
                 <SelectField label="Service" register={register("serviceType")} options={CONTACT_SERVICE_TYPES} />
                 <SelectField label="Budget" register={register("budgetRange")} options={CONTACT_BUDGET_RANGES} />
                 <SelectField label="Timeline" register={register("projectTimeline")} options={CONTACT_TIMELINES} />
               </div>
-              <FloatingField label="Subject" error={errors.subject?.message}><Input {...register("subject")} placeholder="Subject" className="peer h-12 rounded-2xl border-white/10 bg-white/[0.04] px-4 pt-5 text-white placeholder:text-transparent focus-visible:ring-primary/30" /></FloatingField>
-              <FloatingArea label="Message" error={errors.message?.message}><Textarea {...register("message")} rows={6} placeholder="Message" className="peer rounded-3xl border-white/10 bg-white/[0.04] px-4 pt-6 text-white placeholder:text-transparent focus-visible:ring-primary/30" /></FloatingArea>
-              <Button type="submit" disabled={isSubmitting} className="group/button mt-2 h-12 rounded-2xl bg-linear-to-r from-primary via-blue-500 to-cyan-400 px-6 text-sm font-semibold text-primary-foreground shadow-[0_18px_50px_rgba(59,130,246,0.32)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(59,130,246,0.42)] sm:h-14 sm:text-base">
+              <FloatingField label="Subject" error={errors.subject?.message}><Input {...register("subject")} placeholder=" " className="peer h-14 rounded-[22px] border-white/10 bg-white/[0.04] px-4 pt-6 text-sm text-white placeholder:text-transparent focus-visible:border-primary/40 focus-visible:ring-primary/30" /></FloatingField>
+              <FloatingArea label="Message" error={errors.message?.message}><Textarea {...register("message")} rows={6} placeholder=" " className="peer min-h-[190px] rounded-[24px] border-white/10 bg-white/[0.04] px-4 pt-7 text-sm text-white placeholder:text-transparent focus-visible:border-primary/40 focus-visible:ring-primary/30" /></FloatingArea>
+              <Button type="submit" disabled={isSubmitting} className="group/button mt-2 h-12 rounded-[20px] bg-linear-to-r from-primary via-blue-500 to-cyan-400 px-6 text-sm font-semibold text-primary-foreground shadow-[0_18px_50px_rgba(59,130,246,0.32)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(59,130,246,0.42)] sm:h-14 sm:text-base">
                 <Send className="mr-2 h-4 w-4 transition-transform duration-300 group-hover/button:translate-x-0.5" aria-hidden="true" />
                 {isSubmitting ? "Sending..." : sent ? "Sent" : data.contact_form.submitText}
               </Button>
@@ -292,10 +292,10 @@ export function ContactExperience({ data }: { data: ContactPageData }) {
 
 function FloatingField({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
-    <div className="grid gap-2">
+    <div className="grid min-w-0 gap-2">
       <div className="relative">
         {children}
-        <span className="pointer-events-none absolute left-4 top-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/55 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:tracking-normal peer-focus:top-3 peer-focus:text-[11px] peer-focus:tracking-[0.15em] peer-focus:text-primary">{label}</span>
+        <span className="pointer-events-none absolute left-4 top-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/55 transition-all peer-placeholder-shown:top-[1.05rem] peer-placeholder-shown:text-sm peer-placeholder-shown:font-medium peer-placeholder-shown:tracking-normal peer-focus:top-3 peer-focus:text-[11px] peer-focus:tracking-[0.15em] peer-focus:text-primary peer-not-placeholder-shown:top-3 peer-not-placeholder-shown:text-[11px] peer-not-placeholder-shown:tracking-[0.15em]">{label}</span>
       </div>
       {error ? <span className="text-xs text-red-400">{error}</span> : null}
     </div>
@@ -304,7 +304,7 @@ function FloatingField({ label, error, children }: { label: string; error?: stri
 
 function FloatingArea({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
-    <div className="grid gap-2">
+    <div className="grid min-w-0 gap-2">
       <div className="relative">
         {children}
         <span className="pointer-events-none absolute left-4 top-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/55 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:tracking-normal peer-focus:top-3 peer-focus:text-[11px] peer-focus:tracking-[0.15em] peer-focus:text-primary">{label}</span>
@@ -316,9 +316,9 @@ function FloatingArea({ label, error, children }: { label: string; error?: strin
 
 function SelectField({ label, register, options }: { label: string; register: UseFormRegisterReturn; options: readonly string[] }) {
   return (
-    <label className="grid gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
+    <label className="grid min-w-0 gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
       {label}
-      <select {...register} className="h-12 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-white outline-none transition-all duration-300 focus:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/30">
+      <select {...register} className="h-14 w-full rounded-[22px] border border-white/10 bg-white/[0.04] px-4 text-sm text-white outline-none transition-all duration-300 focus:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/30">
         {options.map((option) => (
           <option key={option} value={option} className="bg-slate-950 text-white">{option}</option>
         ))}
@@ -397,4 +397,5 @@ export function ContactExperienceSkeleton() {
     </div>
   );
 }
+
 

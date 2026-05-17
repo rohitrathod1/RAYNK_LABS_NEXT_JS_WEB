@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image, { type ImageProps } from 'next/image';
 import { cn } from '@/lib/utils';
+import { DEFAULT_IMAGE_PLACEHOLDER, resolveImageSrc } from '@/lib/image-url';
 
 interface ImageWithFallbackProps extends Omit<ImageProps, 'onError'> {
   fallbackSrc?: string;
@@ -11,11 +12,13 @@ interface ImageWithFallbackProps extends Omit<ImageProps, 'onError'> {
 export function ImageWithFallback({
   src,
   alt,
-  fallbackSrc = '/api/uploads/placeholder.png',
+  fallbackSrc = DEFAULT_IMAGE_PLACEHOLDER,
   className,
   ...props
 }: ImageWithFallbackProps) {
-  const [imgSrc, setImgSrc] = useState(src);
+  const resolvedSrc = useMemo(() => resolveImageSrc(String(src)), [src]);
+  const resolvedFallback = useMemo(() => resolveImageSrc(fallbackSrc), [fallbackSrc]);
+  const [imgSrc, setImgSrc] = useState(resolvedSrc);
 
   return (
     <Image
@@ -23,7 +26,7 @@ export function ImageWithFallback({
       src={imgSrc}
       alt={alt}
       className={cn(className)}
-      onError={() => setImgSrc(fallbackSrc)}
+      onError={() => setImgSrc(resolvedFallback)}
     />
   );
 }

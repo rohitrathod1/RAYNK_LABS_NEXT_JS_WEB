@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Send } from "lucide-react";
 import { motion } from "framer-motion";
@@ -103,12 +103,7 @@ export function ServiceInquiryDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-1rem)] max-w-3xl overflow-hidden rounded-[1.5rem] border-white/10 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.16),transparent_28%),rgba(6,8,16,0.96)] p-0 text-foreground shadow-[0_24px_90px_-44px_rgba(15,23,42,1)] backdrop-blur-2xl max-sm:top-[50%] max-sm:max-h-[calc(100svh-1rem)] sm:w-[calc(100vw-2rem)] sm:rounded-[2rem] md:max-h-[min(860px,calc(100svh-2rem))]">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={scaleIn}
-          className="grid max-h-[inherit] min-h-0 gap-0 md:grid-cols-[0.88fr_1.12fr]"
-        >
+        <motion.div initial="hidden" animate="visible" variants={scaleIn} className="grid max-h-[inherit] min-h-0 gap-0 md:grid-cols-[0.86fr_1.14fr]">
           <div className="relative overflow-y-auto border-b border-white/10 p-5 md:max-h-[min(860px,calc(100svh-2rem))] md:border-b-0 md:border-r md:p-8">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)]" />
             <DialogHeader className="relative pr-8 text-left">
@@ -124,92 +119,44 @@ export function ServiceInquiryDialog({
             </div>
           </div>
 
-          <motion.form
-            variants={staggerContainer}
-            onSubmit={handleSubmit(onSubmit)}
-            className="min-h-0 space-y-4 overflow-y-auto p-5 md:max-h-[min(860px,calc(100svh-2rem))] md:p-8"
-          >
+          <motion.form variants={staggerContainer} onSubmit={handleSubmit(onSubmit)} className="min-h-0 space-y-4 overflow-y-auto p-5 md:max-h-[min(860px,calc(100svh-2rem))] md:p-8">
             <input className="hidden" tabIndex={-1} autoComplete="off" {...register("website")} aria-hidden="true" />
 
             <motion.div variants={staggerItem} className="grid gap-4 sm:grid-cols-2">
-              <FloatingField label="Full Name" error={errors.fullName?.message}>
-                <input
-                  {...register("fullName")}
-                  placeholder=" "
-                  className="peer h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 pt-6 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20"
-                />
-              </FloatingField>
-              <FloatingField label="Email" error={errors.email?.message}>
-                <input
-                  type="email"
-                  {...register("email")}
-                  placeholder=" "
-                  className="peer h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 pt-6 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20"
-                />
-              </FloatingField>
+              <FieldGroup label="Full Name" error={errors.fullName?.message}>
+                <input {...register("fullName")} className={fieldClassName} />
+              </FieldGroup>
+              <FieldGroup label="Email" error={errors.email?.message}>
+                <input type="email" {...register("email")} className={fieldClassName} />
+              </FieldGroup>
             </motion.div>
 
             <motion.div variants={staggerItem} className="grid gap-4 sm:grid-cols-2">
-              <FloatingField label="Contact Number" error={errors.contactNumber?.message}>
-                <input
-                  {...register("contactNumber")}
-                  placeholder=" "
-                  className="peer h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 pt-6 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20"
-                />
-              </FloatingField>
-              <FloatingField label="Company Name" error={errors.companyName?.message}>
-                <input
-                  {...register("companyName")}
-                  placeholder=" "
-                  className="peer h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 pt-6 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20"
-                />
-              </FloatingField>
+              <FieldGroup label="Contact Number" error={errors.contactNumber?.message}>
+                <input {...register("contactNumber")} className={fieldClassName} />
+              </FieldGroup>
+              <FieldGroup label="Company Name" error={errors.companyName?.message}>
+                <input {...register("companyName")} className={fieldClassName} />
+              </FieldGroup>
             </motion.div>
 
-            <motion.div variants={staggerItem} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <FloatingField label="Service Name" error={errors.serviceName?.message}>
-                <input
-                  {...register("serviceName")}
-                  placeholder=" "
-                  readOnly
-                  className="peer h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 pt-6 text-sm text-foreground outline-none"
-                />
-              </FloatingField>
-              <SelectField
-                label="Budget Range"
-                error={errors.budgetRange?.message}
-                registration={register("budgetRange")}
-                options={SERVICE_BUDGET_RANGES}
-              />
-              <SelectField
-                label="Project Timeline"
-                error={errors.projectTimeline?.message}
-                registration={register("projectTimeline")}
-                options={SERVICE_PROJECT_TIMELINES}
-              />
+            <motion.div variants={staggerItem} className="grid gap-4 md:grid-cols-3 md:items-start">
+              <FieldGroup label="Service Name" error={errors.serviceName?.message}>
+                <input {...register("serviceName")} readOnly className={`${fieldClassName} truncate`} />
+              </FieldGroup>
+              <SelectField label="Budget Range" error={errors.budgetRange?.message} registration={register("budgetRange")} options={SERVICE_BUDGET_RANGES} />
+              <SelectField label="Project Timeline" error={errors.projectTimeline?.message} registration={register("projectTimeline")} options={SERVICE_PROJECT_TIMELINES} />
             </motion.div>
 
             <motion.div variants={staggerItem}>
-              <FloatingTextarea label="Project Description" error={errors.projectDescription?.message}>
-                <Textarea
-                  {...register("projectDescription")}
-                  rows={6}
-                  placeholder=" "
-                  className="peer min-h-[150px] rounded-[1.5rem] border-white/10 bg-white/[0.03] px-4 pt-7 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20 sm:min-h-[170px]"
-                />
-              </FloatingTextarea>
+              <FieldGroup label="Project Description" error={errors.projectDescription?.message}>
+                <Textarea {...register("projectDescription")} rows={6} className="min-h-[170px] rounded-[22px] border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20 sm:min-h-[190px]" />
+              </FieldGroup>
             </motion.div>
 
             <motion.div variants={staggerItem} className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-sm text-sm leading-6 text-white/55">
-                Stored securely and visible in the admin submissions dashboard.
-              </p>
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isSubmitting}
-                className="h-12 w-full rounded-full px-7 shadow-[0_18px_50px_-22px_rgba(59,130,246,0.8)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_68px_-20px_rgba(59,130,246,0.92)] sm:w-auto"
-              >
+              <p className="max-w-sm text-sm leading-6 text-white/55">Stored securely and visible in the admin submissions dashboard.</p>
+              <Button type="submit" size="lg" disabled={isSubmitting} className="h-12 w-full rounded-full px-7 shadow-[0_18px_50px_-22px_rgba(59,130,246,0.8)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_68px_-20px_rgba(59,130,246,0.92)] sm:w-auto">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Sending...
@@ -229,26 +176,15 @@ export function ServiceInquiryDialog({
   );
 }
 
-function FloatingField({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <label className="relative block min-w-0">
-      {children}
-      <span className="pointer-events-none absolute left-4 top-4 text-sm text-white/48 transition-all peer-placeholder-shown:top-[1.05rem] peer-focus:top-2.5 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.18em] peer-focus:text-primary peer-not-placeholder-shown:top-2.5 peer-not-placeholder-shown:text-[11px] peer-not-placeholder-shown:font-semibold peer-not-placeholder-shown:uppercase peer-not-placeholder-shown:tracking-[0.18em] peer-not-placeholder-shown:text-white/48">
-        {label}
-      </span>
-      {error ? <span className="mt-2 block text-xs text-destructive">{error}</span> : null}
-    </label>
-  );
-}
+const fieldClassName =
+  "h-14 w-full rounded-[22px] border border-white/10 bg-white/[0.03] px-4 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20";
 
-function FloatingTextarea({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+function FieldGroup({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
-    <label className="relative block min-w-0">
+    <label className="grid min-w-0 gap-2 text-sm font-medium text-foreground">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">{label}</span>
       {children}
-      <span className="pointer-events-none absolute left-4 top-4 text-sm text-white/48 transition-all peer-placeholder-shown:top-4 peer-focus:top-2.5 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:uppercase peer-focus:tracking-[0.18em] peer-focus:text-primary peer-not-placeholder-shown:top-2.5 peer-not-placeholder-shown:text-[11px] peer-not-placeholder-shown:font-semibold peer-not-placeholder-shown:uppercase peer-not-placeholder-shown:tracking-[0.18em] peer-not-placeholder-shown:text-white/48">
-        {label}
-      </span>
-      {error ? <span className="mt-2 block text-xs text-destructive">{error}</span> : null}
+      {error ? <span className="text-xs text-destructive">{error}</span> : null}
     </label>
   );
 }
@@ -265,11 +201,11 @@ function SelectField({
   options: readonly string[];
 }) {
   return (
-    <label className="grid min-w-0 gap-2 text-sm font-medium">
-      <span className="text-xs uppercase tracking-[0.18em] text-white/55">{label}</span>
+    <label className="grid min-w-0 gap-2 text-sm font-medium text-foreground">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">{label}</span>
       <select
         {...registration}
-        className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20"
+        className="h-14 w-full rounded-[22px] border border-white/10 bg-white/[0.03] px-4 text-sm text-foreground outline-none transition focus:border-primary/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20"
       >
         {options.map((option) => (
           <option key={option} value={option} className="bg-slate-950 text-foreground">
