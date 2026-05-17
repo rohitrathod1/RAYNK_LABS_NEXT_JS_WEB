@@ -69,6 +69,17 @@ export const seoSchema = z.object({
   noIndex: z.boolean().optional().default(false),
 });
 
+export const teamApplicationSchema = z.object({
+  fullName: z.string().trim().min(2, "Full name is required").max(120),
+  email: z.string().trim().email("Enter a valid email").max(160),
+  phone: z.string().trim().min(8, "Phone number is required").max(40),
+  roleInterestedIn: z.string().trim().min(2, "Role is required").max(120),
+  experienceLevel: z.string().trim().min(2, "Experience level is required").max(80),
+  portfolioUrl: z.string().trim().url("Enter a valid portfolio URL").max(200).optional().or(z.literal("")),
+  resumeUrl: z.string().trim().min(1, "Resume upload is required").max(220),
+  message: z.string().trim().min(20, "Please share a short introduction").max(2500),
+});
+
 export type HeroSchema = z.infer<typeof heroSchema>;
 export type IntroSchema = z.infer<typeof introSchema>;
 export type FoundersSchema = z.infer<typeof foundersSchema>;
@@ -76,3 +87,4 @@ export type TeamMembersSchema = z.infer<typeof teamMembersSchema>;
 export type ValuesSchema = z.infer<typeof valuesSchema>;
 export type CtaSchema = z.infer<typeof ctaSchema>;
 export type TeamMemberInputSchema = z.infer<typeof teamMemberInputSchema>;
+export type TeamApplicationSchema = z.infer<typeof teamApplicationSchema>;

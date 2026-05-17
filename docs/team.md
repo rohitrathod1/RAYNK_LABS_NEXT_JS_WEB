@@ -2,99 +2,127 @@
 
 ## Overview
 
-The Team Page CMS provides a complete content management system for the team page, including public UI showcase, admin dashboard for CRUD operations, API routes, SEO integration, and role-based access control.
+The Team module powers the public `/team` page, the Team CMS editor, SEO defaults, and the join-team application workflow. The public page now emphasizes premium motion, department filtering, profile previews, and a hiring / collaboration dialog that stores submissions in the shared `Submission` system.
 
-## Page Structure
+## Updated Public Experience
 
-The team page consists of 6 sections:
-1. **Hero** - Main banner with title, subtitle, and background image
-2. **Intro** - Brief description of team culture
-3. **Founders** - Highlight 1-2 founders with larger cards
-4. **Team Members** - Grid layout of all team members
-5. **Values** - 4-6 team values with icons
-6. **Contact CTA** - Call-to-action section
+### 1. Hero architecture
+- File: `src/modules/team/components/hero.tsx`
+- Client-side hero with lightweight motion only
+- Animated gradient mesh, moving glow, grid texture, and parallax logo treatment
+- Staggered badge, heading, body, and CTA animation
+- Exports `HeroSectionSkeleton` for route loading
 
-## Public UI
+### 2. Team showcase system
+- File: `src/modules/team/components/team-showcase.tsx`
+- Handles:
+  - intro / culture section
+  - featured leadership cards
+  - department filter pills
+  - full team grid
+  - metrics section
+  - values grid
+  - join-team CTA
+  - profile preview modal
+- Exports `TeamShowcaseSkeleton`
 
-### Components
+### 3. Lazy loading strategy
+- File: `src/modules/team/components/lazy-team-sections.tsx`
+- Below-fold content is lazy-loaded with `next/dynamic` and `LazyOnView`
+- Hero stays first-rendered
+- Route loading UI now uses section-matched skeletons in `src/app/(public)/team/loading.tsx`
 
-| Component | File | Description |
-|-----------|------|-------------|
-| `TeamPageContent` | `main.tsx` | Main container that fetches and renders all sections |
-| `HeroSection` | `hero.tsx` | Full-width hero banner with overlay |
-| `IntroSection` | `intro.tsx` | Centered description text |
-| `FoundersSection` | `founders.tsx` | Grid of founder cards with portfolio links |
-| `TeamGrid` | `team-grid.tsx` | Responsive grid of team member cards |
-| `TeamCard` | `team-card.tsx` | Individual team member card with social links |
-| `ValuesSection` | `values.tsx` | Grid of value points with icons |
-| `CtaSection` | `cta.tsx` | Call-to-action with button |
+## Team Card Architecture
 
-### Public Page Route
+### Data source
+- Team members come from `TeamMember` records synced from admin profiles
+- Query layer: `src/modules/team/data/queries.ts`
+- Derived fields added at query time:
+  - `department`
+  - `expertiseTags`
 
-- **URL**: `/team`
-- **File**: `src/app/(public)/team/page.tsx`
-- **Content**: `src/app/(public)/team/page-content.tsx`
+### Card UX
+- Premium glass card shell
+- Hover lift + border glow + image zoom
+- Fallback avatar treatment when no valid image exists
+- Social actions for LinkedIn, GitHub, portfolio, email, phone, and YouTube
+- Profile modal with bio, tags, and link actions
 
-## Admin Dashboard
+## Filtering System
 
-### Route
+### Department filter flow
+- Department list is generated dynamically from live team data
+- `All` plus derived departments
+- Filtering is client-side for smooth transitions
+- Uses `AnimatePresence` and motion layout for card updates
 
-- **URL**: `/admin/dashboard/team`
-- **File**: `src/app/admin/(dashboard)/team/page.tsx`
+## Join Team Dialog System
 
-### Features
+### Component
+- File: `src/modules/team/components/team-application-dialog.tsx`
+- Triggered from the final CTA section
+- Uses:
+  - Radix `Dialog`
+  - `react-hook-form`
+  - Zod validation via `teamApplicationSchema`
+  - Sonner success / error toasts
 
-1. **Tabs Interface**:
-   - Hero
-   - Intro
-   - Founders
-   - Team Section
-   - Values
-   - CTA
-   - Team Members (CRUD list)
-   - SEO
+### Required form fields
+- Full Name
+- Email
+- Phone Number
+- Role Interested In
+- Experience Level
+- Portfolio URL
+- Resume Upload
+- Message
 
-2. **Team Member Management**:
-   - Add new member (dialog form)
-   - Edit existing member
-   - Delete member (with confirmation)
-   - Fields: name, role, bio, image, social links, portfolio, sort order, active status
+### UX details
+- Glassmorphism dialog surface
+- Floating labels
+- Upload state for resume
+- Disabled submit during upload / submit
+- Success toast on completion
 
-3. **Image Upload**: Uses `ImageUpload` component for hero and founder images
+## Submission Workflow
 
-## API Routes
+### Flow
+`UI -> /api/team-resume -> /api/submissions -> DB -> admin/dashboard/submissions`
 
-### Public API
+### Resume upload route
+- File: `src/app/api/team-resume/route.ts`
+- Public route with strict validation
+- Accepts:
+  - PDF
+  - DOC
+  - DOCX
+- Max file size: 6 MB
+- Stores files in `uploads/resumes`
+- Rate limited using `checkLimit`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/team` | Get all active sections and team members |
+### Resume file serving route
+- File: `src/app/api/resumes/[filename]/route.ts`
+- Streams uploaded resume files safely
+- Prevents path traversal
 
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "sections": { "hero": {...}, "intro": {...}, ... },
-    "teamMembers": [...]
-  }
-}
-```
+### Submission API
+- File: `src/app/api/submissions/route.ts`
+- Extended to support team application metadata:
+  - `roleInterestedIn`
+  - `experienceLevel`
+  - `portfolioUrl`
+  - `resumeUrl`
+- Security protections:
+  - Zod parsing
+  - input sanitization
+  - honeypot field
+  - rate limit
 
-### Admin API
+## Database Schema
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/team` | Get all sections and members (requires MANAGE_TEAM) |
-| POST | `/api/admin/team` | Upsert section content (requires MANAGE_TEAM) |
-| GET | `/api/admin/team/member` | List all members (requires MANAGE_TEAM) |
-| POST | `/api/admin/team/member` | Create new member (requires MANAGE_TEAM) |
-| PUT | `/api/admin/team/member?id=...` | Update member (requires MANAGE_TEAM) |
-| DELETE | `/api/admin/team/member?id=...` | Delete member (requires MANAGE_TEAM) |
+### Team page content
+- File: `prisma/schema/team.prisma`
 
-## Prisma Models
-
-### TeamPage Model
 ```prisma
 model TeamPage {
   id        String   @id @default(cuid())
@@ -108,117 +136,116 @@ model TeamPage {
 
   @@index([sortOrder])
 }
-```
 
-### TeamMember Model
-```prisma
 model TeamMember {
-  id        String   @id @default(cuid())
-  name      String
-  role      String
-  bio       String?
-  image     String
-  linkedin  String?
-  twitter   String?
-  github    String?
-  portfolio String?
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String @id @default(cuid())
+  userId       String? @unique
+  user         Admin?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName  String
+  role         String
+  bio          String? @db.Text
+  avatar       String?
+  githubUrl    String?
+  linkedinUrl  String?
+  instagramUrl String?
+  youtubeUrl   String?
+  isVisible    Boolean @default(true)
+  isFeatured   Boolean @default(false)
+  sortOrder    Int     @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([sortOrder])
 }
 ```
 
-## Module Structure
+### Shared submission storage
+- File: `prisma/schema/submission.prisma`
+- Team applications use the shared `Submission` model with:
+  - `type = "join_team"`
+  - primary fields in normal columns
+  - resume / experience / portfolio metadata stored in `metadata`
 
-```
-src/modules/team/
-├── index.ts           # Exports all components and functions
-├── types.ts           # TypeScript interfaces
-├── validations.ts     # Zod validation schemas
-├── actions.ts         # Server actions with permission checks
-├── data/
-│   ├── index.ts       # Re-exports
-│   ├── queries.ts     # Database queries
-│   ├── mutations.ts   # Database mutations
-│   └── defaults.ts    # Default content and SEO
-└── components/
-    ├── index.ts       # Component exports
-    ├── main.tsx       # Main page component
-    ├── hero.tsx
-    ├── intro.tsx
-    ├── founders.tsx
-    ├── team-grid.tsx
-    ├── team-card.tsx
-    ├── values.tsx
-    └── cta.tsx
-```
+## Admin Dashboard Integration
 
-## SEO Integration
+### Team page CMS
+- Route: `/admin/dashboard/team`
+- Existing editor still controls:
+  - hero
+  - intro
+  - founders
+  - team section
+  - values
+  - CTA
+  - team members
+  - SEO
 
-- Uses `resolveSeo` from `@/lib/seo`
-- SEO data stored in `Seo` model with `page: "team"`
-- Fields: title, description, keywords, ogImage, noIndex
-- SEO tab available in admin dashboard
+### Submissions dashboard
+- Route: `/admin/dashboard/submissions`
+- Team applications appear alongside other website submissions
+- Supports:
+  - type filtering (`join_team`)
+  - search
+  - read / unread toggle
+  - detail modal
+  - delete action
+  - resume link display
 
-## Permission System
+## SEO Updates
 
-- All admin actions require `MANAGE_TEAM` permission
-- SUPER_ADMIN has full access
-- Permission check: `requirePermission("MANAGE_TEAM")`
+### Default SEO
+- File: `src/modules/team/data/defaults.ts`
+- Updated meta copy for startup-style positioning
+- Canonical remains `/team`
+- Stronger title, description, and keyword defaults
 
-## Default Content
+### Page metadata
+- Public route continues to use SEO fallback + CMS override pattern
+- Admin SEO controls remain permission-protected with `MANAGE_TEAM`
 
-Default content is defined in `src/modules/team/data/defaults.ts`:
-- Hero: "Meet Our Team"
-- Founders: Rohit Kumar (CEO), Priya Sharma (CTO)
-- Values: Collaboration, Innovation, Integrity, Excellence, Continuous Learning
-- CTA: "Join Our Team"
+## Permission Model
 
-## Workflow
+### Team editor
+- Team admin APIs and actions remain protected with `requirePermission("MANAGE_TEAM")`
 
-1. **View Public Page**: User visits `/team`
-2. **Admin Login**: Admin logs in with MANAGE_TEAM permission
-3. **Edit Content**: Admin navigates to `/admin/dashboard/team`
-4. **Update Sections**: Use tabs to edit each section
-5. **Manage Members**: Add/edit/delete team members
-6. **SEO Settings**: Configure meta tags in SEO tab
-7. **Save**: Changes are saved and page is revalidated
+### Submissions viewer
+- Submission listing / moderation remains protected with `requirePermission("MANAGE_SUBMISSIONS")`
 
-## Postman Testing
+## Files Updated
 
-### Test Public API
-```
-GET http://localhost:3000/api/team
-```
+### Core Team module
+- `src/modules/team/components/hero.tsx`
+- `src/modules/team/components/team-showcase.tsx`
+- `src/modules/team/components/team-application-dialog.tsx`
+- `src/modules/team/components/lazy-team-sections.tsx`
+- `src/modules/team/components/index.ts`
+- `src/modules/team/types.ts`
+- `src/modules/team/validations.ts`
+- `src/modules/team/data/defaults.ts`
+- `src/modules/team/data/queries.ts`
 
-### Test Admin APIs (requires auth token)
-```
-GET http://localhost:3000/api/admin/team
-POST http://localhost:3000/api/admin/team
-Body: { "section": "hero", "content": { "title": "...", "subtitle": "...", "backgroundImage": "..." } }
+### Public route
+- `src/app/(public)/team/loading.tsx`
 
-GET http://localhost:3000/api/admin/team/member
-POST http://localhost:3000/api/admin/team/member
-Body: { "name": "...", "role": "...", "image": "..." }
+### Submission pipeline
+- `src/app/api/team-resume/route.ts`
+- `src/app/api/resumes/[filename]/route.ts`
+- `src/app/api/submissions/route.ts`
+- `src/app/admin/(dashboard)/submissions/page.tsx`
 
-PUT http://localhost:3000/api/admin/team/member?id=<member_id>
-DELETE http://localhost:3000/api/admin/team/member?id=<member_id>
-```
+## Verification
 
-## Build Verification
+Commands executed successfully:
 
-After all changes, run:
 ```bash
-npm run build
 npm run lint
+npm run build
+node_modules/typescript/bin/tsc --noEmit
 ```
 
-Ensure:
-- No TypeScript errors
-- No Prisma issues
-- All API routes working
-- Public page renders correctly
-- Admin CRUD operations functional
+## Final Notes
+
+- No whole-site redesign was done.
+- Existing Team CMS structure was preserved.
+- The join-team workflow uses the already-established submissions admin area instead of creating a second review surface.
+- The public Team page is now more cinematic, responsive, and interactive while staying inside the project architecture.

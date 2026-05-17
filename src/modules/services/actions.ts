@@ -18,7 +18,7 @@ import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
 
 function revalidateServices() {
   revalidatePath("/services");
-  revalidatePath("/admin/services");
+  revalidatePath("/admin/dashboard/services");
 }
 
 export async function updateServicesHero(raw: unknown) {
@@ -104,3 +104,4 @@ export async function updateServicesSeo(raw: unknown) {
     return fail(getErrorMessage(err));
   }
 }
+

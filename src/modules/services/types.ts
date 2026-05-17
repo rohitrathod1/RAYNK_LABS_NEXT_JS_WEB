@@ -55,6 +55,23 @@ export interface ContactCtaSection {
   subheading: string;
   ctaText: string;
   ctaHref: string;
+  secondaryCtaText: string;
+  secondaryCtaHref: string;
+  primaryService: string;
+  secondaryService: string;
+  trustIndicators: string[];
+}
+
+export interface ServiceInquiryFormValues {
+  fullName: string;
+  email: string;
+  contactNumber?: string;
+  companyName?: string;
+  serviceName: string;
+  budgetRange: string;
+  projectTimeline: string;
+  projectDescription: string;
+  website?: string;
 }
 
 export interface ServicesPageData {

@@ -2,6 +2,29 @@ import { db } from "@/lib/db";
 import type { TeamPageData } from "../types";
 import { defaultTeamContent } from "./defaults";
 
+function getDepartment(role: string) {
+  const normalized = role.toLowerCase();
+  if (normalized.includes("founder") || normalized.includes("ceo") || normalized.includes("admin") || normalized.includes("lead")) return "Leadership";
+  if (normalized.includes("design") || normalized.includes("ui") || normalized.includes("ux") || normalized.includes("brand")) return "Design";
+  if (normalized.includes("seo") || normalized.includes("marketing") || normalized.includes("growth") || normalized.includes("content")) return "Growth";
+  if (normalized.includes("manager") || normalized.includes("operation") || normalized.includes("project")) return "Operations";
+  return "Engineering";
+}
+
+function getExpertiseTags(role: string, bio?: string | null) {
+  const source = `${role} ${bio ?? ""}`.toLowerCase();
+  const tags = new Set<string>();
+  if (source.includes("full stack") || source.includes("developer") || source.includes("engineer")) tags.add("Full Stack");
+  if (source.includes("product")) tags.add("Product");
+  if (source.includes("design") || source.includes("ui") || source.includes("ux")) tags.add("Design");
+  if (source.includes("seo") || source.includes("growth") || source.includes("marketing")) tags.add("Growth");
+  if (source.includes("strategy") || source.includes("founder")) tags.add("Strategy");
+  if (source.includes("frontend")) tags.add("Frontend");
+  if (source.includes("backend")) tags.add("Backend");
+  if (tags.size === 0) tags.add(getDepartment(role));
+  return Array.from(tags).slice(0, 4);
+}
+
 export async function getTeamPageData(): Promise<TeamPageData> {
   const sections = await db.teamPage.findMany({
     where: { isActive: true },
@@ -43,6 +66,7 @@ export async function getTeamMembers() {
       youtubeUrl?: string | null;
       portfolioUrl?: string | null;
       isFeatured?: boolean;
+      isVisible?: boolean;
       sortOrder?: number;
       createdAt?: Date | string;
       user?: { email: string; mobile?: string | null; portfolio?: string | null } | null;
@@ -60,11 +84,12 @@ export async function getTeamMembers() {
     if (order !== 0) return order;
     return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
   });
-  
+
   return sorted.map((m) => ({
     id: m.id,
     displayName: m.displayName ?? m.name ?? "Team Member",
     role: m.role,
+    department: getDepartment(m.role),
     bio: m.bio ?? undefined,
     avatar: m.avatar ?? m.image ?? undefined,
     githubUrl: m.githubUrl ?? m.github ?? undefined,
@@ -74,6 +99,8 @@ export async function getTeamMembers() {
     portfolioUrl: m.portfolioUrl ?? m.user?.portfolio ?? undefined,
     email: m.user?.email ?? undefined,
     phone: m.user?.mobile ?? undefined,
+    expertiseTags: getExpertiseTags(m.role, m.bio),
+    isVisible: m.isVisible ?? true,
     isFeatured: m.isFeatured ?? false,
     sortOrder: m.sortOrder ?? 0,
   }));

@@ -8,6 +8,7 @@ import {
   whyChooseSchema,
   coreTeamSchema,
   socialLinksSchema,
+  collaborationCtaSchema,
 } from "@/modules/about/validations";
 import type { ZodSchema } from "zod";
 
@@ -18,6 +19,7 @@ const SECTION_SCHEMAS: Record<string, ZodSchema> = {
   why_choose_us: whyChooseSchema,
   core_team: coreTeamSchema,
   social_links: socialLinksSchema,
+  collaboration_cta: collaborationCtaSchema,
 };
 
 export async function GET() {
@@ -25,12 +27,12 @@ export async function GET() {
     await requirePermission("EDIT_ABOUT");
     const sections = await db.aboutPage.findMany({ orderBy: { sortOrder: "asc" } });
     const data: Record<string, unknown> = {};
-    for (const s of sections) data[s.section] = s.content;
+    for (const section of sections) data[section.section] = section.content;
     return NextResponse.json({ success: true, data });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
-    const msg = err instanceof Error ? err.message : "Error";
-    return NextResponse.json({ success: false, error: msg }, { status });
+    const message = err instanceof Error ? err.message : "Error";
+    return NextResponse.json({ success: false, error: message }, { status });
   }
 }
 
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: result });
   } catch (err) {
     const status = (err as { status?: number }).status ?? 500;
-    const msg = err instanceof Error ? err.message : "Error";
-    return NextResponse.json({ success: false, error: msg }, { status });
+    const message = err instanceof Error ? err.message : "Error";
+    return NextResponse.json({ success: false, error: message }, { status });
   }
 }

@@ -3,11 +3,18 @@ import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import type { AboutPageData } from "../types";
 
 export const defaultSeo = definePageSeo({
-  metaTitle: "About RaYnk Labs - Our Story, Mission & Team",
-  metaDescription: "Learn about RaYnk Labs, our story, mission, vision, and the team driving digital innovation forward.",
-  keywords: ["raynk labs", "about us", "digital agency", "tech team", "company story"],
+  metaTitle: "About RaYnk Labs - Story, Mission, Team & Collaboration",
+  metaDescription:
+    "Discover the story behind RaYnk Labs, the team shaping our product mindset, and the ways brands can collaborate with us on digital growth.",
+  keywords: [
+    "raynk labs",
+    "about raynk labs",
+    "digital product studio",
+    "saas agency team",
+    "startup technology partner",
+  ],
   ogTitle: "About RaYnk Labs",
-  ogDescription: "Meet the team and mission behind RaYnk Labs.",
+  ogDescription: "Meet the team, mission, and collaboration mindset behind RaYnk Labs.",
   ogImage: "og-about.png",
   twitterCard: "summary_large_image",
   canonicalUrl: `${SITE_URL}/about`,
@@ -31,36 +38,21 @@ export const defaultSeo = definePageSeo({
         url: SITE_URL,
       },
     },
-    {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Home",
-          item: SITE_URL,
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "About",
-          item: `${SITE_URL}/about`,
-        },
-      ],
-    },
   ],
   robots: "index,follow",
 });
+
 export const defaultAboutContent: AboutPageData = {
   hero: {
     title: "Who We Are",
-    subtitle: "A team of passionate innovators building the future of digital solutions.",
-    backgroundImage: "placeholder.png",
+    subtitle:
+      "A product-minded digital team helping ambitious brands turn momentum into durable growth.",
+    backgroundImage: "/about/hero-bg.svg",
   },
   story: {
-    image: "placeholder.png",
+    image: "/about/story-studio.svg",
     content:
-      "RaYnk Labs was founded with a simple yet powerful vision: to bridge the gap between complex technology and real business needs. What started as a small team of passionate developers has grown into a full-service digital solutions provider.\n\nOur journey began when we recognized that many businesses were struggling to navigate the rapidly evolving digital landscape. We saw an opportunity to not just build software, but to become true partners in our clients' growth stories.\n\nToday, we combine cutting-edge technology with deep business understanding to deliver solutions that don't just work — they drive results. From startups to enterprises, we've helped businesses across industries transform their digital presence and achieve their goals.",
+      "RaYnk Labs began with a simple conviction: modern businesses deserve digital systems that feel as thoughtful as the brands they represent. We started by helping fast-moving teams close the gap between bold ideas and reliable execution.\n\nOver time, that mission evolved into a sharper operating style. We pair product thinking, design clarity, and engineering discipline so launches feel intentional, not improvised. Instead of shipping disconnected assets, we build momentum across brand, web, and growth surfaces together.\n\nToday, we work like a compact strategic partner for founders, operators, and growing companies. Our focus stays the same: create digital experiences that look premium, move fast, and keep working long after the launch week glow fades.",
   },
   mission: {
     title: "Our Mission & Vision",
@@ -68,92 +60,108 @@ export const defaultAboutContent: AboutPageData = {
     items: [
       {
         icon: "Eye",
-        title: "Our Vision",
+        title: "See the next move",
         description:
-          "To be the leading force in digital transformation, empowering businesses worldwide with innovative technology solutions.",
+          "We design with the long game in mind, helping teams build a digital presence that feels ready for the next stage of growth.",
       },
       {
         icon: "Target",
-        title: "Our Mission",
+        title: "Build with precision",
         description:
-          "We build scalable, user-centric digital solutions that solve real problems and create measurable business value.",
+          "From strategy to shipped product, we focus on clarity, measurable value, and systems that are built to scale cleanly.",
       },
       {
-        icon: "Heart",
-        title: "Our Values",
+        icon: "HeartHandshake",
+        title: "Partner with care",
         description:
-          "Integrity, innovation, and impact guide everything we do. We believe in building lasting relationships with our clients.",
+          "We work closely, communicate clearly, and stay invested in the outcome so the process feels grounded and collaborative.",
       },
     ],
   },
   why_choose_us: {
     title: "Why Choose RaYnk Labs?",
-    subtitle: "What sets us apart in the digital landscape",
+    subtitle: "What makes our working style feel different in practice",
     points: [
       {
         icon: "Zap",
-        title: "Innovation First",
+        title: "Fast without feeling rushed",
         description:
-          "We stay ahead of technology trends to deliver cutting-edge solutions that give you a competitive edge.",
+          "We move with urgency, but the work still gets the product thinking, polish, and QA it deserves.",
       },
       {
         icon: "Users",
-        title: "Client-Centric",
+        title: "Tight collaboration",
         description:
-          "Your success is our success. We work as an extension of your team, understanding your unique needs.",
+          "We stay close to founders and operators so decisions happen in context instead of being lost in handoff loops.",
       },
       {
         icon: "Award",
-        title: "Proven Excellence",
+        title: "Premium output",
         description:
-          "With 50+ successful projects and counting, our track record speaks for itself.",
+          "Every interface, content surface, and system we touch is shaped to feel sharp, credible, and production-ready.",
       },
       {
-        icon: "Clock",
-        title: "On-Time Delivery",
+        icon: "Clock3",
+        title: "Reliable delivery",
         description:
-          "We respect your timelines. Our agile process ensures consistent, predictable delivery.",
+          "We keep momentum visible through clear priorities, practical updates, and execution that respects your timeline.",
       },
       {
-        icon: "Shield",
-        title: "Security Focused",
+        icon: "ShieldCheck",
+        title: "Built with discipline",
         description:
-          "Enterprise-grade security practices are baked into every solution we build.",
+          "Security, maintainability, and operational sanity are part of the product, not a cleanup task for later.",
       },
       {
         icon: "TrendingUp",
-        title: "Scalable Growth",
+        title: "Growth-aware systems",
         description:
-          "Our solutions grow with your business — no costly rewrites or migrations needed.",
+          "We build foundations that support launches, campaigns, and future features without turning into brittle one-offs.",
       },
     ],
   },
   core_team: {
     title: "Meet Our Core Team",
-    subtitle: "The minds behind RaYnk Labs",
+    subtitle: "The people behind the strategy, systems, and shipping rhythm",
     members: [
       {
-        name: "Rohit Kumar",
-        role: "Founder & CEO",
-        image: "placeholder.png",
+        name: "Rohit Rathod",
+        role: "Founder & Product Lead",
+        image: "/about/team-rohit.svg",
+        bio: "Rohit blends product direction, systems thinking, and execution oversight to keep ambitious digital work grounded in business outcomes.",
+        skills: ["Product Strategy", "Web Architecture", "Growth Systems"],
+        linkedinUrl: "https://linkedin.com",
+        githubUrl: "https://github.com",
+        twitterUrl: "https://x.com",
         portfolioUrl: "/portfolio",
       },
       {
         name: "Priya Sharma",
-        role: "CTO",
-        image: "placeholder.png",
+        role: "Design Director",
+        image: "/about/team-priya.svg",
+        bio: "Priya turns complex ideas into calm, modern interfaces with a sharp eye for hierarchy, usability, and visual trust.",
+        skills: ["UI Systems", "Brand Experience", "Design Ops"],
+        linkedinUrl: "https://linkedin.com",
         portfolioUrl: "/portfolio",
       },
       {
         name: "Amit Patel",
-        role: "Head of Design",
-        image: "placeholder.png",
+        role: "Engineering Lead",
+        image: "/about/team-amit.svg",
+        bio: "Amit focuses on stable implementation, scalable frontends, and the kind of engineering choices that age well under real traffic.",
+        skills: ["Next.js", "Performance", "Platform Delivery"],
+        linkedinUrl: "https://linkedin.com",
+        githubUrl: "https://github.com",
         portfolioUrl: "/portfolio",
       },
       {
         name: "Sneha Singh",
-        role: "Lead Developer",
-        image: "placeholder.png",
+        role: "Growth & Client Success",
+        image: "/about/team-sneha.svg",
+        bio: "Sneha keeps delivery aligned with client goals, translating feedback into focused next steps and stronger launch outcomes.",
+        skills: ["Client Strategy", "Launch Planning", "Retention"],
+        linkedinUrl: "https://linkedin.com",
+        twitterUrl: "https://x.com",
         portfolioUrl: "/portfolio",
       },
     ],
@@ -176,6 +184,30 @@ export const defaultAboutContent: AboutPageData = {
         platform: "Instagram",
         url: "https://instagram.com/raynklabs",
         icon: "Instagram",
+      },
+    ],
+  },
+  collaboration_cta: {
+    title: "Let�s Build Something That Actually Moves The Needle",
+    subtitle:
+      "Bring us in for a product push, a sharper website, partnership exploration, or a thoughtful conversation about what your next digital move should be.",
+    submitText: "Send Inquiry",
+    successMessage: "Thanks for reaching out. We will get back to you shortly.",
+    highlights: [
+      {
+        icon: "Sparkles",
+        title: "Work with us",
+        description: "For launches, redesigns, growth systems, and digital product execution.",
+      },
+      {
+        icon: "Handshake",
+        title: "Partnership ready",
+        description: "For agency collaborations, strategic partnerships, and white-label delivery.",
+      },
+      {
+        icon: "MessageSquareText",
+        title: "Feedback welcome",
+        description: "For product feedback, thoughtful intros, and ideas worth exploring together.",
       },
     ],
   },

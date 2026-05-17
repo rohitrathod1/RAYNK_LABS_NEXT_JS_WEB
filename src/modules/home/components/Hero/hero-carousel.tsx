@@ -2,7 +2,6 @@
 
 import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -18,7 +17,7 @@ interface HomeHeroCarouselProps {
 
 export function HomeHeroCarousel({ slides }: HomeHeroCarouselProps) {
   const autoplay = useMemo(
-    () => Autoplay({ delay: 5500, stopOnInteraction: false, stopOnMouseEnter: true }),
+    () => Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: false }),
     [],
   );
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -42,9 +41,6 @@ export function HomeHeroCarousel({ slides }: HomeHeroCarouselProps) {
       emblaApi.off("reInit", onSelect);
     };
   }, [emblaApi, onSelect]);
-
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   return (
     <div className="absolute inset-0">
@@ -108,16 +104,8 @@ export function HomeHeroCarousel({ slides }: HomeHeroCarouselProps) {
         </div>
       </div>
 
-      <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3">
-        <button
-          type="button"
-          onClick={scrollPrev}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          aria-label="Previous hero slide"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div className="flex items-center gap-2" aria-label="Hero slide controls">
+      <div className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2">
+        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/20 px-3 py-2 backdrop-blur-md" aria-label="Hero slide controls">
           {slides.map((slide, index) => (
             <button
               key={slide.id ?? index}
@@ -132,14 +120,6 @@ export function HomeHeroCarousel({ slides }: HomeHeroCarouselProps) {
             />
           ))}
         </div>
-        <button
-          type="button"
-          onClick={scrollNext}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          aria-label="Next hero slide"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
       </div>
     </div>
   );

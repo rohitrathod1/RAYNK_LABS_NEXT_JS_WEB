@@ -2,8 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/middleware/permission";
+import { checkLimit } from "@/lib/rate-limit-local";
 
-const TYPE_OPTIONS = ["contact", "service", "feedback", "team", "project", "seo", "work_with_us", "other"] as const;
+const TYPE_OPTIONS = [
+  "contact",
+  "service",
+  "feedback",
+  "team",
+  "project",
+  "seo",
+  "work_with_us",
+  "join_team",
+  "partnership",
+  "project_inquiry",
+  "other",
+] as const;
 const STATUS_OPTIONS = ["read", "unread"] as const;
 const MAX_METADATA_KEYS = 30;
 
@@ -16,8 +29,16 @@ const submissionSchema = z.object({
   message: z.string().trim().max(5000).optional().or(z.literal("")),
   company: z.string().trim().max(160).optional().or(z.literal("")),
   service: z.string().trim().max(160).optional().or(z.literal("")),
+  serviceName: z.string().trim().max(160).optional().or(z.literal("")),
+  budget: z.string().trim().max(160).optional().or(z.literal("")),
+  timeline: z.string().trim().max(160).optional().or(z.literal("")),
+  roleInterestedIn: z.string().trim().max(160).optional().or(z.literal("")),
+  experienceLevel: z.string().trim().max(120).optional().or(z.literal("")),
+  portfolioUrl: z.string().trim().max(220).optional().or(z.literal("")),
+  resumeUrl: z.string().trim().max(220).optional().or(z.literal("")),
   sourcePage: z.string().trim().max(220).optional().or(z.literal("")),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  website: z.string().trim().max(0).optional().or(z.literal("")),
 });
 
 function clean(value: string | undefined) {
@@ -39,24 +60,49 @@ function normalizeType(type: string) {
   return TYPE_OPTIONS.includes(normalized as (typeof TYPE_OPTIONS)[number]) ? normalized : "other";
 }
 
+function getClientIp(request: NextRequest) {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
+  return request.headers.get("x-real-ip") || "unknown";
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const limit = checkLimit(`submission:${ip}`, 5, 10 * 60 * 1000);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many submissions. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+      );
+    }
+
     const raw = await req.json();
     const parsed = submissionSchema.parse(raw);
 
-    if (!parsed.email && !parsed.phone) {
-      return NextResponse.json(
-        { success: false, error: "Email or phone is required" },
-        { status: 400 },
-      );
+    if (parsed.website) {
+      return NextResponse.json({ success: true, data: null }, { status: 202 });
     }
 
-    if (!parsed.message && !parsed.subject && !parsed.service) {
-      return NextResponse.json(
-        { success: false, error: "Message, subject, or service is required" },
-        { status: 400 },
-      );
+    if (!parsed.email && !parsed.phone) {
+      return NextResponse.json({ success: false, error: "Email or phone is required" }, { status: 400 });
     }
+
+    if (!parsed.message && !parsed.subject && !parsed.service && !parsed.serviceName) {
+      return NextResponse.json({ success: false, error: "Message, subject, or service is required" }, { status: 400 });
+    }
+
+    const normalizedServiceName = clean(parsed.serviceName) ?? clean(parsed.service) ?? clean(parsed.subject);
+    const metadata = {
+      ...(cleanMetadata(parsed.metadata) ?? {}),
+      budget: clean(parsed.budget),
+      timeline: clean(parsed.timeline),
+      serviceName: normalizedServiceName,
+      roleInterestedIn: clean(parsed.roleInterestedIn),
+      experienceLevel: clean(parsed.experienceLevel),
+      portfolioUrl: clean(parsed.portfolioUrl),
+      resumeUrl: clean(parsed.resumeUrl),
+    };
 
     const submission = await db.submission.create({
       data: {
@@ -67,9 +113,9 @@ export async function POST(req: NextRequest) {
         subject: clean(parsed.subject),
         message: clean(parsed.message),
         company: clean(parsed.company),
-        service: clean(parsed.service),
+        service: normalizedServiceName,
         sourcePage: clean(parsed.sourcePage) ?? req.headers.get("referer"),
-        metadata: cleanMetadata(parsed.metadata) as never,
+        metadata: metadata as never,
       },
     });
 
@@ -87,12 +133,12 @@ export async function GET(req: NextRequest) {
     const q = url.searchParams.get("q")?.trim();
     const type = url.searchParams.get("type")?.trim();
     const status = url.searchParams.get("status")?.trim();
+    const service = url.searchParams.get("service")?.trim();
 
     const where = {
       ...(type && type !== "all" ? { type } : {}),
-      ...(status && status !== "all" && STATUS_OPTIONS.includes(status as (typeof STATUS_OPTIONS)[number])
-        ? { status }
-        : {}),
+      ...(status && status !== "all" && STATUS_OPTIONS.includes(status as (typeof STATUS_OPTIONS)[number]) ? { status } : {}),
+      ...(service && service !== "all" ? { service } : {}),
       ...(q
         ? {
             OR: [
@@ -104,12 +150,13 @@ export async function GET(req: NextRequest) {
         : {}),
     };
 
-    const [submissions, total, unread, read, groups] = await Promise.all([
+    const [submissions, total, unread, read, groups, services] = await Promise.all([
       db.submission.findMany({ where, orderBy: { createdAt: "desc" } }),
       db.submission.count(),
       db.submission.count({ where: { status: "unread" } }),
       db.submission.count({ where: { status: "read" } }),
       db.submission.groupBy({ by: ["type"], _count: { type: true } }),
+      db.submission.findMany({ where: { service: { not: null } }, distinct: ["service"], select: { service: true }, orderBy: { service: "asc" } }),
     ]);
 
     return NextResponse.json({
@@ -122,6 +169,7 @@ export async function GET(req: NextRequest) {
           read,
           types: groups.length,
           typeCounts: groups.map((group) => ({ type: group.type, count: group._count.type })),
+          services: services.map((entry) => entry.service).filter(Boolean),
         },
       },
     });
@@ -131,3 +179,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: message }, { status: statusCode });
   }
 }
+

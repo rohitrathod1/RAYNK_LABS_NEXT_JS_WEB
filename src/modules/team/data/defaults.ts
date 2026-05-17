@@ -2,50 +2,51 @@ import { definePageSeo } from "@/modules/seo";
 import type { TeamPageData } from "../types";
 
 export const defaultSeo = definePageSeo({
-  metaTitle: "Our Team - RaYnk Labs",
-  metaDescription: "Meet the founders, developers, designers, and collaborators behind RaYnk Labs and the values that drive our work.",
-  keywords: ["raynk labs team", "developers", "designers", "tech team", "company culture"],
+  metaTitle: "Team - RaYnk Labs",
+  metaDescription: "Meet the builders, operators, and creative leads shaping premium digital products at RaYnk Labs.",
+  keywords: ["raynk labs team", "startup team", "digital agency team", "product builders", "creative studio team"],
   ogTitle: "Meet the RaYnk Labs Team",
-  ogDescription: "The people building digital solutions at RaYnk Labs.",
+  ogDescription: "A compact team with full-stack range, sharp product taste, and a bias for shipping excellent work.",
   ogImage: "og-team.png",
   twitterCard: "summary_large_image",
   canonicalUrl: "http://localhost:3000/team",
   structuredData: { "@type": "Organization", name: "RaYnk Labs" },
   robots: "index,follow",
 });
+
 export const defaultTeamContent: TeamPageData = {
   hero: {
     title: "Meet Our Team",
-    subtitle: "The passionate individuals driving innovation at RaYnk Labs.",
-    backgroundImage: "placeholder.png",
+    subtitle: "The passionate individuals driving product, design, engineering, and growth at RaYnk Labs.",
+    backgroundImage: "/about/hero-bg.svg",
   },
   intro: {
     description:
-      "At RaYnk Labs, we believe that great products are built by great teams. Our diverse group of developers, designers, and strategists work together to solve complex problems and deliver exceptional digital experiences. We foster a culture of continuous learning, collaboration, and innovation.",
+      "At RaYnk Labs, we keep the team intentionally compact and deeply collaborative. Designers, developers, and operators work shoulder to shoulder so decisions happen fast, quality stays high, and every project benefits from shared ownership.",
   },
   founders: {
-    title: "Our Founders",
-    subtitle: "The visionaries leading the way",
+    title: "Leadership",
+    subtitle: "The people setting the pace and raising the bar",
     founders: [
       {
-        name: "Rohit Kumar",
-        role: "Founder & CEO",
-        image: "placeholder.png",
-        bio: "With a passion for technology and business, Rohit founded RaYnk Labs to bridge the gap between complex tech and real business needs.",
+        name: "Rohit Rathod",
+        role: "Founder & Product Lead",
+        image: "/about/team-rohit.svg",
+        bio: "Rohit leads product direction, systems thinking, and the delivery standards that shape the RaYnk Labs experience.",
         portfolioUrl: "/portfolio",
       },
       {
         name: "Priya Sharma",
-        role: "Co-Founder & CTO",
-        image: "placeholder.png",
-        bio: "Priya brings years of technical expertise and leadership to drive our engineering excellence and innovation initiatives.",
+        role: "Co-Founder & Engineering Lead",
+        image: "/about/team-priya.svg",
+        bio: "Priya drives architecture, engineering discipline, and the hands-on execution behind reliable digital builds.",
         portfolioUrl: "/portfolio",
       },
     ],
   },
   team_members: {
     title: "Our Team Members",
-    subtitle: "Talented individuals making an impact",
+    subtitle: "Talented individuals making an impact across strategy, design, growth, and engineering.",
   },
   values: {
     title: "Our Values",
@@ -55,38 +56,38 @@ export const defaultTeamContent: TeamPageData = {
         icon: "Users",
         title: "Collaboration",
         description:
-          "We believe the best solutions come from working together, sharing ideas, and respecting diverse perspectives.",
+          "We work in the open, challenge ideas with respect, and build better outcomes by leaning into each other’s strengths.",
       },
       {
         icon: "Lightbulb",
         title: "Innovation",
         description:
-          "We constantly explore new technologies and approaches to stay ahead of the curve and deliver cutting-edge solutions.",
+          "We stay curious, test quickly, and keep refining the craft so our clients get work that feels current and durable.",
       },
       {
         icon: "Heart",
         title: "Integrity",
         description:
-          "We operate with transparency, honesty, and ethical practices in everything we do.",
+          "Trust is part of the product. We communicate clearly, stay accountable, and avoid shortcuts that create hidden cost later.",
       },
       {
         icon: "TrendingUp",
         title: "Excellence",
         description:
-          "We strive for excellence in every project, paying attention to detail and delivering high-quality results.",
+          "We care about polish, performance, and the small details that make a product feel confidently finished.",
       },
       {
         icon: "BookOpen",
         title: "Continuous Learning",
         description:
-          "We invest in our team's growth, encouraging learning and development to stay at the forefront of technology.",
+          "The team grows in public through iteration, feedback, and constant skill sharpening across product and technology.",
       },
     ],
   },
   contact_cta: {
     title: "Join Our Team",
-    subtitle: "Want to work with passionate people on exciting projects? We'd love to hear from you.",
-    buttonText: "View Open Positions",
-    buttonLink: "/careers",
+    subtitle: "Join us for full-time roles, internships, collaborations, or thoughtful project conversations.",
+    buttonText: "Join Team",
+    buttonLink: "/team#section7-join-team",
   },
 };

@@ -26,6 +26,7 @@ export interface TeamMember {
   id: string;
   displayName: string;
   role: string;
+  department?: string;
   bio?: string | null;
   avatar?: string | null;
   githubUrl?: string | null;
@@ -35,6 +36,7 @@ export interface TeamMember {
   portfolioUrl?: string | null;
   email?: string | null;
   phone?: string | null;
+  expertiseTags?: string[];
   isVisible?: boolean;
   isFeatured?: boolean;
   sortOrder?: number;
@@ -84,4 +86,15 @@ export interface TeamMemberInput {
   youtubeUrl?: string;
   isVisible?: boolean;
   isFeatured?: boolean;
+}
+
+export interface TeamApplicationFormValues {
+  fullName: string;
+  email: string;
+  phone: string;
+  roleInterestedIn: string;
+  experienceLevel: string;
+  portfolioUrl?: string;
+  resumeUrl: string;
+  message: string;
 }

@@ -1,137 +1,230 @@
-# Services Page CMS - Documentation
+# Services Page
 
 ## Overview
-The Services Page CMS provides a complete content management system for the services section of RaYnk Labs website. It includes public UI, admin dashboard, API routes, and SEO integration.
 
-## Page Structure
+The Services page keeps the existing module structure but upgrades the public experience into a more premium, conversion-focused flow.
 
-### Sections
-1. **Hero** - Main banner with title, subtitle, and background image
-2. **Categories** - Filter tabs for service categories (Website Design, SEO, Graphic Design)
-3. **Services List** - Grid of service cards with icons, titles, descriptions, and CTAs
-4. **Why Choose** - Benefits/points highlighting why choose our services
-5. **Process** - Step-by-step process (Plan → Design → Develop → Launch)
-6. **Contact CTA** - Call-to-action section with "Get Service" button
+### Public sections
 
-## File Structure
+1. Hero
+2. Interactive category filters and service cards
+3. Why choose us
+4. Process timeline
+5. Premium CTA with dual actions
+6. Service inquiry modal
 
-```
-src/
-├── modules/services/
-│   ├── types.ts              # TypeScript interfaces
-│   ├── validations.ts        # Zod validation schemas
-│   ├── actions.ts            # Server actions for admin
-│   ├── data/
-│   │   ├── queries.ts       # Database queries
-│   │   ├── mutations.ts     # Database mutations
-│   │   └── defaults.ts      # Default content
-│   └── components/
-│       ├── hero.tsx          # Hero section component
-│       ├── categories.tsx    # Categories filter component
-│       ├── services-grid.tsx # Services grid component
-│       ├── why.tsx           # Why choose section
-│       ├── process.tsx       # Process steps component
-│       ├── cta.tsx           # Contact CTA component
-│       └── main.tsx          # Main client component
-├── app/
-│   ├── services/
-│   │   └── page.tsx         # Public services page
-│   ├── api/
-│   │   ├── services/
-│   │   │   └── route.ts     # Public API endpoint
-│   │   └── admin/
-│   │       └── services/
-│   │           └── route.ts  # Admin API endpoint
-│   └── admin/
-│       └── (dashboard)/
-│           └── services/
-│               └── page.tsx  # Admin dashboard page
-└── prisma/
-    └── schema/
-        └── services.prisma   # Prisma model
-```
+## Updated Component Structure
 
-## API Endpoints
+### Server-first composition
 
-### Public API
-- **GET** `/api/services` - Fetch all active services page sections
-  - Returns: `{ success: boolean, data: Record<string, unknown> }`
-  - Cached for 60 seconds
+- `src/app/services/page.tsx`
+  - resolves SEO
+  - fetches CMS data
+  - renders the Services module
+- `src/modules/services/components/main.tsx`
+  - keeps the hero loaded first
+  - lazy loads the interactive below-fold experience via `next/dynamic`
 
-### Admin API (Requires MANAGE_SERVICES permission)
-- **GET** `/api/admin/services` - Fetch all sections for editing
-- **POST** `/api/admin/services` - Update a section
-  - Body: `{ section: string, content: unknown }`
-  - Sections: hero, categories, services_list, why_choose_service, process, contact_cta
+### Public components
 
-## Database Model
+- `hero.tsx`
+  - animated mesh-like background treatment
+  - mouse-responsive glow and logo parallax
+  - staggered heading, subtitle, and CTA motion
+- `experience.tsx`
+  - client-side interaction shell for the services page
+  - owns inquiry modal state
+- `categories.tsx`
+  - category pill filtering
+  - hands selected service into the modal
+- `services-grid.tsx`
+  - premium cards
+  - stagger reveal and hover lift/glow behavior
+  - replaces `Learn More` with `Get Service`
+- `process.tsx`
+  - timeline-like process cards with connector treatment
+- `cta.tsx`
+  - dual CTA section with trust indicators
+- `service-inquiry-dialog.tsx`
+  - Radix Dialog + Framer Motion inquiry modal
 
-```prisma
-model ServicesPage {
-  id        String   @id @default(cuid())
-  section   String   @unique
-  title     String?
-  content   Json
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+## Animation Strategy
 
-  @@index([sortOrder])
-}
-```
+Shared motion variants live in:
 
-## Permissions
+- `src/lib/animation-variants.ts`
 
-- **MANAGE_SERVICES** - Required to access admin services page and API
-- **SUPER_ADMIN** - Full access to all operations
+Added presets:
 
-## SEO Integration
+- `heroStagger`
+- `heroItem`
+- `cardReveal`
+- `timelineReveal`
 
-The services page integrates with the existing SEO system:
-- SEO data stored in `Seo` table with `page: "services"`
-- Managed via the "seo" tab in admin dashboard
-- Fields: metaTitle, metaDescription, keywords, ogImage, noIndex
+The Services page uses these for:
 
-## Workflow
+- hero staggered content reveal
+- category/service card entrance
+- modal open transition
+- process card reveal
+- CTA panel appearance
 
-1. Admin logs in with MANAGE_SERVICES permission
-2. Navigate to `/admin/services`
-3. Select section tab (hero, categories, services_list, etc.)
-4. Edit content in the form
-5. Click "Save Changes"
-6. Public page at `/services` reflects changes
+No heavy particle or canvas libraries are used.
 
-## Postman Testing
+## Service Inquiry Modal Workflow
 
-### Test Public API
-```
-GET http://localhost:3000/api/services
-```
+### Trigger sources
 
-### Test Admin API (requires authentication)
-```
-GET http://localhost:3000/api/admin/services
-Headers:
-  Cookie: (session cookie)
+The modal opens from:
 
-POST http://localhost:3000/api/admin/services
-Headers:
-  Cookie: (session cookie)
-  Content-Type: application/json
-Body:
-{
-  "section": "hero",
-  "content": {
-    "title": "Our Services",
-    "subtitle": "Test subtitle",
-    "backgroundImage": "test.png"
-  }
-}
-```
+- each service card `Get Service` button
+- final CTA primary button
+- final CTA secondary button
+
+### Auto-filled service behavior
+
+Clicking a service card sets `serviceName` automatically before the modal opens.
+
+Examples:
+
+- `SEO Optimization` card -> `serviceName = SEO Optimization`
+- CTA primary -> `serviceName = Project Inquiry`
+- CTA secondary -> `serviceName = Strategy Consultation`
+
+### Form fields
+
+- Full Name
+- Email
+- Contact Number
+- Company Name
+- Service Name
+- Budget Range
+- Project Timeline
+- Project Description
+
+### UX behavior
+
+- floating labels
+- dark glassmorphism dialog surface
+- loading button state
+- modal closes after successful submit
+- Sonner success toast
+
+## Submission System
+
+The Services inquiry flow reuses the shared `Submission` model and shared submissions admin dashboard.
+
+### Storage model
+
+File:
+
+- `prisma/schema/submission.prisma`
+
+Current submission storage for service inquiries uses:
+
+- `type = "service"`
+- `name`
+- `email`
+- `phone`
+- `company`
+- `service`
+- `message`
+- `status`
+- `sourcePage`
+- `metadata.budget`
+- `metadata.timeline`
+- `metadata.serviceName`
+- `createdAt`
+
+This preserves the existing shared submissions pipeline while capturing service-specific context cleanly.
+
+## API Flow
+
+### UI -> API -> DB -> Admin
+
+Flow:
+
+`UI -> /api/submissions -> Prisma -> admin submissions dashboard`
+
+### Public submission route
+
+File:
+
+- `src/app/api/submissions/route.ts`
+
+Responsibilities:
+
+- Zod validation
+- input sanitization
+- honeypot spam check (`website`)
+- rate limiting with `checkLimit()`
+- submission persistence
+- filtering by search/type/status/service for admin reads
+
+### Security
+
+The route applies:
+
+- request validation with Zod
+- sanitized string storage
+- fixed-window rate limiting
+- no direct DB calls from UI
+
+## Admin Dashboard Integration
+
+### Services editor
+
+File:
+
+- `src/app/admin/(dashboard)/services/page.tsx`
+
+The services admin page now supports editing:
+
+- hero content
+- category list
+- services list
+- process steps
+- final CTA
+  - primary CTA text
+  - secondary CTA text
+  - primary service label
+  - secondary service label
+  - trust indicators
+- SEO
+
+### Shared submissions dashboard
+
+File:
+
+- `src/app/admin/(dashboard)/submissions/page.tsx`
+
+Updated capabilities:
+
+- search by name/email/message
+- filter by type
+- filter by service
+- status badge
+- detail modal with service, budget, and timeline
+- mark read/unread
+- delete action
+- export CSV/Excel
+
+## SEO Updates
+
+File:
+
+- `src/modules/services/data/defaults.ts`
+
+Updates include:
+
+- stronger services metadata
+- canonical URL uses `SITE_URL`
+- more relevant service-oriented keywords
+- structured data updated for services listing
 
 ## Notes
-- All components use dynamic imports (lazy loading) for performance
-- Images handled via ImageUpload component
-- Default content provided in `defaults.ts`
-- Follows existing home page CMS patterns
+
+- Hero remains the first-class top section and is not lazy loaded.
+- The interactive below-fold experience is lazy loaded with `next/dynamic`.
+- Service icons are resolved through `src/modules/services/components/shared/icon.tsx`.
+- The current services page keeps its original information architecture while improving interaction, depth, and conversion flow.

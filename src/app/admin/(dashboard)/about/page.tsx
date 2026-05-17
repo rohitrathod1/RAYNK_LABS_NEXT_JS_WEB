@@ -1,38 +1,28 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Save, Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/common/image-upload";
 import { hasPermission } from "@/lib/permissions";
 import {
-  updateAboutHero,
-  updateAboutStory,
-  updateAboutMission,
-  updateAboutWhyChoose,
+  updateAboutCollaborationCta,
   updateAboutCoreTeam,
-  updateAboutSocialLinks,
+  updateAboutHero,
+  updateAboutMission,
   updateAboutSeo,
+  updateAboutStory,
+  updateAboutWhyChoose,
 } from "@/modules/about/actions";
-import type { AboutPageData } from "@/modules/about/types";
 import { defaultAboutContent } from "@/modules/about/data/defaults";
+import type { AboutPageData } from "@/modules/about/types";
 
-const TABS = [
-  "hero",
-  "story",
-  "mission",
-  "why_choose_us",
-  "core_team",
-  "social_links",
-  "seo",
-] as const;
+const TABS = ["hero", "story", "mission", "why_choose_us", "core_team", "collaboration_cta", "seo"] as const;
 type Tab = (typeof TABS)[number];
-
-type FormData = AboutPageData & {
-  seo: { title: string; description: string; keywords: string; ogImage: string; noIndex: boolean };
-};
+type FormData = AboutPageData & { seo: { title: string; description: string; keywords: string; ogImage: string; noIndex: boolean } };
 
 const TAB_LABELS: Record<Tab, string> = {
   hero: "Hero",
@@ -40,28 +30,25 @@ const TAB_LABELS: Record<Tab, string> = {
   mission: "Mission",
   why_choose_us: "Why Choose Us",
   core_team: "Core Team",
-  social_links: "Social Links",
+  collaboration_cta: "Collaboration CTA",
   seo: "SEO",
 };
 
 export default function AboutPageManager() {
   const router = useRouter();
   const { data: session } = useSession();
-
-  useEffect(() => {
-    if (session && !hasPermission(session, "EDIT_ABOUT")) {
-      router.push("/admin");
-    }
-  }, [session, router]);
-
   const [activeTab, setActiveTab] = useState<Tab>("hero");
   const [formData, setFormData] = useState<Partial<FormData>>({});
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
+    if (session && !hasPermission(session, "EDIT_ABOUT")) router.push("/admin");
+  }, [router, session]);
+
+  useEffect(() => {
     fetch("/api/admin/about")
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then(({ data }: { data: Partial<FormData> }) => {
         setFormData({
           hero: { ...defaultAboutContent.hero, ...(data?.hero ?? {}) },
@@ -70,14 +57,8 @@ export default function AboutPageManager() {
           why_choose_us: { ...defaultAboutContent.why_choose_us, ...(data?.why_choose_us ?? {}) },
           core_team: { ...defaultAboutContent.core_team, ...(data?.core_team ?? {}) },
           social_links: { ...defaultAboutContent.social_links, ...(data?.social_links ?? {}) },
-          seo: {
-            title: "",
-            description: "",
-            keywords: "",
-            ogImage: "",
-            noIndex: false,
-            ...((data as Partial<FormData>)?.seo ?? {}),
-          },
+          collaboration_cta: { ...defaultAboutContent.collaboration_cta, ...(data?.collaboration_cta ?? {}) },
+          seo: { title: "", description: "", keywords: "", ogImage: "", noIndex: false, ...((data as Partial<FormData>)?.seo ?? {}) },
         });
         setLoadingData(false);
       })
@@ -88,26 +69,22 @@ export default function AboutPageManager() {
   }, []);
 
   function update<K extends keyof FormData>(section: K, patch: Partial<FormData[K]>) {
-    setFormData((prev) => ({
-      ...prev,
-      [section]: { ...(prev[section] as object), ...patch },
-    }));
+    setFormData((prev) => ({ ...prev, [section]: { ...(prev[section] as object), ...patch } }));
   }
 
   async function handleSave() {
     setLoading(true);
-    type ActionFn = (d: unknown) => Promise<{ success: boolean; error?: string }>;
-    const actionMap: Record<Tab, ActionFn> = {
-      hero: (d) => updateAboutHero(d),
-      story: (d) => updateAboutStory(d),
-      mission: (d) => updateAboutMission(d),
-      why_choose_us: (d) => updateAboutWhyChoose(d),
-      core_team: (d) => updateAboutCoreTeam(d),
-      social_links: (d) => updateAboutSocialLinks(d),
-      seo: (d) => updateAboutSeo(d),
+    const actionMap: Record<Tab, (data: unknown) => Promise<{ success: boolean; error?: string }>> = {
+      hero: updateAboutHero,
+      story: updateAboutStory,
+      mission: updateAboutMission,
+      why_choose_us: updateAboutWhyChoose,
+      core_team: updateAboutCoreTeam,
+      collaboration_cta: updateAboutCollaborationCta,
+      seo: updateAboutSeo,
     };
     const result = await actionMap[activeTab]?.(formData[activeTab]);
-    if (result?.success) toast.success("Saved successfully!");
+    if (result?.success) toast.success("Saved successfully");
     else toast.error(result?.error ?? "Failed to save");
     setLoading(false);
   }
@@ -117,604 +94,81 @@ export default function AboutPageManager() {
   const mission = formData.mission ?? defaultAboutContent.mission;
   const whyChoose = formData.why_choose_us ?? defaultAboutContent.why_choose_us;
   const coreTeam = formData.core_team ?? defaultAboutContent.core_team;
-  const socialLinks = formData.social_links ?? defaultAboutContent.social_links;
-  const seo = (formData as Partial<FormData>).seo ?? {
-    title: "",
-    description: "",
-    keywords: "",
-    ogImage: "",
-    noIndex: false,
-  };
+  const collaborationCta = formData.collaboration_cta ?? defaultAboutContent.collaboration_cta;
+  const seo = (formData as Partial<FormData>).seo ?? { title: "", description: "", keywords: "", ogImage: "", noIndex: false };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">About Page Manager</h1>
-          <p className="text-muted-foreground mt-1">Manage all about page sections and SEO</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">About Page Manager</h1>
+          <p className="mt-1 text-muted-foreground">Manage About page sections, team cards, collaboration CTA, and SEO.</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={loading || loadingData}
-          className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground rounded-lg font-medium transition"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" /> Save Changes
-            </>
-          )}
-        </button>
+        <SaveButton loading={loading} loadingData={loadingData} onClick={handleSave} />
       </div>
 
-      <div className="border rounded-lg bg-card">
+      <div className="rounded-lg border bg-card">
         <div className="flex overflow-x-auto border-b">
           {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 font-medium transition-colors whitespace-nowrap text-sm ${
-                activeTab === tab
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}>
               {TAB_LABELS[tab]}
             </button>
           ))}
         </div>
 
         <div className="p-6">
-          {loadingData ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
+          {loadingData ? <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div> : (
             <>
-              {activeTab === "hero" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Title *</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={hero.title}
-                      onChange={(e) => update("hero", { title: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Subtitle *</label>
-                    <textarea
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
-                      rows={3}
-                      value={hero.subtitle}
-                      onChange={(e) => update("hero", { subtitle: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Background Image</label>
-                    <ImageUpload
-                      value={hero.backgroundImage}
-                      onChange={(v) => update("hero", { backgroundImage: v })}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "story" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Image</label>
-                    <ImageUpload
-                      value={story.image}
-                      onChange={(v) => update("story", { image: v })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Content *</label>
-                    <textarea
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
-                      rows={8}
-                      value={story.content}
-                      onChange={(e) => update("story", { content: e.target.value })}
-                    />
-                  </div>
-                </div>
-              )}
-
+              {activeTab === "hero" && <div className="space-y-4"><Field label="Title *"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={hero.title} onChange={(event) => update("hero", { title: event.target.value })} /></Field><Field label="Subtitle *"><textarea className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm" rows={3} value={hero.subtitle} onChange={(event) => update("hero", { subtitle: event.target.value })} /></Field><Field label="Background Image"><ImageUpload value={hero.backgroundImage} onChange={(value) => update("hero", { backgroundImage: value })} /></Field></div>}
+              {activeTab === "story" && <div className="space-y-4"><Field label="Image"><ImageUpload value={story.image} onChange={(value) => update("story", { image: value })} /></Field><Field label="Content *"><textarea className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm" rows={9} value={story.content} onChange={(event) => update("story", { content: event.target.value })} /></Field></div>}
               {activeTab === "mission" && (
                 <div className="space-y-4">
+                  <Field label="Section Title *"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={mission.title} onChange={(event) => update("mission", { title: event.target.value })} /></Field>
+                  <Field label="Subtitle"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={mission.subtitle} onChange={(event) => update("mission", { subtitle: event.target.value })} /></Field>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={mission.title}
-                      onChange={(e) => update("mission", { title: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={mission.subtitle}
-                      onChange={(e) => update("mission", { subtitle: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium">Mission Items (3 recommended)</label>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          update("mission", {
-                            items: [
-                              ...mission.items,
-                              { icon: "Star", title: "", description: "" },
-                            ],
-                          })
-                        }
-                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Item
-                      </button>
-                    </div>
-                    <div className="space-y-6">
-                      {mission.items.map((item, i) => (
-                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Item {i + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                update("mission", {
-                                  items: mission.items.filter((_, j) => j !== i),
-                                })
-                              }
-                              className="text-destructive hover:text-destructive/70"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Icon (Lucide name)</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                placeholder="Eye, Target, Heart..."
-                                value={item.icon}
-                                onChange={(e) => {
-                                  const updated = [...mission.items];
-                                  updated[i] = { ...updated[i], icon: e.target.value };
-                                  update("mission", { items: updated });
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Title *</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                value={item.title}
-                                onChange={(e) => {
-                                  const updated = [...mission.items];
-                                  updated[i] = { ...updated[i], title: e.target.value };
-                                  update("mission", { items: updated });
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Description *</label>
-                            <textarea
-                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm resize-none"
-                              rows={2}
-                              value={item.description}
-                              onChange={(e) => {
-                                const updated = [...mission.items];
-                                updated[i] = { ...updated[i], description: e.target.value };
-                                update("mission", { items: updated });
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium">Mission Items</label><TinyAction onClick={() => update("mission", { items: [...mission.items, { icon: "Star", title: "", description: "" }] })}><Plus className="h-3.5 w-3.5" /> Add Item</TinyAction></div>
+                    <div className="space-y-6">{mission.items.map((item, index) => <div key={index} className="space-y-3 rounded-lg border border-border p-4"><ItemHeader label={`Item ${index + 1}`} onDelete={() => update("mission", { items: mission.items.filter((_, current) => current !== index) })} /><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Icon (Lucide)"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={item.icon} onChange={(event) => { const items = [...mission.items]; items[index] = { ...items[index], icon: event.target.value }; update("mission", { items }); }} /></Field><Field label="Title *"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={item.title} onChange={(event) => { const items = [...mission.items]; items[index] = { ...items[index], title: event.target.value }; update("mission", { items }); }} /></Field></div><Field label="Description *"><textarea className="w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" rows={2} value={item.description} onChange={(event) => { const items = [...mission.items]; items[index] = { ...items[index], description: event.target.value }; update("mission", { items }); }} /></Field></div>)}</div>
                   </div>
                 </div>
               )}
-
               {activeTab === "why_choose_us" && (
                 <div className="space-y-4">
+                  <Field label="Section Title *"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={whyChoose.title} onChange={(event) => update("why_choose_us", { title: event.target.value })} /></Field>
+                  <Field label="Subtitle"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={whyChoose.subtitle} onChange={(event) => update("why_choose_us", { subtitle: event.target.value })} /></Field>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={whyChoose.title}
-                      onChange={(e) => update("why_choose_us", { title: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={whyChoose.subtitle}
-                      onChange={(e) => update("why_choose_us", { subtitle: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium">Points (6 recommended)</label>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          update("why_choose_us", {
-                            points: [
-                              ...whyChoose.points,
-                              { icon: "Star", title: "", description: "" },
-                            ],
-                          })
-                        }
-                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Point
-                      </button>
-                    </div>
-                    <div className="space-y-6">
-                      {whyChoose.points.map((point, i) => (
-                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Point {i + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                update("why_choose_us", {
-                                  points: whyChoose.points.filter((_, j) => j !== i),
-                                })
-                              }
-                              className="text-destructive hover:text-destructive/70"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Icon (Lucide name)</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                placeholder="Zap, Award, Users..."
-                                value={point.icon}
-                                onChange={(e) => {
-                                  const updated = [...whyChoose.points];
-                                  updated[i] = { ...updated[i], icon: e.target.value };
-                                  update("why_choose_us", { points: updated });
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Title *</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                value={point.title}
-                                onChange={(e) => {
-                                  const updated = [...whyChoose.points];
-                                  updated[i] = { ...updated[i], title: e.target.value };
-                                  update("why_choose_us", { points: updated });
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Description *</label>
-                            <textarea
-                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm resize-none"
-                              rows={2}
-                              value={point.description}
-                              onChange={(e) => {
-                                const updated = [...whyChoose.points];
-                                updated[i] = { ...updated[i], description: e.target.value };
-                                update("why_choose_us", { points: updated });
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium">Points</label><TinyAction onClick={() => update("why_choose_us", { points: [...whyChoose.points, { icon: "Star", title: "", description: "" }] })}><Plus className="h-3.5 w-3.5" /> Add Point</TinyAction></div>
+                    <div className="space-y-6">{whyChoose.points.map((point, index) => <div key={index} className="space-y-3 rounded-lg border border-border p-4"><ItemHeader label={`Point ${index + 1}`} onDelete={() => update("why_choose_us", { points: whyChoose.points.filter((_, current) => current !== index) })} /><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Icon (Lucide)"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={point.icon} onChange={(event) => { const points = [...whyChoose.points]; points[index] = { ...points[index], icon: event.target.value }; update("why_choose_us", { points }); }} /></Field><Field label="Title *"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={point.title} onChange={(event) => { const points = [...whyChoose.points]; points[index] = { ...points[index], title: event.target.value }; update("why_choose_us", { points }); }} /></Field></div><Field label="Description *"><textarea className="w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" rows={2} value={point.description} onChange={(event) => { const points = [...whyChoose.points]; points[index] = { ...points[index], description: event.target.value }; update("why_choose_us", { points }); }} /></Field></div>)}</div>
                   </div>
                 </div>
               )}
-
               {activeTab === "core_team" && (
                 <div className="space-y-4">
+                  <Field label="Section Title *"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={coreTeam.title} onChange={(event) => update("core_team", { title: event.target.value })} /></Field>
+                  <Field label="Subtitle"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={coreTeam.subtitle} onChange={(event) => update("core_team", { subtitle: event.target.value })} /></Field>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={coreTeam.title}
-                      onChange={(e) => update("core_team", { title: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={coreTeam.subtitle}
-                      onChange={(e) => update("core_team", { subtitle: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium">Team Members (4 recommended)</label>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          update("core_team", {
-                            members: [
-                              ...coreTeam.members,
-                              { name: "", role: "", image: "", portfolioUrl: "" },
-                            ],
-                          })
-                        }
-                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Member
-                      </button>
-                    </div>
-                    <div className="space-y-6">
-                      {coreTeam.members.map((member, i) => (
-                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Member {i + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                update("core_team", {
-                                  members: coreTeam.members.filter((_, j) => j !== i),
-                                })
-                              }
-                              className="text-destructive hover:text-destructive/70"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Name *</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                value={member.name}
-                                onChange={(e) => {
-                                  const updated = [...coreTeam.members];
-                                  updated[i] = { ...updated[i], name: e.target.value };
-                                  update("core_team", { members: updated });
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Role *</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                value={member.role}
-                                onChange={(e) => {
-                                  const updated = [...coreTeam.members];
-                                  updated[i] = { ...updated[i], role: e.target.value };
-                                  update("core_team", { members: updated });
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Portfolio URL</label>
-                            <input
-                              className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                              placeholder="/portfolio"
-                              value={member.portfolioUrl}
-                              onChange={(e) => {
-                                const updated = [...coreTeam.members];
-                                updated[i] = { ...updated[i], portfolioUrl: e.target.value };
-                                update("core_team", { members: updated });
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium mb-1">Image</label>
-                            <ImageUpload
-                              value={member.image}
-                              onChange={(v) => {
-                                const updated = [...coreTeam.members];
-                                updated[i] = { ...updated[i], image: v };
-                                update("core_team", { members: updated });
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium">Team Members</label><TinyAction onClick={() => update("core_team", { members: [...coreTeam.members, { name: "", role: "", image: "", bio: "", skills: [], githubUrl: "", linkedinUrl: "", twitterUrl: "", portfolioUrl: "" }] })}><Plus className="h-3.5 w-3.5" /> Add Member</TinyAction></div>
+                    <div className="space-y-6">{coreTeam.members.map((member, index) => <div key={index} className="space-y-3 rounded-lg border border-border p-4"><ItemHeader label={`Member ${index + 1}`} onDelete={() => update("core_team", { members: coreTeam.members.filter((_, current) => current !== index) })} /><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Name *"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={member.name} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], name: event.target.value }; update("core_team", { members }); }} /></Field><Field label="Role *"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={member.role} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], role: event.target.value }; update("core_team", { members }); }} /></Field></div><Field label="Short Bio"><textarea className="w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" rows={3} value={member.bio ?? ""} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], bio: event.target.value }; update("core_team", { members }); }} /></Field><Field label="Skills (comma-separated)"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={(member.skills ?? []).join(", ")} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], skills: event.target.value.split(",").map((skill) => skill.trim()).filter(Boolean) }; update("core_team", { members }); }} /></Field><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"><Field label="LinkedIn URL"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={member.linkedinUrl ?? ""} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], linkedinUrl: event.target.value }; update("core_team", { members }); }} /></Field><Field label="GitHub URL"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={member.githubUrl ?? ""} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], githubUrl: event.target.value }; update("core_team", { members }); }} /></Field><Field label="X / Twitter URL"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={member.twitterUrl ?? ""} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], twitterUrl: event.target.value }; update("core_team", { members }); }} /></Field><Field label="Portfolio URL"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={member.portfolioUrl ?? ""} onChange={(event) => { const members = [...coreTeam.members]; members[index] = { ...members[index], portfolioUrl: event.target.value }; update("core_team", { members }); }} /></Field></div><Field label="Image"><ImageUpload value={member.image} onChange={(value) => { const members = [...coreTeam.members]; members[index] = { ...members[index], image: value }; update("core_team", { members }); }} /></Field></div>)}</div>
                   </div>
                 </div>
               )}
-
-              {activeTab === "social_links" && (
+              {activeTab === "collaboration_cta" && (
                 <div className="space-y-4">
+                  <Field label="Section Title *"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={collaborationCta.title} onChange={(event) => update("collaboration_cta", { title: event.target.value })} /></Field>
+                  <Field label="Subtitle *"><textarea className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm" rows={3} value={collaborationCta.subtitle} onChange={(event) => update("collaboration_cta", { subtitle: event.target.value })} /></Field>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Submit Button Text *"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={collaborationCta.submitText} onChange={(event) => update("collaboration_cta", { submitText: event.target.value })} /></Field><Field label="Success Message *"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={collaborationCta.successMessage} onChange={(event) => update("collaboration_cta", { successMessage: event.target.value })} /></Field></div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Section Title *</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={socialLinks.title}
-                      onChange={(e) => update("social_links", { title: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Subtitle</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={socialLinks.subtitle}
-                      onChange={(e) => update("social_links", { subtitle: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium">Social Links</label>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          update("social_links", {
-                            links: [
-                              ...socialLinks.links,
-                              { platform: "", url: "", icon: "Globe" },
-                            ],
-                          })
-                        }
-                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Link
-                      </button>
-                    </div>
-                    <div className="space-y-6">
-                      {socialLinks.links.map((link, i) => (
-                        <div key={i} className="p-4 rounded-lg border border-border space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Link {i + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                update("social_links", {
-                                  links: socialLinks.links.filter((_, j) => j !== i),
-                                })
-                              }
-                              className="text-destructive hover:text-destructive/70"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Platform *</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                placeholder="YouTube, Instagram..."
-                                value={link.platform}
-                                onChange={(e) => {
-                                  const updated = [...socialLinks.links];
-                                  updated[i] = { ...updated[i], platform: e.target.value };
-                                  update("social_links", { links: updated });
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium mb-1">URL *</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                placeholder="https://..."
-                                value={link.url}
-                                onChange={(e) => {
-                                  const updated = [...socialLinks.links];
-                                  updated[i] = { ...updated[i], url: e.target.value };
-                                  update("social_links", { links: updated });
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Icon (Lucide)</label>
-                              <input
-                                className="w-full px-2.5 py-1.5 rounded-md border border-input bg-background text-sm"
-                                placeholder="Youtube, Instagram..."
-                                value={link.icon}
-                                onChange={(e) => {
-                                  const updated = [...socialLinks.links];
-                                  updated[i] = { ...updated[i], icon: e.target.value };
-                                  update("social_links", { links: updated });
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium">Highlight Cards</label><TinyAction onClick={() => update("collaboration_cta", { highlights: [...collaborationCta.highlights, { icon: "Sparkles", title: "", description: "" }] })}><Plus className="h-3.5 w-3.5" /> Add Highlight</TinyAction></div>
+                    <div className="space-y-6">{collaborationCta.highlights.map((highlight, index) => <div key={index} className="space-y-3 rounded-lg border border-border p-4"><ItemHeader label={`Highlight ${index + 1}`} onDelete={() => update("collaboration_cta", { highlights: collaborationCta.highlights.filter((_, current) => current !== index) })} /><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Icon (Lucide)"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={highlight.icon} onChange={(event) => { const highlights = [...collaborationCta.highlights]; highlights[index] = { ...highlights[index], icon: event.target.value }; update("collaboration_cta", { highlights }); }} /></Field><Field label="Title *"><input className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" value={highlight.title} onChange={(event) => { const highlights = [...collaborationCta.highlights]; highlights[index] = { ...highlights[index], title: event.target.value }; update("collaboration_cta", { highlights }); }} /></Field></div><Field label="Description *"><textarea className="w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-sm" rows={2} value={highlight.description} onChange={(event) => { const highlights = [...collaborationCta.highlights]; highlights[index] = { ...highlights[index], description: event.target.value }; update("collaboration_cta", { highlights }); }} /></Field></div>)}</div>
                   </div>
                 </div>
               )}
-
               {activeTab === "seo" && (
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Meta Title</label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={seo.title}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          seo: { ...seo, title: e.target.value },
-                        }))
-                      }
-                      placeholder="About RaYnk Labs — Our Story, Mission & Team"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Meta Description</label>
-                    <textarea
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm resize-none"
-                      rows={3}
-                      value={seo.description}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          seo: { ...seo, description: e.target.value },
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">
-                      Keywords (comma-separated)
-                    </label>
-                    <input
-                      className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
-                      value={seo.keywords}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          seo: { ...seo, keywords: e.target.value },
-                        }))
-                      }
-                      placeholder="raynk labs, about us, digital agency"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">OG Image</label>
-                    <ImageUpload
-                      value={seo.ogImage}
-                      onChange={(v) =>
-                        setFormData((prev) => ({ ...prev, seo: { ...seo, ogImage: v } }))
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="noIndex"
-                      checked={seo.noIndex}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          seo: { ...seo, noIndex: e.target.checked },
-                        }))
-                      }
-                      className="w-4 h-4 rounded border-border"
-                    />
-                    <label htmlFor="noIndex" className="text-sm font-medium">
-                      No Index (hide from search engines)
-                    </label>
-                  </div>
+                  <Field label="Meta Title"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={seo.title} onChange={(event) => setFormData((prev) => ({ ...prev, seo: { ...seo, title: event.target.value } }))} placeholder="About RaYnk Labs - Story, Mission, Team & Collaboration" /></Field>
+                  <Field label="Meta Description"><textarea className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm" rows={3} value={seo.description} onChange={(event) => setFormData((prev) => ({ ...prev, seo: { ...seo, description: event.target.value } }))} /></Field>
+                  <Field label="Keywords (comma-separated)"><input className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={seo.keywords} onChange={(event) => setFormData((prev) => ({ ...prev, seo: { ...seo, keywords: event.target.value } }))} placeholder="raynk labs, about us, startup partner, digital studio" /></Field>
+                  <Field label="OG Image"><ImageUpload value={seo.ogImage} onChange={(value) => setFormData((prev) => ({ ...prev, seo: { ...seo, ogImage: value } }))} /></Field>
+                  <div className="flex items-center gap-3"><input type="checkbox" id="noIndex" checked={seo.noIndex} onChange={(event) => setFormData((prev) => ({ ...prev, seo: { ...seo, noIndex: event.target.checked } }))} className="h-4 w-4 rounded border-border" /><label htmlFor="noIndex" className="text-sm font-medium">No Index (hide from search engines)</label></div>
                 </div>
               )}
             </>
@@ -722,23 +176,25 @@ export default function AboutPageManager() {
         </div>
       </div>
 
-      <div className="flex justify-end pb-6">
-        <button
-          onClick={handleSave}
-          disabled={loading || loadingData}
-          className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground rounded-lg font-medium transition"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" /> Save Changes
-            </>
-          )}
-        </button>
-      </div>
+      <div className="flex justify-end pb-6"><SaveButton loading={loading} loadingData={loadingData} onClick={handleSave} /></div>
     </div>
   );
 }
+
+function SaveButton({ loading, loadingData, onClick }: { loading: boolean; loadingData: boolean; onClick: () => void }) {
+  return <button onClick={onClick} disabled={loading || loadingData} className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50">{loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Changes</>}</button>;
+}
+
+function TinyAction({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return <button type="button" onClick={onClick} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80">{children}</button>;
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return <div><label className="mb-1.5 block text-sm font-medium">{label}</label>{children}</div>;
+}
+
+function ItemHeader({ label, onDelete }: { label: string; onDelete: () => void }) {
+  return <div className="flex items-center justify-between"><span className="text-sm font-medium text-muted-foreground">{label}</span><button type="button" onClick={onDelete} className="text-destructive hover:text-destructive/70"><Trash2 className="h-4 w-4" /></button></div>;
+}
+
+

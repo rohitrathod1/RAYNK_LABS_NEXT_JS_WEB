@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import type { AboutPageData } from "../types";
 import { Reveal } from "./shared/reveal";
 
@@ -16,7 +17,7 @@ function AnimatedNumber({ value }: { value: number }) {
       ([entry]) => {
         if (!entry.isIntersecting) return;
 
-        const duration = 900;
+        const duration = 1000;
         const start = performance.now();
 
         function tick(now: number) {
@@ -63,26 +64,36 @@ export function StatsSection({ data }: { data: AboutPageData }) {
   ];
 
   return (
-    <section className="section-padding bg-primary text-primary-foreground">
+    <section className="section-padding bg-background">
       <div className="section-container">
-        <Reveal className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <article
-              key={stat.label}
-              className="rounded-2xl border border-primary-foreground/15 bg-primary-foreground/10 p-6 text-center backdrop-blur transition hover:-translate-y-1 hover:bg-primary-foreground/15"
-            >
-              <p className="text-4xl font-black tracking-tight text-primary-foreground sm:text-5xl">
-                <AnimatedNumber value={stat.value} />
-                {stat.suffix}
-              </p>
-              <p className="mt-3 text-sm font-medium text-primary-foreground/75">
-                {stat.label}
-              </p>
-            </article>
-          ))}
-        </Reveal>
+        <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.1),transparent_28%),rgba(255,255,255,0.02)] p-6 shadow-[0_24px_80px_-44px_rgba(15,23,42,1)] backdrop-blur-xl sm:p-8 lg:p-10">
+          <Reveal className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat, index) => (
+              <motion.article
+                key={stat.label}
+                whileHover={{ y: -6 }}
+                transition={{ type: "spring", stiffness: 240, damping: 18 }}
+                className="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-background/40 p-6 backdrop-blur-xl"
+              >
+                <div className="absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_45%)]" />
+                <div className="absolute inset-0 rounded-[1.75rem] p-px [background:linear-gradient(135deg,rgba(59,130,246,0.5),rgba(255,255,255,0.04),rgba(168,85,247,0.38))]">
+                  <div className="h-full w-full rounded-[1.65rem] bg-transparent" />
+                </div>
+                <div className="relative">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">
+                    0{index + 1}
+                  </p>
+                  <p className="mt-5 text-4xl font-black tracking-[-0.05em] text-foreground sm:text-5xl">
+                    <AnimatedNumber value={stat.value} />
+                    {stat.suffix}
+                  </p>
+                  <p className="mt-3 text-sm font-medium text-muted-foreground">{stat.label}</p>
+                </div>
+              </motion.article>
+            ))}
+          </Reveal>
+        </div>
       </div>
     </section>
   );
 }
-

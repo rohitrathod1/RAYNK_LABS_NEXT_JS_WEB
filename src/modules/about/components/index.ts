@@ -6,3 +6,4 @@ export { StatsSection } from "./stats";
 export { WhyChooseSection } from "./why-choose";
 export { TeamSection } from "./team";
 export { SocialLinksSection } from "./social";
+export { CollaborationSection } from "./collaboration";

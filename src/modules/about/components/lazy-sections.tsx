@@ -31,9 +31,9 @@ const TeamSection = dynamic(() => import("./team").then((module) => module.TeamS
   ssr: false,
 });
 
-const SocialLinksSection = dynamic(
-  () => import("./social").then((module) => module.SocialLinksSection),
-  { loading: () => <AboutGridSkeleton cards={3} />, ssr: false },
+const CollaborationSection = dynamic(
+  () => import("./collaboration").then((module) => module.CollaborationSection),
+  { loading: () => <AboutSplitSkeleton />, ssr: false },
 );
 
 export function LazyAboutSections({ data }: { data: AboutPageData }) {
@@ -79,12 +79,12 @@ export function LazyAboutSections({ data }: { data: AboutPageData }) {
       node: <TeamSection data={data.core_team} />,
     },
     {
-      key: "social",
-      id: "section7-about-connect",
-      aliases: ["connect"],
-      fallback: <AboutGridSkeleton cards={3} />,
-      minHeight: 360,
-      node: <SocialLinksSection data={data.social_links} />,
+      key: "collaboration",
+      id: "section7-about-collaborate",
+      aliases: ["collaborate", "contact"],
+      fallback: <AboutSplitSkeleton />,
+      minHeight: 620,
+      node: <CollaborationSection data={data.collaboration_cta} />,
     },
   ];
 

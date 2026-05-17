@@ -3,12 +3,12 @@
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { LazyOnView } from "@/components/shared/lazy-on-view";
-import { SectionSkeleton } from "@/components/common/section-skeleton";
 import type { TeamMember, TeamPageData } from "../types";
+import { TeamShowcaseSkeleton } from "./team-showcase";
 
 const TeamShowcase = dynamic(
   () => import("./team-showcase").then((module) => module.TeamShowcase),
-  { loading: () => <SectionSkeleton /> },
+  { loading: () => <TeamShowcaseSkeleton /> },
 );
 
 export function LazyTeamSections({
@@ -19,8 +19,8 @@ export function LazyTeamSections({
   members: TeamMember[];
 }) {
   return (
-    <LazyOnView fallback={<SectionSkeleton />} rootMargin="450px" minHeight={760}>
-      <Suspense fallback={<SectionSkeleton />}>
+    <LazyOnView fallback={<TeamShowcaseSkeleton />} rootMargin="450px" minHeight={1000}>
+      <Suspense fallback={<TeamShowcaseSkeleton />}>
         <TeamShowcase
           intro={data.intro}
           membersSection={data.team_members}
@@ -32,4 +32,3 @@ export function LazyTeamSections({
     </LazyOnView>
   );
 }
-

@@ -295,7 +295,7 @@ export default function ServicesPageManager() {
                             ...servicesList,
                             services: [
                               ...servicesList.services,
-                              { icon: "", title: "", description: "", category: "", ctaText: "Learn More", ctaHref: "/contact" },
+                              { icon: "", title: "", description: "", category: "", ctaText: "Get Service", ctaHref: "/contact" },
                             ],
                           })
                         }
@@ -753,3 +753,4 @@ export default function ServicesPageManager() {
     </div>
   );
 }
+

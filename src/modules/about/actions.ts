@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/middleware/permission";
 import { ok, fail } from "@/lib/action-response";
 import { getErrorMessage } from "@/lib/errors";
-import { db } from "@/lib/db";
 import {
   heroSchema,
   storySchema,
@@ -12,10 +11,11 @@ import {
   whyChooseSchema,
   coreTeamSchema,
   socialLinksSchema,
+  collaborationCtaSchema,
   seoSchema,
 } from "./validations";
 import { upsertAboutSection } from "./data/mutations";
-import { upsertLegacyPageSeo } from '@/modules/seo/data/mutations';
+import { upsertLegacyPageSeo } from "@/modules/seo/data/mutations";
 
 function revalidateAbout() {
   revalidatePath("/about");
@@ -87,6 +87,18 @@ export async function updateAboutSocialLinks(raw: unknown) {
     await requirePermission("EDIT_ABOUT");
     const data = socialLinksSchema.parse(raw);
     await upsertAboutSection("social_links", data);
+    revalidateAbout();
+    return ok(null);
+  } catch (err) {
+    return fail(getErrorMessage(err));
+  }
+}
+
+export async function updateAboutCollaborationCta(raw: unknown) {
+  try {
+    await requirePermission("EDIT_ABOUT");
+    const data = collaborationCtaSchema.parse(raw);
+    await upsertAboutSection("collaboration_cta", data);
     revalidateAbout();
     return ok(null);
   } catch (err) {

@@ -38,10 +38,10 @@ export interface TeamMember {
   role: string;
   image: string;
   bio?: string;
+  skills?: string[];
   githubUrl?: string;
   linkedinUrl?: string;
-  instagramUrl?: string;
-  youtubeUrl?: string;
+  twitterUrl?: string;
   portfolioUrl?: string;
 }
 
@@ -63,6 +63,20 @@ export interface SocialLinksSection {
   links: SocialLink[];
 }
 
+export interface CollaborationHighlight {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface CollaborationCtaSection {
+  title: string;
+  subtitle: string;
+  submitText: string;
+  successMessage: string;
+  highlights: CollaborationHighlight[];
+}
+
 export interface AboutPageData {
   hero: HeroSection;
   story: StorySection;
@@ -70,4 +84,5 @@ export interface AboutPageData {
   why_choose_us: WhyChooseSection;
   core_team: CoreTeamSection;
   social_links: SocialLinksSection;
+  collaboration_cta: CollaborationCtaSection;
 }

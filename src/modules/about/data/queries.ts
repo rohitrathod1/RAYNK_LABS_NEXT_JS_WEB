@@ -9,15 +9,21 @@ export async function getAboutPageData(): Promise<AboutPageData> {
   });
 
   const data: Record<string, unknown> = {};
-  for (const s of sections) data[s.section] = s.content;
+  for (const section of sections) data[section.section] = section.content;
 
   return {
     hero: (data.hero as AboutPageData["hero"]) ?? defaultAboutContent.hero,
     story: (data.story as AboutPageData["story"]) ?? defaultAboutContent.story,
     mission: (data.mission as AboutPageData["mission"]) ?? defaultAboutContent.mission,
-    why_choose_us: (data.why_choose_us as AboutPageData["why_choose_us"]) ?? defaultAboutContent.why_choose_us,
-    core_team: (data.core_team as AboutPageData["core_team"]) ?? defaultAboutContent.core_team,
-    social_links: (data.social_links as AboutPageData["social_links"]) ?? defaultAboutContent.social_links,
+    why_choose_us:
+      (data.why_choose_us as AboutPageData["why_choose_us"]) ?? defaultAboutContent.why_choose_us,
+    core_team:
+      (data.core_team as AboutPageData["core_team"]) ?? defaultAboutContent.core_team,
+    social_links:
+      (data.social_links as AboutPageData["social_links"]) ?? defaultAboutContent.social_links,
+    collaboration_cta:
+      (data.collaboration_cta as AboutPageData["collaboration_cta"]) ??
+      defaultAboutContent.collaboration_cta,
   };
 }
 
