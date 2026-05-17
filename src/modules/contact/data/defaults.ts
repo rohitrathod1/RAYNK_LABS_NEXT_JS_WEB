@@ -1,10 +1,11 @@
 import { definePageSeo } from "@/modules/seo";
 import type { ContactPageData } from "../types";
+import { CONTACT_MAP } from "../constants";
 
 export const defaultSeo = definePageSeo({
   metaTitle: "Contact RaYnk Labs - Start Your Project",
-  metaDescription: "Contact RaYnk Labs to discuss websites, software, branding, SEO, or digital product ideas for your business.",
-  keywords: ["contact raynk labs", "get in touch", "project inquiry", "web development contact"],
+  metaDescription: "Talk to RaYnk Labs about web products, branding, growth, or digital systems with a premium, fast-moving execution team.",
+  keywords: ["contact raynk labs", "get in touch", "project inquiry", "web development contact", "digital studio contact"],
   ogTitle: "Contact RaYnk Labs",
   ogDescription: "Start your next digital project with RaYnk Labs.",
   ogImage: "og-contact.png",
@@ -13,57 +14,59 @@ export const defaultSeo = definePageSeo({
   structuredData: { "@type": "ContactPage", name: "Contact RaYnk Labs" },
   robots: "index,follow",
 });
+
 export const defaultContactContent: ContactPageData = {
   hero: {
     title: "Contact Us",
-    subtitle: "We'd love to hear from you. Reach out to discuss your project or ask any questions.",
-    backgroundImage: "placeholder.png",
+    subtitle: "Tell us what you're building, where you’re stuck, or what kind of momentum you need next. We’ll help you turn it into a clear plan.",
+    backgroundImage: "/about/hero-bg.svg",
   },
   contact_info: {
     title: "Get in Touch",
-    subtitle: "Here's how you can reach us",
+    subtitle: "Reach us through the channel that fits your pace best.",
     items: [
-      { icon: "MapPin", label: "Address", value: "123 Tech Park, Bangalore, India" },
+      { icon: "MapPin", label: "Location", value: CONTACT_MAP.locationName },
       { icon: "Phone", label: "Phone", value: "+91 98765 43210" },
       { icon: "Mail", label: "Email", value: "hello@raynklabs.com" },
+      { icon: "Clock", label: "Timing", value: "Mon - Fri · 9:00 AM - 6:00 PM" },
     ],
-    workingHours: "Mon - Fri: 9:00 AM - 6:00 PM",
+    workingHours: "Typical response within one business day for serious project inquiries.",
   },
   contact_form: {
     title: "Send us a Message",
-    subtitle: "Fill out the form below and we'll get back to you soon",
+    subtitle: "Share your goal, current stage, and the kind of result you want. We'll come back with the right next step.",
     submitText: "Send Message",
   },
   map: {
     title: "Find Us",
-    embedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0!2d77.0!3d13.0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM0PCsM!5e0!3m2!1sen!2sin!4v0",
+    embedUrl: CONTACT_MAP.embedUrl,
   },
   faq: {
     title: "Frequently Asked Questions",
-    subtitle: "Find answers to common questions",
+    subtitle: "Find quick answers before we talk in detail.",
     items: [
       {
         question: "What services do you offer?",
-        answer: "We offer full-stack web development, mobile app development, UI/UX design, and digital consulting services.",
+        answer: "We work across websites, full-stack product builds, UI/UX design, branding systems, SEO, and practical digital growth support.",
       },
       {
         question: "How long does a typical project take?",
-        answer: "Project timelines vary based on complexity. A simple website may take 2-4 weeks, while complex applications can take 3-6 months.",
+        answer: "Smaller launches can move in a few weeks, while deeper product engagements typically run across multiple phases. We scope timelines clearly before kickoff.",
       },
       {
         question: "Do you provide ongoing support?",
-        answer: "Yes, we offer maintenance and support packages to keep your application running smoothly after launch.",
+        answer: "Yes. We can stay involved for maintenance, SEO, iteration cycles, analytics, and roadmap-based product improvements after launch.",
       },
       {
         question: "Can you work with existing projects?",
-        answer: "Absolutely! We can join existing projects, perform audits, and help improve or extend your current application.",
+        answer: "Absolutely. We often audit existing builds, improve design systems, repair performance issues, and extend products that already have a live user base.",
       },
     ],
   },
   contact_cta: {
     title: "Start Your Project Today",
-    subtitle: "Ready to bring your idea to life? Let's discuss how we can help you succeed.",
-    buttonText: "Get Started",
-    buttonLink: "/contact",
+    subtitle: "If the idea matters, let's get it moving with clear communication and a thoughtful build plan.",
+    buttonText: "Start Your Project",
+    buttonLink: "/contact#section2-contact-form",
   },
 };

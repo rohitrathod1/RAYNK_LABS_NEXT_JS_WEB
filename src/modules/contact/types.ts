@@ -67,3 +67,8 @@ export interface ContactInquiryInput {
   message: string;
   website?: string;
 }
+
+export interface ContactSocialLink {
+  label: string;
+  href: string;
+}

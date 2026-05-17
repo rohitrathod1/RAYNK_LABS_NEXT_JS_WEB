@@ -35,3 +35,18 @@ export const CONTACT_TIMELINES = [
   'Flexible',
 ] as const;
 
+export const CONTACT_MAP = {
+  locationName: 'Akal University',
+  fullAddress: 'Akal University, Talwandi Sabo, Bathinda, Punjab, India',
+  googleMapsUrl: 'https://maps.app.goo.gl/B1obe57EuZzM1c3i8',
+  embedUrl: 'https://www.google.com/maps?q=Akal%20University&z=15&output=embed',
+  travelNote: 'Available for remote collaborations, campus meetings, and scheduled discovery sessions.',
+} as const;
+
+export const CONTACT_SOCIAL_LINKS = [
+  { label: 'GitHub', href: 'https://github.com' },
+  { label: 'LinkedIn', href: 'https://linkedin.com' },
+  { label: 'Instagram', href: 'https://instagram.com' },
+  { label: 'YouTube', href: 'https://youtube.com' },
+  { label: 'Website', href: '/' },
+] as const;

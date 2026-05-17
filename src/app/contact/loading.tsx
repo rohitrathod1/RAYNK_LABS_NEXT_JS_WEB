@@ -1,6 +1,11 @@
-import { SectionSkeleton } from "@/components/common/section-skeleton";
+import { HeroSectionSkeleton } from "@/modules/contact/components/hero";
+import { ContactExperienceSkeleton } from "@/modules/contact/components/contact-experience";
 
 export default function ContactLoading() {
-  return <SectionSkeleton />;
+  return (
+    <main>
+      <HeroSectionSkeleton />
+      <ContactExperienceSkeleton />
+    </main>
+  );
 }
-

@@ -1,4 +1,4 @@
-import { definePageSeo } from "@/modules/seo";
+﻿import { definePageSeo } from "@/modules/seo";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import type { AboutPageData } from "../types";
 
@@ -188,7 +188,7 @@ export const defaultAboutContent: AboutPageData = {
     ],
   },
   collaboration_cta: {
-    title: "Let�s Build Something That Actually Moves The Needle",
+    title: "Let’s Build Something That Actually Moves The Needle",
     subtitle:
       "Bring us in for a product push, a sharper website, partnership exploration, or a thoughtful conversation about what your next digital move should be.",
     submitText: "Send Inquiry",
@@ -212,3 +212,4 @@ export const defaultAboutContent: AboutPageData = {
     ],
   },
 };
+
