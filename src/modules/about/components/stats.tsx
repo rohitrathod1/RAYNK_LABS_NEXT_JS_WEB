@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -66,28 +66,28 @@ export function StatsSection({ data }: { data: AboutPageData }) {
   return (
     <section className="section-padding bg-background">
       <div className="section-container">
-        <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.1),transparent_28%),rgba(255,255,255,0.02)] p-6 shadow-[0_24px_80px_-44px_rgba(15,23,42,1)] backdrop-blur-xl sm:p-8 lg:p-10">
+        <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.1),transparent_28%),rgba(255,255,255,0.02)] p-4 shadow-[0_24px_80px_-44px_rgba(15,23,42,1)] backdrop-blur-xl sm:p-6 lg:p-10">
           <Reveal className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {stats.map((stat, index) => (
               <motion.article
                 key={stat.label}
                 whileHover={{ y: -6 }}
                 transition={{ type: "spring", stiffness: 240, damping: 18 }}
-                className="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-background/40 p-6 backdrop-blur-xl"
+                className="group relative min-w-0 overflow-hidden rounded-[1.75rem] border border-white/10 bg-background/40 p-5 backdrop-blur-xl sm:p-6"
               >
-                <div className="absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_45%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_45%)] opacity-0 transition duration-300 group-hover:opacity-100" />
                 <div className="absolute inset-0 rounded-[1.75rem] p-px [background:linear-gradient(135deg,rgba(59,130,246,0.5),rgba(255,255,255,0.04),rgba(168,85,247,0.38))]">
                   <div className="h-full w-full rounded-[1.65rem] bg-transparent" />
                 </div>
-                <div className="relative">
+                <div className="relative min-w-0">
                   <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">
                     0{index + 1}
                   </p>
-                  <p className="mt-5 text-4xl font-black tracking-[-0.05em] text-foreground sm:text-5xl">
+                  <p className="mt-4 break-words text-3xl font-black tracking-[-0.05em] text-foreground sm:mt-5 sm:text-4xl lg:text-5xl">
                     <AnimatedNumber value={stat.value} />
                     {stat.suffix}
                   </p>
-                  <p className="mt-3 text-sm font-medium text-muted-foreground">{stat.label}</p>
+                  <p className="mt-3 text-sm font-medium leading-6 text-muted-foreground">{stat.label}</p>
                 </div>
               </motion.article>
             ))}

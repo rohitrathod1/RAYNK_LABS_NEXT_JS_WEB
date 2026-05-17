@@ -56,7 +56,7 @@ export const defaultTeamContent: TeamPageData = {
         icon: "Users",
         title: "Collaboration",
         description:
-          "We work in the open, challenge ideas with respect, and build better outcomes by leaning into each other’s strengths.",
+          "We work in the open, challenge ideas with respect, and build better outcomes by leaning into each otherï¿½s strengths.",
       },
       {
         icon: "Lightbulb",

@@ -445,7 +445,7 @@ export function TeamShowcase({ intro, membersSection, values, cta, members }: Te
               <div className="space-y-5 p-6 sm:p-8">
                 <DialogHeader className="space-y-2 text-left">
                   <DialogTitle className="text-3xl font-black">{previewMember.displayName}</DialogTitle>
-                  <DialogDescription className="text-sm text-primary">{getRoleLabel(previewMember.role)} · {getDepartment(previewMember)}</DialogDescription>
+                  <DialogDescription className="text-sm text-primary">{getRoleLabel(previewMember.role)} ï¿½ {getDepartment(previewMember)}</DialogDescription>
                 </DialogHeader>
                 {previewMember.bio ? <p className="text-sm leading-7 text-white/65 sm:text-base">{previewMember.bio}</p> : null}
                 {previewMember.expertiseTags?.length ? (

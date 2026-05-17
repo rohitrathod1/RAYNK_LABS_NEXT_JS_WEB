@@ -47,10 +47,10 @@ export const defaultAboutContent: AboutPageData = {
     title: "Who We Are",
     subtitle:
       "A product-minded digital team helping ambitious brands turn momentum into durable growth.",
-    backgroundImage: "/about/hero-bg.svg",
+    backgroundImage: "",
   },
   story: {
-    image: "/about/story-studio.svg",
+    image: "",
     content:
       "RaYnk Labs began with a simple conviction: modern businesses deserve digital systems that feel as thoughtful as the brands they represent. We started by helping fast-moving teams close the gap between bold ideas and reliable execution.\n\nOver time, that mission evolved into a sharper operating style. We pair product thinking, design clarity, and engineering discipline so launches feel intentional, not improvised. Instead of shipping disconnected assets, we build momentum across brand, web, and growth surfaces together.\n\nToday, we work like a compact strategic partner for founders, operators, and growing companies. Our focus stays the same: create digital experiences that look premium, move fast, and keep working long after the launch week glow fades.",
   },
@@ -127,7 +127,7 @@ export const defaultAboutContent: AboutPageData = {
       {
         name: "Rohit Rathod",
         role: "Founder & Product Lead",
-        image: "/about/team-rohit.svg",
+        image: "",
         bio: "Rohit blends product direction, systems thinking, and execution oversight to keep ambitious digital work grounded in business outcomes.",
         skills: ["Product Strategy", "Web Architecture", "Growth Systems"],
         linkedinUrl: "https://linkedin.com",
@@ -138,7 +138,7 @@ export const defaultAboutContent: AboutPageData = {
       {
         name: "Priya Sharma",
         role: "Design Director",
-        image: "/about/team-priya.svg",
+        image: "",
         bio: "Priya turns complex ideas into calm, modern interfaces with a sharp eye for hierarchy, usability, and visual trust.",
         skills: ["UI Systems", "Brand Experience", "Design Ops"],
         linkedinUrl: "https://linkedin.com",
@@ -147,7 +147,7 @@ export const defaultAboutContent: AboutPageData = {
       {
         name: "Amit Patel",
         role: "Engineering Lead",
-        image: "/about/team-amit.svg",
+        image: "",
         bio: "Amit focuses on stable implementation, scalable frontends, and the kind of engineering choices that age well under real traffic.",
         skills: ["Next.js", "Performance", "Platform Delivery"],
         linkedinUrl: "https://linkedin.com",
@@ -157,7 +157,7 @@ export const defaultAboutContent: AboutPageData = {
       {
         name: "Sneha Singh",
         role: "Growth & Client Success",
-        image: "/about/team-sneha.svg",
+        image: "",
         bio: "Sneha keeps delivery aligned with client goals, translating feedback into focused next steps and stronger launch outcomes.",
         skills: ["Client Strategy", "Launch Planning", "Retention"],
         linkedinUrl: "https://linkedin.com",
@@ -188,7 +188,7 @@ export const defaultAboutContent: AboutPageData = {
     ],
   },
   collaboration_cta: {
-    title: "Let’s Build Something That Actually Moves The Needle",
+    title: "Let's Build Something That Actually Moves The Needle",
     subtitle:
       "Bring us in for a product push, a sharper website, partnership exploration, or a thoughtful conversation about what your next digital move should be.",
     submitText: "Send Inquiry",
@@ -212,4 +212,3 @@ export const defaultAboutContent: AboutPageData = {
     ],
   },
 };
-

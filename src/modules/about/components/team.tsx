@@ -1,13 +1,12 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import { ArrowUpRight, Globe } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { SafeImage } from "@/components/shared/safe-image";
 import { ABOUT_IMAGE_SIZES } from "../constants";
 import type { CoreTeamSection } from "../types";
-import { resolveAboutImageSrc } from "./shared/image-url";
 import { Reveal } from "./shared/reveal";
 import { AboutSectionHeading } from "./shared/section-heading";
 
@@ -32,27 +31,71 @@ export function TeamSection({ data }: { data: CoreTeamSection }) {
 
               return (
                 <Reveal key={`${member.name}-${index}`} delay={index * 0.05}>
-                  <motion.article whileHover={{ y: -8 }} transition={{ type: "spring", stiffness: 250, damping: 18 }} className="group relative h-full overflow-hidden rounded-[2rem] border border-white/10 bg-background/90 shadow-[0_22px_70px_-44px_rgba(15,23,42,1)]">
+                  <motion.article
+                    whileHover={{ y: -8 }}
+                    transition={{ type: "spring", stiffness: 250, damping: 18 }}
+                    className="group relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-background/90 shadow-[0_22px_70px_-44px_rgba(15,23,42,1)]"
+                  >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_48%),linear-gradient(180deg,transparent,rgba(168,85,247,0.08))] opacity-0 transition duration-500 group-hover:opacity-100" />
-                    <div className="absolute inset-0 rounded-[2rem] p-px opacity-60 transition duration-500 group-hover:opacity-100 [background:linear-gradient(160deg,rgba(59,130,246,0.5),rgba(255,255,255,0.06),rgba(168,85,247,0.32))]"><div className="h-full w-full rounded-[calc(2rem-1px)] bg-transparent" /></div>
-                    <div className="relative h-72 overflow-hidden bg-muted">
-                      <Image src={resolveAboutImageSrc(member.image)} alt={member.name} fill sizes={ABOUT_IMAGE_SIZES.card} className="object-cover grayscale transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 rounded-[2rem] p-px opacity-60 transition duration-500 group-hover:opacity-100 [background:linear-gradient(160deg,rgba(59,130,246,0.5),rgba(255,255,255,0.06),rgba(168,85,247,0.32))]">
+                      <div className="h-full w-full rounded-[calc(2rem-1px)] bg-transparent" />
+                    </div>
+                    <div className="relative aspect-[4/4.2] overflow-hidden bg-muted sm:aspect-[4/4.6] xl:aspect-[4/4.8]">
+                      <SafeImage
+                        src={member.image || "placeholder.png"}
+                        alt={member.name}
+                        fill
+                        sizes={ABOUT_IMAGE_SIZES.card}
+                        className="object-cover grayscale transition-transform duration-700 group-hover:scale-105"
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
                       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
                     </div>
-                    <div className="relative p-6">
+                    <div className="relative flex flex-1 flex-col p-5 sm:p-6">
                       <div className="flex items-start justify-between gap-3">
-                        <div>
+                        <div className="min-w-0">
                           <h3 className="text-xl font-semibold tracking-tight text-foreground">{member.name}</h3>
                           <p className="mt-1 text-sm font-medium text-primary">{member.role}</p>
                         </div>
-                        <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Team</div>
+                        <div className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Team</div>
                       </div>
                       {member.bio ? <p className="mt-4 text-sm leading-6 text-muted-foreground">{member.bio}</p> : null}
-                      {member.skills?.length ? <div className="mt-5 flex flex-wrap gap-2">{member.skills.map((skill) => <span key={skill} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/70">{skill}</span>)}</div> : null}
-                      <div className="mt-6 flex items-center justify-between gap-3">
-                        <div className="flex flex-wrap gap-2">{socialLinks.map(({ href, label, icon }) => <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-muted-foreground transition duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`${member.name} on ${label}`}>{icon}</a>)}</div>
-                        {member.portfolioUrl ? <Link href={member.portfolioUrl} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground transition duration-300 hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">View Portfolio<ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link> : null}
+                      {member.skills?.length ? (
+                        <div className="mt-5 flex flex-wrap gap-2">
+                          {member.skills.map((skill) => (
+                            <span
+                              key={skill}
+                              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/70"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="mt-6 flex flex-1 flex-col justify-end gap-4">
+                        <div className="flex flex-wrap gap-2">
+                          {socialLinks.map(({ href, label, icon }) => (
+                            <a
+                              key={label}
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-muted-foreground transition duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                              aria-label={`${member.name} on ${label}`}
+                            >
+                              {icon}
+                            </a>
+                          ))}
+                        </div>
+                        {member.portfolioUrl ? (
+                          <Link
+                            href={member.portfolioUrl}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground transition duration-300 hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:w-auto sm:justify-start"
+                          >
+                            View Portfolio
+                            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                          </Link>
+                        ) : null}
                       </div>
                     </div>
                   </motion.article>
@@ -73,5 +116,9 @@ function BrandIcon({ name }: { name: "github" | "linkedin" | "x" }) {
     x: "M18.9 2H22l-6.77 7.73L23 22h-6.1l-4.78-6.22L6.67 22H3.55l7.24-8.28L1 2h6.26l4.32 5.7L18.9 2Zm-1.07 18h1.69L6.34 3.9H4.53L17.83 20Z",
   };
 
-  return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d={paths[name]} /></svg>;
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d={paths[name]} />
+    </svg>
+  );
 }

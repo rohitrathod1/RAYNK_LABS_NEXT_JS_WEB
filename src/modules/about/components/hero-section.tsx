@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, type MouseEvent } from "react";
 import Image from "next/image";
@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isPlaceholderValue } from "@/components/shared/safe-image";
 import { ABOUT_IMAGE_SIZES } from "../constants";
 import type { HeroSection as HeroSectionData } from "../types";
 import { resolveAboutImageSrc } from "./shared/image-url";
@@ -37,6 +38,7 @@ export function HeroSection({ data }: { data: HeroSectionData }) {
   const smoothY = useSpring(mouseY, { stiffness: 120, damping: 18, mass: 0.4 });
   const parallaxX = useTransform(smoothX, [-1, 1], reducedMotion ? [0, 0] : [-24, 24]);
   const parallaxY = useTransform(smoothY, [-1, 1], reducedMotion ? [0, 0] : [-18, 18]);
+  const hasBackgroundImage = !isPlaceholderValue(data.backgroundImage);
 
   const handleMouseMove = useCallback(
     (event: MouseEvent<HTMLElement>) => {
@@ -59,14 +61,16 @@ export function HeroSection({ data }: { data: HeroSectionData }) {
       <span id="hero" className="block scroll-mt-24" aria-hidden="true" />
 
       <div className="absolute inset-0">
-        <Image
-          src={resolveAboutImageSrc(data.backgroundImage)}
-          alt=""
-          fill
-          priority
-          sizes={ABOUT_IMAGE_SIZES.hero}
-          className="object-cover opacity-[0.14]"
-        />
+        {hasBackgroundImage ? (
+          <Image
+            src={resolveAboutImageSrc(data.backgroundImage)}
+            alt=""
+            fill
+            priority
+            sizes={ABOUT_IMAGE_SIZES.hero}
+            className="object-cover opacity-[0.14]"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(59,130,246,0.22),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(168,85,247,0.12),transparent_28%),linear-gradient(180deg,rgba(6,8,16,0.58),rgba(7,9,17,0.74)_48%,rgba(5,7,14,0.96))]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent" />
@@ -153,6 +157,3 @@ export function HeroSection({ data }: { data: HeroSectionData }) {
     </section>
   );
 }
-
-
-

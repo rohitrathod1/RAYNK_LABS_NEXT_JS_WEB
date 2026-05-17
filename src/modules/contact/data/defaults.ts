@@ -18,7 +18,7 @@ export const defaultSeo = definePageSeo({
 export const defaultContactContent: ContactPageData = {
   hero: {
     title: "Contact Us",
-    subtitle: "Tell us what you're building, where you’re stuck, or what kind of momentum you need next. We’ll help you turn it into a clear plan.",
+    subtitle: "Tell us what you're building, where youï¿½re stuck, or what kind of momentum you need next. Weï¿½ll help you turn it into a clear plan.",
     backgroundImage: "/about/hero-bg.svg",
   },
   contact_info: {
@@ -28,7 +28,7 @@ export const defaultContactContent: ContactPageData = {
       { icon: "MapPin", label: "Location", value: CONTACT_MAP.locationName },
       { icon: "Phone", label: "Phone", value: "+91 98765 43210" },
       { icon: "Mail", label: "Email", value: "hello@raynklabs.com" },
-      { icon: "Clock", label: "Timing", value: "Mon - Fri · 9:00 AM - 6:00 PM" },
+      { icon: "Clock", label: "Timing", value: "Mon - Fri ï¿½ 9:00 AM - 6:00 PM" },
     ],
     workingHours: "Typical response within one business day for serious project inquiries.",
   },
